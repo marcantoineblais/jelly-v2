@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@heroui/accordion": "^2.2.16",
+    "@heroui/react": "^2.8.0-beta.6",
     "@heroui/system": "^2.4.15",
     "@heroui/theme": "^2.4.15",
     "framer-motion": "^12.12.2",

@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { MediaFile } from "../../entities/MediaFile";
+import { MediaFile } from "../../types/MediaFile";
 import { extractInfo } from "./extractInfo";
 
 const paths = process.env.DOWNLOAD_PATHS ?? "";

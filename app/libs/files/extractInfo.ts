@@ -1,27 +1,51 @@
-import { MediaInfo } from "@/app/entities/MediaInfo";
+import { MediaInfo } from "@/app/types/MediaInfo";
 
 export function extractInfo(filename: string = ""): MediaInfo {
   filename = filename.replaceAll(/[_\.]/g, " "); // replace spacing with actual space
 
-  let title = filename.replace(/[sS]\d{2}[eE]\d{2}/, ""); // remove everything after the episode
+  const title = extractTitle(filename);
+  const year = extractYear(filename);
+  const [season, episode] = extractSeries(filename);
+  const type = episode ? "show" : "movie";
+
+  return { title, year, season, episode, type };
+}
+
+function extractTitle(filename: string = "") {
+  let title = filename.replace(/s\d{2}e\d{2}/i, ""); // remove everything after the episode
   title = title.replace(/\s*\d{3,4}p.*$/, ""); // remove everything after the resolution
   title = title.replace(/\s*\(\d{4}\).*$/, ""); // remove everything after the year
   title = title.replaceAll(/\[.*\]/g, ""); // remove author and info in []
   title = title.replaceAll(/\(.*\)/g, ""); // remove author and info in ()
-  title = title.trim();
+  
+  return title.trim();
+}
 
-  const yearMatch = filename.match(/\d{4}/);
-  const year = yearMatch ? yearMatch[0] : null;
+function extractYear(filename: string = "") {
+  const match = filename.match(/\d{4}/);
 
-  let episodeMatch = filename.match(/[sS]\d{2}[eE]\d{2}/);
-  let episode = episodeMatch ? episodeMatch[0].toUpperCase() : null;
-
-  if (!episode) {
-    episodeMatch = filename.match(/\d{2}(?=\s)/);
-    episode = episodeMatch ? `S01E${episodeMatch[0]}` : null;
+  if (match) {
+    return parseInt(match[0], 10);
   }
 
-  const type = episode ? "show" : "movie";
+  return null;
+}
 
-  return { title, year, episode, type };
+function extractSeries(filename: string = "") {
+  let seriesMatch = filename.match(/s(\d{2})e(\d{2})/i);
+  let season = null;
+  let episode = null;
+
+  if (seriesMatch) {
+    season = parseInt(seriesMatch[1], 10);
+    episode = parseInt(seriesMatch[2], 10);
+  } else {
+    seriesMatch = filename.match(/\d{2}(?=\s)/);
+
+    if (seriesMatch) {
+      episode = parseInt(seriesMatch[0], 10);
+    }
+  }
+
+  return [season, episode];
 }

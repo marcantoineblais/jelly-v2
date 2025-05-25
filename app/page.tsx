@@ -1,5 +1,5 @@
 import H1 from "./components/elements/H1";
-import MediaTypes from "./components/media/MediaTypes";
+import MediaList from "./components/media/MediaList";
 import { readFolders } from "./libs/files/readFiles";
 
 const Home = async () => {
@@ -8,7 +8,7 @@ const Home = async () => {
   return (
     <main className="py-5 px-1 h-full w-full">
       <H1>Jelly</H1>
-      <MediaTypes files={files} />
+      <MediaList files={files} />
     </main>
   );
 }
