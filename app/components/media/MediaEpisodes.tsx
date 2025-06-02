@@ -25,7 +25,7 @@ const MediaEpisodes = ({ files = [] }: { files: MediaFile[]}) => {
   }, [files])
 
   return (
-    <Accordion>
+    <Accordion isCompact>
       {episodes.map(({ key, title, node }) => {
         return <AccordionItem key={key} title={title}>{node}</AccordionItem>
       })}

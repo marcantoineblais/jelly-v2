@@ -12,20 +12,19 @@ export function extractInfo(filename: string = ""): MediaInfo {
 }
 
 function extractTitle(filename: string = "") {
-  let title = filename.replace(/s\d{2}e\d{2}/i, ""); // remove everything after the episode
-  title = title.replace(/\s*\d{3,4}p.*$/, ""); // remove everything after the resolution
-  title = title.replace(/\s*\(\d{4}\).*$/, ""); // remove everything after the year
-  title = title.replaceAll(/\[.*\]/g, ""); // remove author and info in []
-  title = title.replaceAll(/\(.*\)/g, ""); // remove author and info in ()
+  let title = filename.replace(/s\d{2}e\d{2}.*$/i, ""); // remove everything after the episode
+  title = title.replace(/\s+\d{3,4}p\+.*$/, ""); // remove everything after the resolution
+  title = title.replace(/\s+\d{4}\s+.*$/, ""); // remove everything after the year
+  title = title.replaceAll(/[\[\()].*[\]\)]/g, ""); // remove author and info in [] and ()
   
   return title.trim();
 }
 
 function extractYear(filename: string = "") {
-  const match = filename.match(/\d{4}/);
+  const match = filename.match(/\s+(\d{4})\s+/);
 
   if (match) {
-    return parseInt(match[0], 10);
+    return parseInt(match[1], 10);
   }
 
   return null;

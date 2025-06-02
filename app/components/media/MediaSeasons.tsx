@@ -22,7 +22,7 @@ const MediaSeasons = ({ files = {} }: { files: Record<string, MediaFile[]>}) => 
   }, [files])
 
   return (
-    <Accordion>
+    <Accordion isCompact>
       {seasons.map(({ key, title, node }) => {
         return <AccordionItem key={key} title={title}>{node}</AccordionItem>
       })}

@@ -43,7 +43,7 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
 
   if (shows.length > 0 || movies.length > 0) {
     return (
-      <Accordion className="px-1 py-3">
+      <Accordion className="px-1 py-3" isCompact>
         {shows.length > 0 ? (
           <AccordionItem key={0} title="Shows">
             <Accordion isCompact>
