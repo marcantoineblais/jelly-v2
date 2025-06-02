@@ -7,22 +7,24 @@ import { PressEvent } from "@heroui/react";
 import { ChangeEvent, MouseEvent, useState } from "react";
 import useModal from "../hooks/useModal";
 
-const MediaContentEditor = ({
-  title = "",
-  files = {},
+const MediaSeasonEditor = ({
+  title = "Unknown",
+  season = null,
+  files = [],
   updateFiles = () => {},
 }: {
   title?: string;
-  files?: Record<string, MediaFile[]>;
+  season?: number | null;
+  files?: MediaFile[];
   updateFiles?: Function;
 }) => {
-  const [updatedTitle, setUpdatedTitle] = useState<string>(title);
+  const [updatedSeason, setUpdatedSeason] = useState<number | null>(season);
   const inputs = [
     {
-      label: "Title",
-      value: updatedTitle,
+      label: "Season",
+      value: updatedSeason,
       onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setUpdatedTitle(e.currentTarget.value),
+        setUpdatedSeason(parseInt(e.currentTarget.value) ?? null),
     },
   ];
 
@@ -30,7 +32,7 @@ const MediaContentEditor = ({
     {
       label: "Cancel",
       handler: (_e: PressEvent, onClose: () => void) => {
-        setUpdatedTitle(title);
+        setUpdatedSeason(season);
         onClose();
       },
     },
@@ -45,15 +47,14 @@ const MediaContentEditor = ({
   const { onOpen, modal } = useModal(inputs, actions);
 
   function onSave() {
-    const seasons = Object.values(files).map((season) => season);
-    const episodes = seasons.map((episode) => episode).flat();
+    const episodes = files.map((episode) => episode);
 
     episodes.forEach((episode) => {
       if (!episode.mediaInfo) {
         episode.mediaInfo = {};
       }
 
-      episode.mediaInfo.title = updatedTitle;
+      episode.mediaInfo.season = updatedSeason;
     });
 
     updateFiles();
@@ -76,4 +77,4 @@ const MediaContentEditor = ({
   );
 };
 
-export default MediaContentEditor;
+export default MediaSeasonEditor;

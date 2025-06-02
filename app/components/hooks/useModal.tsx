@@ -15,12 +15,14 @@ import { ChangeEventHandler, Dispatch, SetStateAction } from "react";
 const useModal = (
   inputs: {
     label: string;
-    value: string | number | Date;
+    value: string | number | Date | null;
+    type?: string,
     onChange?: ChangeEventHandler;
   }[] = [
     {
       label: "Title",
       value: "Title",
+      type: "text"
     },
   ],
   actions = [
@@ -43,7 +45,7 @@ const useModal = (
               {inputs.map((input, i) => (
                 <Input
                   key={i}
-                  value={input.value.toString()}
+                  value={input.value !== null ? input.value.toString() : ""}
                   type={typeof input.value}
                   onChange={input.onChange}
                   placeholder={input.label}
