@@ -1,7 +1,7 @@
 import { MediaInfo } from "@/app/types/MediaInfo";
 
 export function extractInfo(filename: string = ""): MediaInfo {
-  filename = filename.replaceAll(/[_\.]/g, " "); // replace spacing with actual space
+  filename = filename.replaceAll(/[_\.]/g, " "); // replace spacing symbols with actual space
 
   const title = extractTitle(filename);
   const year = extractYear(filename);
@@ -13,7 +13,7 @@ export function extractInfo(filename: string = ""): MediaInfo {
 
 function extractTitle(filename: string = "") {
   let title = filename.replace(/s\d{2}e\d{2}.*$/i, ""); // remove everything after the episode
-  title = title.replace(/\s+\d{3,4}p\+.*$/, ""); // remove everything after the resolution
+  title = title.replace(/\s+\d{3,4}p\s+.*$/, ""); // remove everything after the resolution
   title = title.replace(/\s+\d{4}\s+.*$/, ""); // remove everything after the year
   title = title.replaceAll(/[\[\()].*[\]\)]/g, ""); // remove author and info in [] and ()
   

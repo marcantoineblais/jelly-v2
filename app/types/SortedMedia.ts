@@ -13,7 +13,7 @@ export class SortedMedia {
       } else if (file.mediaInfo.type === "movie") {
         this.movies.push(file);
       } else {
-        const title = file.mediaInfo.title || "unknown";
+        const title = file.mediaInfo.title || "Unknown";
         const season = `Season ${formatNumber(file.mediaInfo.season)}`;
 
         if (!this.shows[title]) {

@@ -9,6 +9,7 @@ import H2 from "../elements/H2";
 import { AccordionData } from "@/app/types/AccordionData";
 import { createFilename } from "@/app/libs/files/createFilename";
 import { Accordion, AccordionItem } from "@heroui/react";
+import MediaTitleEditor from "./MediaTitleEditor";
 
 const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
   const [sortedFiles, setSortedFiles] = useState<SortedMedia>(
@@ -18,18 +19,27 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
   const [movies, setMovies] = useState<AccordionData[]>([]);
 
   useEffect(() => {
+    const updateSortedFiles = () => setSortedFiles(new SortedMedia(files));
+
     const showsData = Object.entries(sortedFiles.shows).map(
       ([title, show], i) => {
+
         return {
           key: i,
-          title: title,
-          node: <MediaSeasons key={i} files={show} />,
+          title: <MediaTitleEditor title={title} files={show} updateFiles={() => updateSortedFiles()}/>,
+          node: (
+            <MediaSeasons
+              key={i}
+              files={show}
+              updateFiles={updateSortedFiles}
+            />
+          ),
         };
       }
     );
 
     const moviesData = sortedFiles.movies.map((movie, i) => {
-      const title = createFilename(movie.mediaInfo)
+      const title = createFilename(movie.mediaInfo);
       return {
         key: i,
         title: title,
@@ -39,13 +49,13 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
 
     setShows(showsData);
     setMovies(moviesData);
-  }, [sortedFiles]);
+  }, [files, sortedFiles]);
 
   if (shows.length > 0 || movies.length > 0) {
     return (
-      <Accordion className="px-1 py-3" isCompact>
+      <Accordion className="px-1 py-3">
         {shows.length > 0 ? (
-          <AccordionItem key={0} title="Shows">
+          <AccordionItem key={0} title={<H2 className="text-left">Shows</H2>}>
             <Accordion isCompact>
               {shows.map(({ title, key, node }) => {
                 return (
@@ -61,7 +71,7 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
         )}
 
         {movies.length > 0 ? (
-          <AccordionItem key={1} title="Movies">
+          <AccordionItem key={1} title={<H2 className="text-left">Movies</H2>}>
             <Accordion isCompact>
               {movies.map(({ title, key, node }) => {
                 return (
