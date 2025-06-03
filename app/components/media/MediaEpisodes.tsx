@@ -13,8 +13,8 @@ const MediaEpisodes = ({
   unSelectFile = () => {},
 }: {
   files: MediaFile[];
-  selectFile?: () => void;
-  unSelectFile?: () => void;
+  selectFile?: (file: MediaFile) => void;
+  unSelectFile?: (file: MediaFile) => void;
 }) => {
   const [episodes, setEpisodes] = useState<AccordionData[]>([]);
   const [refs, setRefs] = useState<(HTMLElement | null)[]>([]);

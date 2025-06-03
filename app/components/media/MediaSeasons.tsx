@@ -15,8 +15,8 @@ const MediaSeasons = ({
 }: {
   files: Record<string, MediaFile[]>;
   title?: string;
-  selectFile?: Function;
-  unSelectFile?: Function;
+  selectFile?: (file: MediaFile) => void;
+  unSelectFile?: (file: MediaFile) => void;
 }) => {
   const [seasons, setSeasons] = useState<AccordionData[]>([]);
 
@@ -41,7 +41,12 @@ const MediaSeasons = ({
         textValue: title,
         title: title,
         node: (
-          <MediaEpisodes files={season} key={i} selectFile={selectFile} unSelectFile={unSelectFile} />
+          <MediaEpisodes
+            files={season}
+            key={i}
+            selectFile={selectFile}
+            unSelectFile={unSelectFile}
+          />
         ),
       };
     });
