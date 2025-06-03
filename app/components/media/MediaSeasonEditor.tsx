@@ -8,23 +8,36 @@ import { ChangeEvent, MouseEvent, useState } from "react";
 import useModal from "../hooks/useModal";
 
 const MediaSeasonEditor = ({
-  title = "Unknown",
+  label = "Not set",
+  title = "",
   season = null,
   files = [],
   updateFiles = () => {},
 }: {
+  label?: string;
   title?: string;
   season?: number | null;
   files?: MediaFile[];
   updateFiles?: Function;
 }) => {
+  const [updatedTitle, setUpdatedTitle] = useState<string>(title);
   const [updatedSeason, setUpdatedSeason] = useState<number | null>(season);
   const inputs = [
     {
+      label: "Title",
+      value: updatedTitle,
+      onChange: (e: ChangeEvent<HTMLInputElement>) =>
+        setUpdatedTitle(e.currentTarget.value),
+      type: "text",
+    },
+    {
       label: "Season",
       value: updatedSeason,
-      onChange: (e: ChangeEvent<HTMLInputElement>) =>
-        setUpdatedSeason(parseInt(e.currentTarget.value) ?? null),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => {
+        const number = parseInt(e.currentTarget.value);
+        setUpdatedSeason(isNaN(number) ? null : number);
+      },
+      type: "number",
     },
   ];
 
@@ -44,7 +57,11 @@ const MediaSeasonEditor = ({
       },
     },
   ];
-  const { onOpen, modal } = useModal(inputs, actions);
+  const { onOpen, modal } = useModal(
+    inputs,
+    actions,
+    "Title and season number"
+  );
 
   function onSave() {
     const episodes = files.map((episode) => episode);
@@ -54,6 +71,7 @@ const MediaSeasonEditor = ({
         episode.mediaInfo = {};
       }
 
+      episode.mediaInfo.title = updatedTitle;
       episode.mediaInfo.season = updatedSeason;
     });
 
@@ -68,7 +86,7 @@ const MediaSeasonEditor = ({
   return (
     <>
       <div className="flex justify-between gap-3">
-        <span>{title}</span>
+        <label>{label}</label>
         <FontAwesomeIcon icon={faPenToSquare} onClick={handleClick} />
       </div>
 

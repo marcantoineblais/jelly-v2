@@ -2,10 +2,10 @@ import { MediaInfo } from "@/app/types/MediaInfo";
 import { formatNumber } from "./formatNumber";
 
 export function createFilename(info: MediaInfo = {}): string {
-  const title = info.title || "Unknown";
-  const year = info.year;
-  const season = info.season;
-  const episode = info.episode;
+  const title = info.title || "Not set";
+  const year = info.type === "movie" ? `(${info.year})` : null;
+  const season = info.type === "show" ? info.season : null;
+  const episode = info.type === "show" ? info.episode : null;
 
   let se = "";
   if (season !== null && episode !== null) {

@@ -18,7 +18,6 @@ export async function readFolders() {
   files.forEach((file) => {
     file.mediaInfo = extractInfo(file.name);
   });
-  console.log(files);
   
   return files;
 }

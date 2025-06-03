@@ -1,4 +1,3 @@
-import { formatNumber } from "../libs/files/formatNumber";
 import { MediaFile } from "./MediaFile";
 
 export class SortedMedia {
@@ -13,8 +12,8 @@ export class SortedMedia {
       } else if (file.mediaInfo.type === "movie") {
         this.movies.push(file);
       } else {
-        const title = file.mediaInfo.title || "Unknown";
-        const season = `Season ${formatNumber(file.mediaInfo.season)}`;
+        const title = file.mediaInfo.title || "Not set";
+        const season = file.mediaInfo.season ?? "Not set";
 
         if (!this.shows[title]) {
           this.shows[title] = {};

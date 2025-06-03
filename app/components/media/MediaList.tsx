@@ -23,14 +23,22 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
 
     const showsData = Object.entries(sortedFiles.shows).map(
       ([title, show], i) => {
-
         return {
           key: i,
-          title: <MediaTitleEditor title={title} files={show} updateFiles={() => updateSortedFiles()}/>,
+          textValue: title,
+          title: (
+            <MediaTitleEditor
+              label={title}
+              title={title}
+              files={show}
+              updateFiles={updateSortedFiles}
+            />
+          ),
           node: (
             <MediaSeasons
               key={i}
               files={show}
+              title={title}
               updateFiles={updateSortedFiles}
             />
           ),
@@ -42,6 +50,7 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
       const title = createFilename(movie.mediaInfo);
       return {
         key: i,
+        textValue: title,
         title: title,
         node: <MediaForm file={movie} key={i} />,
       };
@@ -55,11 +64,11 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
     return (
       <Accordion className="px-1 py-3">
         {shows.length > 0 ? (
-          <AccordionItem key={0} title={<H2 className="text-left">Shows</H2>}>
+          <AccordionItem key={0} title={<H2 className="text-left">Shows</H2>} textValue="Shows">
             <Accordion isCompact>
-              {shows.map(({ title, key, node }) => {
+              {shows.map(({ title, textValue, key, node }) => {
                 return (
-                  <AccordionItem key={key} title={title}>
+                  <AccordionItem key={key} title={title} textValue={textValue}>
                     {node}
                   </AccordionItem>
                 );
@@ -71,11 +80,11 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
         )}
 
         {movies.length > 0 ? (
-          <AccordionItem key={1} title={<H2 className="text-left">Movies</H2>}>
+          <AccordionItem key={1} title={<H2 className="text-left">Movies</H2>} textValue="Movies">
             <Accordion isCompact>
-              {movies.map(({ title, key, node }) => {
+              {movies.map(({ title, textValue, key, node }) => {
                 return (
-                  <AccordionItem key={key} title={title}>
+                  <AccordionItem key={key} title={title} textValue={textValue}>
                     {node}
                   </AccordionItem>
                 );

@@ -10,19 +10,19 @@ import {
   PressEvent,
   useDisclosure,
 } from "@heroui/react";
-import { ChangeEventHandler, Dispatch, SetStateAction } from "react";
+import { ChangeEventHandler, ReactNode } from "react";
 
 const useModal = (
   inputs: {
     label: string;
     value: string | number | Date | null;
-    type?: string,
+    type?: string;
     onChange?: ChangeEventHandler;
   }[] = [
     {
       label: "Title",
       value: "Title",
-      type: "text"
+      type: "text",
     },
   ],
   actions = [
@@ -30,7 +30,8 @@ const useModal = (
       label: "Close",
       handler: (_e: PressEvent, onClose: () => void) => onClose(),
     },
-  ]
+  ],
+  header: ReactNode = "Edit"
 ) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -39,16 +40,17 @@ const useModal = (
       <ModalContent>
         {(onClose: () => void) => (
           <>
-            <ModalHeader>Edit Title</ModalHeader>
-
+            <ModalHeader>{header}</ModalHeader>
             <ModalBody>
               {inputs.map((input, i) => (
                 <Input
                   key={i}
+                  label={input.label}
                   value={input.value !== null ? input.value.toString() : ""}
-                  type={typeof input.value}
+                  type={input.type}
                   onChange={input.onChange}
-                  placeholder={input.label}
+                  radius="sm"
+                  classNames={{label: "group-data-[filled-within=true]:-translate-y-[75%]", input: "focus:outline-none"}}
                 />
               ))}
             </ModalBody>

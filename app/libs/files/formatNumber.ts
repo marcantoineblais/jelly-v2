@@ -1,5 +1,5 @@
-export function formatNumber(number: number | null = 0) {
-  if (number === null) return "00";
+export function formatNumber(number: number | null = null) {
+  if (number === null || isNaN(number)) return null;
 
   const formatter = new Intl.NumberFormat("en-CA", {
     minimumIntegerDigits: 2,

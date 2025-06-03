@@ -3,6 +3,6 @@
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 
 body {
-  width: 100dvw;
-  height: 100dvh;
+  width: 100lvw;
+  height: 100lvh;
 }

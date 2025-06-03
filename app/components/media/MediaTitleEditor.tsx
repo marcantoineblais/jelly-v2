@@ -8,11 +8,13 @@ import { ChangeEvent, MouseEvent, useState } from "react";
 import useModal from "../hooks/useModal";
 
 const MediaContentEditor = ({
+  label = "",
   title = "",
   files = {},
   updateFiles = () => {},
 }: {
-  title?: string;
+  label?: string;
+  title?: string,
   files?: Record<string, MediaFile[]>;
   updateFiles?: Function;
 }) => {
@@ -42,7 +44,7 @@ const MediaContentEditor = ({
       },
     },
   ];
-  const { onOpen, modal } = useModal(inputs, actions);
+  const { onOpen, modal } = useModal(inputs, actions, "Edit title");
 
   function onSave() {
     const seasons = Object.values(files).map((season) => season);
@@ -67,7 +69,7 @@ const MediaContentEditor = ({
   return (
     <>
       <div className="flex justify-between gap-3">
-        <span>{title}</span>
+        <label>{label}</label>
         <FontAwesomeIcon icon={faPenToSquare} onClick={handleClick} />
       </div>
 
