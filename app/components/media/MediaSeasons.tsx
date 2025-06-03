@@ -6,16 +6,17 @@ import { useEffect, useState } from "react";
 import MediaEpisodes from "./MediaEpisodes";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { formatNumber } from "@/app/libs/files/formatNumber";
-import MediaSeasonEditor from "./MediaSeasonEditor";
 
 const MediaSeasons = ({
   files = {},
   title = "",
-  updateFiles = () => {},
+  selectFile = () => {},
+  unSelectFile = () => {},
 }: {
   files: Record<string, MediaFile[]>;
   title?: string;
-  updateFiles?: Function;
+  selectFile?: Function;
+  unSelectFile?: Function;
 }) => {
   const [seasons, setSeasons] = useState<AccordionData[]>([]);
 
@@ -38,24 +39,15 @@ const MediaSeasons = ({
       return {
         key: i,
         textValue: title,
-        title: (
-          <MediaSeasonEditor
-            key={i}
-            label={label}
-            title={title}
-            files={season}
-            updateFiles={updateFiles}
-            season={number}
-          />
-        ),
+        title: title,
         node: (
-          <MediaEpisodes files={season} key={i} updateFiles={updateFiles} />
+          <MediaEpisodes files={season} key={i} selectFile={selectFile} unSelectFile={unSelectFile} />
         ),
       };
     });
 
     setSeasons(seasonsData);
-  }, [files, title, updateFiles]);
+  }, [files, title, selectFile]);
 
   return (
     <Accordion isCompact>
