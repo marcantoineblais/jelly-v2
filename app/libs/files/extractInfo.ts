@@ -23,17 +23,17 @@ function extractTitle(filename: string = "") {
 }
 
 function extractYear(filename: string = "") {
-  const match = filename.match(/\s+(\d{4})\s+/);
+  const match = filename.match(/(\-+|\s+|\()(\d{4})(\-+|\s+|\)|$)/);
 
   if (match) {
-    return parseInt(match[1], 10);
+    return parseInt(match[2], 10);
   }
 
   return null;
 }
 
 function extractSeries(filename: string = "") {
-  let seriesMatch = filename.match(/(\-+|\s+)s(\d{2})e(\d{2})(\-?e\d{2})?(\-+|\s+)/i);
+  let seriesMatch = filename.match(/(\-+|\s+)s(\d{2})e(\d{2})(\-?e\d{2})?(\-+|\s+|$)/i);
   let season = null;
   let episode = null;
 

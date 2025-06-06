@@ -14,22 +14,22 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
     new SortedMedia(files)
   );
   const [selectedMedias, setSelectedMedia] = useState<MediaFile[]>([]);
+  const [showCheckboxes, setShowCheckboxes] = useState<boolean>(false);
   const [shows, setShows] = useState<AccordionData[]>([]);
   const [movies, setMovies] = useState<AccordionData[]>([]);
 
   useEffect(() => {
-    const updateSortedFiles = () => setSortedFiles(new SortedMedia(files));
-    const selectFile = (file: MediaFile) => {
-      setSelectedMedia((selectedMedias) => {
-        selectedMedias.push(file);
-        return [...selectedMedias];
-      });
-    };
+    const toggleShowCheckboxes = () => {
+      setShowCheckboxes(!showCheckboxes);
+    }
 
-    const unSelectFile = (file: MediaFile) => {
-      setSelectedMedia((selectedMedias) => {
-        return selectedMedias.filter(selectedFile => selectedFile !== file);
-      });
+    const toggleFile = (file: MediaFile) => {
+        setSelectedMedia((selectedMedias) => {
+          if (selectedMedias.includes(file))
+            return selectedMedias.filter(el => el !== file);
+          
+          return [...selectedMedias, file];
+        });
     };
 
     const showsData = Object.entries(sortedFiles.shows).map(
@@ -38,15 +38,7 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
           key: i,
           textValue: title,
           title: title,
-          node: (
-            <MediaSeasons
-              key={i}
-              files={show}
-              title={title}
-              selectFile={selectFile}
-              unSelectFile={unSelectFile}
-            />
-          ),
+          node: <MediaSeasons key={i} files={show} toggleFile={toggleFile} selectedMedias={selectedMedias} showCheckboxes={showCheckboxes} toggleShowCheckboxes={toggleShowCheckboxes}/>,
         };
       }
     );
@@ -63,7 +55,7 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
 
     setShows(showsData);
     setMovies(moviesData);
-  }, [files, sortedFiles]);
+  }, [files, sortedFiles, selectedMedias, showCheckboxes]);
 
   if (shows.length > 0 || movies.length > 0) {
     return (
@@ -124,8 +116,9 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
     );
   } else {
     return (
-      <div>
+      <div className="w-full h-full flex flex-col justify-center items-center">
         <H2>Nothing to show</H2>
+        <p>Add some content and come back later.</p>
       </div>
     );
   }

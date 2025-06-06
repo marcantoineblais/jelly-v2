@@ -9,14 +9,16 @@ import { formatNumber } from "@/app/libs/files/formatNumber";
 
 const MediaSeasons = ({
   files = {},
-  title = "",
-  selectFile = () => {},
-  unSelectFile = () => {},
+  selectedMedias = [],
+  showCheckboxes = false,
+  toggleFile = () => {},
+  toggleShowCheckboxes = () => {}
 }: {
-  files: Record<string, MediaFile[]>;
-  title?: string;
-  selectFile?: (file: MediaFile) => void;
-  unSelectFile?: (file: MediaFile) => void;
+  files?: Record<string, MediaFile[]>;
+  selectedMedias?: MediaFile[];
+  showCheckboxes?: boolean;
+  toggleFile?: (file: MediaFile) => void;
+  toggleShowCheckboxes?: () => void;
 }) => {
   const [seasons, setSeasons] = useState<AccordionData[]>([]);
 
@@ -38,21 +40,23 @@ const MediaSeasons = ({
 
       return {
         key: i,
-        textValue: title,
-        title: title,
+        textValue: label,
+        title: label,
         node: (
           <MediaEpisodes
             files={season}
             key={i}
-            selectFile={selectFile}
-            unSelectFile={unSelectFile}
+            toggleFile={toggleFile}
+            selectedMedias={selectedMedias}
+            showCheckbox={showCheckboxes}
+            toggleShowCheckboxes={toggleShowCheckboxes}
           />
         ),
       };
     });
 
     setSeasons(seasonsData);
-  }, [files, title, selectFile]);
+  }, [files, toggleFile, toggleShowCheckboxes, selectedMedias, showCheckboxes]);
 
   return (
     <Accordion isCompact>
