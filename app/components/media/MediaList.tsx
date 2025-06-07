@@ -3,59 +3,50 @@
 import { MediaFile } from "@/app/types/MediaFile";
 import { SortedMedia } from "@/app/types/SortedMedia";
 import { useEffect, useState } from "react";
-import MediaSeasons from "./MediaSeasons";
 import H2 from "../elements/H2";
 import { AccordionData } from "@/app/types/AccordionData";
 import { createFilename } from "@/app/libs/files/createFilename";
 import { Accordion, AccordionItem } from "@heroui/react";
+import MediaSelectCheckbox from "./MediaSelectCheckbox";
+import SingleMedia from "./SingleMedia";
+import MediaSeason from "./MediaSeason";
+import { object } from "framer-motion/client";
+import MediaShow from "./MediaShow";
 
 const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
   const [sortedFiles, setSortedFiles] = useState<SortedMedia>(
     new SortedMedia(files)
   );
-  const [selectedMedias, setSelectedMedia] = useState<MediaFile[]>([]);
-  const [showCheckboxes, setShowCheckboxes] = useState<boolean>(false);
   const [shows, setShows] = useState<AccordionData[]>([]);
   const [movies, setMovies] = useState<AccordionData[]>([]);
 
   useEffect(() => {
-    const toggleShowCheckboxes = () => {
-      setShowCheckboxes(!showCheckboxes);
-    }
-
-    const toggleFile = (file: MediaFile) => {
-        setSelectedMedia((selectedMedias) => {
-          if (selectedMedias.includes(file))
-            return selectedMedias.filter(el => el !== file);
-          
-          return [...selectedMedias, file];
-        });
-    };
-
     const showsData = Object.entries(sortedFiles.shows).map(
-      ([title, show], i) => {
+      ([label, show], i) => {
+        const seasons = Object.values(show);
+
         return {
           key: i,
-          textValue: title,
-          title: title,
-          node: <MediaSeasons key={i} files={show} toggleFile={toggleFile} selectedMedias={selectedMedias} showCheckboxes={showCheckboxes} toggleShowCheckboxes={toggleShowCheckboxes}/>,
+          textValue: label,
+          title: label,
+          node: <MediaShow key={i} files={seasons} />,
         };
       }
     );
 
-    const moviesData = sortedFiles.movies.map((movie, i) => {
-      const title = createFilename(movie.mediaInfo);
+    const moviesData = sortedFiles.movies.map((file, i) => {
+      const label = createFilename(file.mediaInfo) || "Not set";
       return {
         key: i,
-        textValue: title,
-        title: title,
-        node: null,
+        textValue: label,
+        title: <MediaSelectCheckbox file={file} label={label} />,
+        node: <SingleMedia file={file} />,
       };
     });
 
     setShows(showsData);
     setMovies(moviesData);
-  }, [files, sortedFiles, selectedMedias, showCheckboxes]);
+  }, [files, sortedFiles]);
 
   if (shows.length > 0 || movies.length > 0) {
     return (
