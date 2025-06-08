@@ -2,117 +2,100 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { SortedMedia } from "@/app/types/SortedMedia";
-import { useEffect, useState } from "react";
+import { ChangeEvent, JSX, useEffect, useState } from "react";
 import H2 from "../elements/H2";
-import { AccordionData } from "@/app/types/AccordionData";
-import { createFilename } from "@/app/libs/files/createFilename";
 import { Accordion, AccordionItem } from "@heroui/react";
-import MediaSelectCheckbox from "./MediaSelectCheckbox";
-import SingleMedia from "./SingleMedia";
-import MediaSeason from "./MediaSeason";
-import { object } from "framer-motion/client";
 import MediaShow from "./MediaShow";
+import sortMediaFiles from "@/app/libs/files/sortMediaFiles";
+import MediaCheckbox from "./MediaCheckbox";
 
 const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
-  const [sortedFiles, setSortedFiles] = useState<SortedMedia>(
-    new SortedMedia(files)
-  );
-  const [shows, setShows] = useState<AccordionData[]>([]);
-  const [movies, setMovies] = useState<AccordionData[]>([]);
+  const [sortedFiles, setSortedFiles] = useState<SortedMedia>({
+    shows: [],
+    movies: [],
+  });
+  const [showsNodes, setShowsNodes] = useState<JSX.Element[]>([]);
+  const [moviesNodes, setMoviesNodes] = useState<any>([]);
 
   useEffect(() => {
-    const showsData = Object.entries(sortedFiles.shows).map(
-      ([label, show], i) => {
-        const seasons = Object.values(show);
+    setSortedFiles(sortFiles(files));
+  }, [files]);
 
-        return {
-          key: i,
-          textValue: label,
-          title: label,
-          node: <MediaShow key={i} files={seasons} />,
-        };
-      }
+  useEffect(() => {
+    const uniqueTitles = new Set<string>();
+
+    sortedFiles.shows.forEach((file) =>
+      uniqueTitles.add(file.mediaInfo.title || "")
     );
 
-    const moviesData = sortedFiles.movies.map((file, i) => {
-      const label = createFilename(file.mediaInfo) || "Not set";
-      return {
-        key: i,
-        textValue: label,
-        title: <MediaSelectCheckbox file={file} label={label} />,
-        node: <SingleMedia file={file} />,
-      };
+    const showsNodes = Array.from(uniqueTitles).map((title, i) => {
+      const files = sortedFiles.shows.filter(
+        (file) => file.mediaInfo.title === title
+      );
+      
+      return (
+        <AccordionItem
+          key={i}
+          textValue={title}
+          title={
+            <MediaCheckbox
+              files={files}
+              label={title}
+              isSelected={files.every((file) => file.isSelected)}
+              isIndeterminate={files.some((file) => file.isSelected)}
+              onSelect={handleSelect}
+            />
+          }
+        >
+          <MediaShow files={files} handleSelect={handleSelect} />
+        </AccordionItem>
+      );
     });
 
-    setShows(showsData);
-    setMovies(moviesData);
-  }, [files, sortedFiles]);
+    setShowsNodes(showsNodes);
+  }, [sortedFiles]);
 
-  if (shows.length > 0 || movies.length > 0) {
-    return (
-      <>
-        <Accordion
-          className="px-1 py-3"
-          defaultExpandedKeys={shows.length > 0 ? "0" : "1"}
-        >
-          {shows.length > 0 ? (
-            <AccordionItem
-              key={"0"}
-              title={<H2 className="text-left">Shows</H2>}
-              textValue="Shows"
-            >
-              <Accordion isCompact>
-                {shows.map(({ title, textValue, key, node }) => {
-                  return (
-                    <AccordionItem
-                      key={key}
-                      title={title}
-                      textValue={textValue}
-                    >
-                      {node}
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
-            </AccordionItem>
-          ) : (
-            <></>
-          )}
+  function sortFiles(files: MediaFile[]) {
+    const sortedFiles = {
+      movies: files
+        .filter((file) => file.mediaInfo?.type === "movie")
+        .sort(sortMediaFiles),
+      shows: files
+        .filter((file) => file.mediaInfo?.type === "show")
+        .sort(sortMediaFiles),
+    };
 
-          {movies.length > 0 ? (
-            <AccordionItem
-              key={"1"}
-              title={<H2 className="text-left">Movies</H2>}
-              textValue="Movies"
-            >
-              <Accordion isCompact>
-                {movies.map(({ title, textValue, key, node }) => {
-                  return (
-                    <AccordionItem
-                      key={key}
-                      title={title}
-                      textValue={textValue}
-                    >
-                      {node}
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
-            </AccordionItem>
-          ) : (
-            <></>
-          )}
-        </Accordion>
-      </>
-    );
-  } else {
-    return (
-      <div className="w-full h-full flex flex-col justify-center items-center">
-        <H2>Nothing to show</H2>
-        <p>Add some content and come back later.</p>
-      </div>
-    );
+    return sortedFiles;
   }
+
+  function handleSelect(e: ChangeEvent<HTMLInputElement>, files: MediaFile[]) {
+    const selected = e.currentTarget.checked;
+    files.forEach((file) => (file.isSelected = selected));
+
+    setSortedFiles((sortedFiles) => {
+      return { ...sortedFiles };
+    });
+  }
+
+  return (
+    <>
+      <Accordion className="px-1 py-3" defaultExpandedKeys={"0"}>
+        <AccordionItem
+          key={"0"}
+          title={<H2 className="text-left">Shows</H2>}
+          textValue="Shows"
+        >
+          <Accordion isCompact>{showsNodes}</Accordion>
+        </AccordionItem>
+      </Accordion>
+      {files.length === 0 && (
+        <div className="w-full h-full flex flex-col justify-center items-center">
+          <H2>Nothing to show</H2>
+          <p>Add some content and come back later.</p>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default MediaList;

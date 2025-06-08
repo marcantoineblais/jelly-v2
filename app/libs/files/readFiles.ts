@@ -45,6 +45,7 @@ function extractFilesFromFolder(
           path: entryPath,
           name: path.basename(entry, ext),
           ext: ext,
+          mediaInfo: {}
         };
 
         filesList.push(file);
