@@ -3,10 +3,14 @@
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 
 body {
-  width: 100lvw;
-  height: 100lvh;
+  width: 100dvw;
+  height: 100dvh;
 }
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.text-gradient {
+  @apply text-transparent bg-clip-text bg-gradient-to-b from-emerald-600 to-90% to-emerald-950;
 }

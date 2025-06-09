@@ -6,8 +6,8 @@ const Home = async () => {
   const files = await readFolders();
   
   return (
-    <main className="py-5 px-1 h-full w-full">
-      <H1>Jelly</H1>
+    <main className="h-full max-h-full w-full flex flex-col gap-3 bg-stone-100">
+      <H1 className="mt-5">Jelly</H1>
       <MediaList files={files} />
     </main>
   );

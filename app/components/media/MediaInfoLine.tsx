@@ -7,31 +7,37 @@ const MediaInfoLine = ({
   label?: string;
   content?: string;
 }) => {
+  const time = 2000 // ms
   const articleRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let timer: NodeJS.Timeout | null = null;
+    
     const cancelInterval = () => {
-      if (interval) clearInterval(interval);
+      if (timer) {
+        clearInterval(timer);
+        clearTimeout(timer);
+      }
     }
+    
     const animateScroll = () => {
       const ref = articleRef.current
       if (!ref) return;
 
-      interval = setInterval(() => {
-        ref.scrollLeft += 1;
-
-        if (ref.scrollLeft >= ref.scrollWidth - ref.clientWidth) {
-          cancelInterval();
-          setTimeout(() => {
-            ref.scrollLeft = 0;
-          }, 2000);
-
-          setTimeout(() => {
-            animateScroll();
-          }, 4000);
-        }
-      }, 10);
+      ref.scrollLeft = 0;
+      timer = setTimeout(() => {
+        timer = setInterval(() => {
+          ref.scrollLeft += 1;
+          
+          // When section can't scroll anymore
+          if (ref.scrollLeft >= ref.scrollWidth - ref.clientWidth) {
+            cancelInterval();
+            timer = setTimeout(() => {
+              animateScroll();
+            }, time); 
+          }
+        }, 10);
+      }, time);
     };
 
     animateScroll();

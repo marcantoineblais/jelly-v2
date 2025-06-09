@@ -9,7 +9,7 @@ const H1 = ({
 }) => {
   return (
     <h1
-      className={`w-full text-center text-5xl ${pressStart2p.className} ${className}`}
+      className={`w-full text-center text-5xl ${pressStart2p.className} text-gradient ${className}`}
     >
       {children}
     </h1>

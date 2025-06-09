@@ -8,6 +8,8 @@ import { Accordion, AccordionItem } from "@heroui/react";
 import MediaShow from "./MediaShow";
 import sortMediaFiles from "@/app/libs/files/sortMediaFiles";
 import MediaCheckbox from "./MediaCheckbox";
+import SingleMedia from "./SingleMedia";
+import FileSelectionBox from "../overlay/FileSelectionBox";
 
 const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
   const [sortedFiles, setSortedFiles] = useState<SortedMedia>({
@@ -15,7 +17,8 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
     movies: [],
   });
   const [showsNodes, setShowsNodes] = useState<JSX.Element[]>([]);
-  const [moviesNodes, setMoviesNodes] = useState<any>([]);
+  const [moviesNodes, setMoviesNodes] = useState<JSX.Element[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
 
   useEffect(() => {
     setSortedFiles(sortFiles(files));
@@ -32,7 +35,7 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
       const files = sortedFiles.shows.filter(
         (file) => file.mediaInfo.title === title
       );
-      
+
       return (
         <AccordionItem
           key={i}
@@ -52,8 +55,37 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
       );
     });
 
+    const moviesNodes = sortedFiles.movies.map((file, i) => {
+      const title = file.mediaInfo.title || "Not set";
+
+      return (
+        <AccordionItem
+          key={i}
+          textValue={title}
+          title={
+            <MediaCheckbox
+              files={file}
+              label={title}
+              isSelected={file.isSelected}
+              onSelect={handleSelect}
+            />
+          }
+        >
+          <SingleMedia file={file} />
+        </AccordionItem>
+      );
+    });
+
     setShowsNodes(showsNodes);
+    setMoviesNodes(moviesNodes);
   }, [sortedFiles]);
+
+  useEffect(() => {
+    const selectedShows = sortedFiles.shows.filter(file => file.isSelected);
+    const selectedMovies = sortedFiles.movies.filter(file => file.isSelected);
+
+    setSelectedFiles([...selectedShows, ...selectedMovies]);
+  }, [sortedFiles])
 
   function sortFiles(files: MediaFile[]) {
     const sortedFiles = {
@@ -68,33 +100,59 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
     return sortedFiles;
   }
 
-  function handleSelect(e: ChangeEvent<HTMLInputElement>, files: MediaFile[]) {
+  function handleSelect(
+    e: ChangeEvent<HTMLInputElement>,
+    files: MediaFile | MediaFile[]
+  ) {
     const selected = e.currentTarget.checked;
-    files.forEach((file) => (file.isSelected = selected));
+    if (Array.isArray(files)) {
+      files.forEach((file) => (file.isSelected = selected));
+    } else {
+      files.isSelected = selected;
+    }
 
     setSortedFiles((sortedFiles) => {
       return { ...sortedFiles };
     });
   }
 
-  return (
-    <>
-      <Accordion className="px-1 py-3" defaultExpandedKeys={"0"}>
-        <AccordionItem
-          key={"0"}
-          title={<H2 className="text-left">Shows</H2>}
-          textValue="Shows"
-        >
-          <Accordion isCompact>{showsNodes}</Accordion>
-        </AccordionItem>
-      </Accordion>
-      {files.length === 0 && (
-        <div className="w-full h-full flex flex-col justify-center items-center">
-          <H2>Nothing to show</H2>
-          <p>Add some content and come back later.</p>
+  if (files.length > 0) {
+    return (
+      <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
+        <div className="h-full overflow-hidden">
+          <Accordion className="h-full overflow-y-auto px-1 py-3" defaultExpandedKeys={"0"}>
+            {showsNodes.length > 0 ? (
+              <AccordionItem
+                key={"0"}
+                title={<H2 className="text-left">Shows</H2>}
+                textValue="Shows"
+              >
+                <Accordion isCompact>{showsNodes}</Accordion>
+              </AccordionItem>
+            ) : null}
+
+            {moviesNodes.length > 0 ? (
+              <AccordionItem
+                key={showsNodes.length > 0 ? "1" : "0"}
+                title={<H2 className="text-left">Movies</H2>}
+                textValue="Movies"
+              >
+                <Accordion isCompact>{moviesNodes}</Accordion>
+              </AccordionItem>
+            ) : null}
+          </Accordion>
         </div>
-      )}
-    </>
+
+        <FileSelectionBox disabled={selectedFiles.length === 0} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col justify-center items-center">
+      <H2>Nothing to show</H2>
+      <p>Add some content and come back later.</p>
+    </div>
   );
 };
 

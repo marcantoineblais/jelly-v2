@@ -3,9 +3,9 @@ import { formatNumber } from "./formatNumber";
 
 export function createFilename(info: MediaInfo = {}): string {
   const title = info.title || "Not set";
-  const year = info.type === "movie" && info.year ? `(${info.year})` : null;
-  const season = info.type === "show" ? info.season : null;
-  const episode = info.type === "show" ? info.episode : null;
+  const year =  info.year ? `(${info.year})` : null;
+  const season = info.season;
+  const episode = info.episode;
 
   let se = "";
   if (season !== null && episode !== null) {

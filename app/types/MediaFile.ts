@@ -6,4 +6,5 @@ export interface MediaFile {
   ext: string;
   mediaInfo: MediaInfo;
   isSelected?: boolean;
+  isIgnored?: boolean;
 }

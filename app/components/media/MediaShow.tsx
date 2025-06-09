@@ -12,22 +12,22 @@ const MediaShow = ({
   handleSelect = () => {},
 }: {
   files?: MediaFile[];
-  handleSelect?: (e: ChangeEvent<HTMLInputElement>, files: MediaFile[]) => void;
+  handleSelect?: (e: ChangeEvent<HTMLInputElement>, files: MediaFile | MediaFile[]) => void;
 }) => {
   const [nodes, setNodes] = useState<JSX.Element[]>([]);
 
   useEffect(() => {
-    const uniqueSeasons = new Set<string>();
+    const uniqueSeasons = new Set<number | null | undefined>();
     files.forEach((file) => {
       const season = file.mediaInfo.season;
-      uniqueSeasons.add(formatNumber(season) ?? "");
+      uniqueSeasons.add(season);
     });
 
     const nodes = Array.from(uniqueSeasons).map((season, i) => {
-      const label = season ? `Season ${season}` : "Not set";
+      const formattedSeason = formatNumber(season);
+      const label = formattedSeason ? `Season ${formattedSeason}` : "Not set";
       const seasonFiles = files.filter((file) => {
-        const mediaSeason = formatNumber(file.mediaInfo.season) || "";
-        return season === mediaSeason;
+        return season === file.mediaInfo.season;
       });
 
       return (

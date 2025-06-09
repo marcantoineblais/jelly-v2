@@ -3,17 +3,17 @@ import { Checkbox } from "@heroui/react";
 import { ChangeEvent, useEffect, useState } from "react";
 
 const MediaCheckbox = ({
-  files,
+  files = [],
   label = "",
   isSelected = false,
   isIndeterminate = false,
   onSelect = () => {},
 }: {
-  files: MediaFile[];
+  files?: MediaFile | MediaFile[];
   label?: string;
   isSelected?: boolean;
   isIndeterminate?: boolean;
-  onSelect?: (e: ChangeEvent<HTMLInputElement>, files: MediaFile[]) => void;
+  onSelect?: (e: ChangeEvent<HTMLInputElement>, files: MediaFile | MediaFile[]) => void;
 }) => {
   function handleSelect(e: ChangeEvent<HTMLInputElement>) {
     onSelect(e, files);
@@ -25,6 +25,7 @@ const MediaCheckbox = ({
         isSelected={isSelected}
         isIndeterminate={isIndeterminate && !isSelected}
         onChange={handleSelect}
+        classNames={{wrapper: "after:bg-emerald-700"}}
       />
       <span>{label}</span>
     </div>
