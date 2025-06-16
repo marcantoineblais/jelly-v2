@@ -30,10 +30,14 @@ export default function MediaList({
   const [showBin, setShowBin] = useState<boolean>(true);
 
   useEffect(() => {
-    setSortedFiles(sortFiles(files));
-  }, [files]);
+    setSortedFiles(sortFiles(files, libraries));
+  }, [files, libraries]);
 
-  function sortFiles(files: MediaFile[], binned: boolean = false) {
+  function sortFiles(
+    files: MediaFile[],
+    libraries: MediaLibrary[],
+    binned: boolean = false
+  ) {
     const names: string[] = libraries
       .map((library) => library.name)
       .filter((name) => typeof name === "string");
@@ -55,7 +59,7 @@ export default function MediaList({
       if (value.length === 0) {
         delete sortedFiles[key];
       }
-    })
+    });
 
     return sortedFiles;
   }
@@ -130,8 +134,8 @@ export default function MediaList({
       if ((binSelected && isShowed) || (!isShowed && !binSelected)) {
         selectedFiles.forEach((file) => (file.isSelected = false));
         setSelectedFiles([]);
-        setSortedFiles(sortFiles(files));
-        setBinnedFiles(sortFiles(files, true));
+        setSortedFiles(sortFiles(files, libraries));
+        setBinnedFiles(sortFiles(files, libraries, true));
       }
 
       return !binSelected;
@@ -161,8 +165,8 @@ export default function MediaList({
     });
 
     setSelectedFiles([]);
-    setSortedFiles(sortFiles(files));
-    setBinnedFiles(sortFiles(files, true));
+    setSortedFiles(sortFiles(files, libraries));
+    setBinnedFiles(sortFiles(files, libraries, true));
   }
 
   function handleRestore() {
@@ -172,8 +176,8 @@ export default function MediaList({
     });
 
     setSelectedFiles([]);
-    setSortedFiles(sortFiles(files));
-    setBinnedFiles(sortFiles(files, true));
+    setSortedFiles(sortFiles(files, libraries));
+    setBinnedFiles(sortFiles(files, libraries, true));
   }
 
   if (files.length > 0) {
