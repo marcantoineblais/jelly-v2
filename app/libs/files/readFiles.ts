@@ -2,21 +2,32 @@ import fs from "fs";
 import path from "path";
 import { MediaFile } from "../../types/MediaFile";
 import { extractInfo } from "./extractInfo";
+import { assignDefaultLibrary } from "./assignDefaultLibrary";
+import { MediaLibrary } from "@/app/types/MediaLibrary";
 
-const paths = process.env.DOWNLOAD_PATHS ?? "";
-const folders = paths.split(",");
-const videoExt = process.env.VIDEO_EXT ?? "";
-const acceptedExt = videoExt.split(",");
-
-export async function readFolders() {
+export function readFolders(
+  folders: string[],
+  videoExt: string[],
+  libraries: MediaLibrary[]
+) {
   const files: MediaFile[] = [];
+  const librariesData: { title: string; library: MediaLibrary }[] = [];
+  libraries.forEach((library) => {
+    if (library.type === "show" && library.path) {
+      const files = readLibraryFiles(library.path);
+      files.forEach((file) =>
+        librariesData.push({ title: file, library: library })
+      );
+    }
+  });
 
   folders.forEach((folder) => {
-    extractFilesFromFolder(folder, files);
+    extractFilesFromFolder(folder, files, videoExt);
   });
 
   files.forEach((file) => {
     file.mediaInfo = extractInfo(file.name);
+    file.library = assignDefaultLibrary(file, librariesData, libraries);
   });
   
   return files;
@@ -25,7 +36,8 @@ export async function readFolders() {
 // Recursively scan all folders and subfolders for files
 function extractFilesFromFolder(
   folderPath: string = process.cwd(),
-  filesList: MediaFile[] = []
+  filesList: MediaFile[] = [],
+  videoExt: string[]
 ) {
   const entries = fs.readdirSync(folderPath);
 
@@ -35,17 +47,18 @@ function extractFilesFromFolder(
 
     if (stats.isDirectory()) {
       if (entry !== "temp") {
-        extractFilesFromFolder(entryPath, filesList);
+        extractFilesFromFolder(entryPath, filesList, videoExt);
       }
     } else {
       const ext = path.extname(entry);
 
-      if (acceptedExt.includes(ext)) {
+      if (videoExt.includes(ext)) {
         const file: MediaFile = {
           path: entryPath,
           name: path.basename(entry, ext),
           ext: ext,
-          mediaInfo: {}
+          mediaInfo: {},
+          library: {},
         };
 
         filesList.push(file);
@@ -54,4 +67,9 @@ function extractFilesFromFolder(
   });
 
   return filesList;
+}
+
+function readLibraryFiles(path: string) {
+  const files = fs.readdirSync(path);  
+  return files;
 }

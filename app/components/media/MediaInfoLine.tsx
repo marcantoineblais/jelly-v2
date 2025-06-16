@@ -1,40 +1,40 @@
 import { useEffect, useRef } from "react";
 
-const MediaInfoLine = ({
+export default function MediaInfoLine({
   label = "",
   content = "",
 }: {
   label?: string;
   content?: string;
-}) => {
-  const time = 2000 // ms
+}) {
+  const time = 2000; // ms
   const articleRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
-    
+
     const cancelInterval = () => {
       if (timer) {
         clearInterval(timer);
         clearTimeout(timer);
       }
-    }
-    
+    };
+
     const animateScroll = () => {
-      const ref = articleRef.current
+      const ref = articleRef.current;
       if (!ref) return;
 
       ref.scrollLeft = 0;
       timer = setTimeout(() => {
         timer = setInterval(() => {
           ref.scrollLeft += 1;
-          
+
           // When section can't scroll anymore
           if (ref.scrollLeft >= ref.scrollWidth - ref.clientWidth) {
             cancelInterval();
             timer = setTimeout(() => {
               animateScroll();
-            }, time); 
+            }, time);
           }
         }, 10);
       }, time);
@@ -59,6 +59,4 @@ const MediaInfoLine = ({
       </div>
     </li>
   );
-};
-
-export default MediaInfoLine;
+}

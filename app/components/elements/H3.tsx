@@ -1,4 +1,4 @@
-export default function H2({
+export default function H3({
   className = "",
   children,
 }: {
@@ -6,8 +6,8 @@ export default function H2({
   children?: React.ReactNode;
 }) {
   return (
-    <h2 className={`w-full text-center text-3xl font-bold ${className}`}>
+    <h3 className={`w-full text-center text-xl font-bold ${className}`}>
       {children}
-    </h2>
+    </h3>
   );
 }

@@ -7,18 +7,21 @@ import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
 import { createFilename } from "@/app/libs/files/createFilename";
 
-const MediaSeason = ({
+export default function MediaSeason({
   files = [],
   handleSelect = () => {},
 }: {
   files?: MediaFile[];
-  handleSelect?: (e: ChangeEvent<HTMLInputElement>, files: MediaFile | MediaFile[]) => void;
-}) => {
+  handleSelect?: (
+    e: ChangeEvent<HTMLInputElement>,
+    files: MediaFile | MediaFile[],
+  ) => void;
+}) {
   const [nodes, setNodes] = useState<JSX.Element[]>([]);
 
   useEffect(() => {
     const nodes = files.map((file, i) => {
-      const label = createFilename(file.mediaInfo) ?? "Not set";;
+      const label = createFilename(file.mediaInfo) ?? "Not set";
 
       return (
         <AccordionItem
@@ -40,8 +43,6 @@ const MediaSeason = ({
 
     setNodes(nodes);
   }, [files, handleSelect]);
-  
-  return <Accordion isCompact>{nodes}</Accordion>;
-};
 
-export default MediaSeason;
+  return <Accordion isCompact>{nodes}</Accordion>;
+}

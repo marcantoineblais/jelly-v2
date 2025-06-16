@@ -1,6 +1,6 @@
 import { FormEventHandler } from "react";
 
-const Input = ({
+export default function Input({
   label = "",
   value = "",
   name = "",
@@ -10,13 +10,11 @@ const Input = ({
   value?: string;
   name?: string;
   onChange?: FormEventHandler<HTMLInputElement>;
-}) => {
+}) {
   return (
     <div className="flex flex-col">
       <label htmlFor={name}>{label}</label>
       <input value={value} name={name} onChange={onChange} />
     </div>
   );
-};
-
-export default Input;
+}

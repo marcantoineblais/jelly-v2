@@ -10,31 +10,63 @@ import sortMediaFiles from "@/app/libs/files/sortMediaFiles";
 import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
 import FileSelectionBox from "../overlay/FileSelectionBox";
+import H3 from "../elements/H3";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { MediaLibrary } from "@/app/types/MediaLibrary";
+import { library } from "@fortawesome/fontawesome-svg-core";
 
-const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
-  const [sortedFiles, setSortedFiles] = useState<SortedMedia>({
-    shows: [],
-    movies: [],
-  });
-  const [showsNodes, setShowsNodes] = useState<JSX.Element[]>([]);
-  const [moviesNodes, setMoviesNodes] = useState<JSX.Element[]>([]);
+export default function MediaList({
+  files = [],
+  libraries = [],
+}: {
+  files: MediaFile[];
+  libraries: MediaLibrary[];
+}) {
+  const [sortedFiles, setSortedFiles] = useState<SortedMedia>({});
+  const [unknownFiles, setUnknownFiles] = useState<SortedMedia>({});
+  const [binnedFiles, setBinnedFiles] = useState<SortedMedia>({});
   const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
+  const [showBin, setShowBin] = useState<boolean>(true);
 
   useEffect(() => {
     setSortedFiles(sortFiles(files));
   }, [files]);
 
-  useEffect(() => {
+  function sortFiles(files: MediaFile[], binned: boolean = false) {
+    const names: string[] = libraries
+      .map((library) => library.name)
+      .filter((name) => typeof name === "string");
+
+    const sortedFiles: SortedMedia = {};
+
+    names.forEach((name) => {
+      const content = files
+        .filter(
+          (file) =>
+            (file.isIgnored ?? false) === binned && file.library.name === name
+        )
+        .sort(sortMediaFiles);
+
+      sortedFiles[name] = content;
+    });
+
+    Object.entries(sortedFiles).forEach(([key, value]) => {
+      if (value.length === 0) {
+        delete sortedFiles[key];
+      }
+    })
+
+    return sortedFiles;
+  }
+
+  function createShowsNodes(files: MediaFile[]) {
     const uniqueTitles = new Set<string>();
 
-    sortedFiles.shows.forEach((file) =>
-      uniqueTitles.add(file.mediaInfo.title || "")
-    );
+    files.forEach((file) => uniqueTitles.add(file.mediaInfo.title || ""));
 
-    const showsNodes = Array.from(uniqueTitles).map((title, i) => {
-      const files = sortedFiles.shows.filter(
-        (file) => file.mediaInfo.title === title
-      );
+    return Array.from(uniqueTitles).map((title, i) => {
+      const showFiles = files.filter((file) => file.mediaInfo.title === title);
 
       return (
         <AccordionItem
@@ -42,20 +74,22 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
           textValue={title}
           title={
             <MediaCheckbox
-              files={files}
+              files={showFiles}
               label={title}
-              isSelected={files.every((file) => file.isSelected)}
-              isIndeterminate={files.some((file) => file.isSelected)}
+              isSelected={showFiles.every((file) => file.isSelected)}
+              isIndeterminate={showFiles.some((file) => file.isSelected)}
               onSelect={handleSelect}
             />
           }
         >
-          <MediaShow files={files} handleSelect={handleSelect} />
+          <MediaShow files={showFiles} handleSelect={handleSelect} />
         </AccordionItem>
       );
     });
+  }
 
-    const moviesNodes = sortedFiles.movies.map((file, i) => {
+  function createMoviesNodes(files: MediaFile[]) {
+    return files.map((file, i) => {
       const title = file.mediaInfo.title || "Not set";
 
       return (
@@ -75,29 +109,33 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
         </AccordionItem>
       );
     });
+  }
 
-    setShowsNodes(showsNodes);
-    setMoviesNodes(moviesNodes);
-  }, [sortedFiles]);
+  function renderNode(files: MediaFile[] = []) {
+    const type = files[0]?.library.type ?? null;
 
-  useEffect(() => {
-    const selectedShows = sortedFiles.shows.filter(file => file.isSelected);
-    const selectedMovies = sortedFiles.movies.filter(file => file.isSelected);
+    if (type === "show")
+      return <Accordion isCompact>{createShowsNodes(files)}</Accordion>;
+    else if (type === "movie")
+      return <Accordion isCompact>{createMoviesNodes(files)}</Accordion>;
+    else return <div className="text-center">Empty</div>;
+  }
 
-    setSelectedFiles([...selectedShows, ...selectedMovies]);
-  }, [sortedFiles])
+  function handleSelectionChange(keys: "all" | Set<React.Key>) {
+    if (keys === "all") return;
 
-  function sortFiles(files: MediaFile[]) {
-    const sortedFiles = {
-      movies: files
-        .filter((file) => file.mediaInfo?.type === "movie")
-        .sort(sortMediaFiles),
-      shows: files
-        .filter((file) => file.mediaInfo?.type === "show")
-        .sort(sortMediaFiles),
-    };
+    const selectedKey = Array.from(keys)[0];
+    setShowBin((isShowed) => {
+      const binSelected = selectedKey === "bin";
+      if ((binSelected && isShowed) || (!isShowed && !binSelected)) {
+        selectedFiles.forEach((file) => (file.isSelected = false));
+        setSelectedFiles([]);
+        setSortedFiles(sortFiles(files));
+        setBinnedFiles(sortFiles(files, true));
+      }
 
-    return sortedFiles;
+      return !binSelected;
+    });
   }
 
   function handleSelect(
@@ -116,34 +154,55 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
     });
   }
 
+  function handleDelete() {
+    selectedFiles.forEach((file) => {
+      file.isIgnored = true;
+      file.isSelected = false;
+    });
+
+    setSelectedFiles([]);
+    setSortedFiles(sortFiles(files));
+    setBinnedFiles(sortFiles(files, true));
+  }
+
+  function handleRestore() {
+    selectedFiles.forEach((file) => {
+      file.isIgnored = false;
+      file.isSelected = false;
+    });
+
+    setSelectedFiles([]);
+    setSortedFiles(sortFiles(files));
+    setBinnedFiles(sortFiles(files, true));
+  }
+
   if (files.length > 0) {
     return (
       <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
         <div className="h-full overflow-hidden">
-          <Accordion className="h-full overflow-y-auto px-1 py-3" defaultExpandedKeys={"0"}>
-            {showsNodes.length > 0 ? (
+          <Accordion
+            className="flex-col h-full overflow-y-auto px-1 py-3"
+            defaultExpandedKeys={"0"}
+            onSelectionChange={handleSelectionChange}
+          >
+            {Object.entries(sortedFiles).map(([key, files]) => (
               <AccordionItem
-                key={"0"}
-                title={<H2 className="text-left">Shows</H2>}
-                textValue="Shows"
+                key={key || "Not set"}
+                textValue={key || "Not set"}
+                title={<H2 className="text-left">{key || "Not set"}</H2>}
               >
-                <Accordion isCompact>{showsNodes}</Accordion>
+                {renderNode(files)}
               </AccordionItem>
-            ) : null}
-
-            {moviesNodes.length > 0 ? (
-              <AccordionItem
-                key={showsNodes.length > 0 ? "1" : "0"}
-                title={<H2 className="text-left">Movies</H2>}
-                textValue="Movies"
-              >
-                <Accordion isCompact>{moviesNodes}</Accordion>
-              </AccordionItem>
-            ) : null}
+            ))}
           </Accordion>
         </div>
 
-        <FileSelectionBox disabled={selectedFiles.length === 0} />
+        <FileSelectionBox
+          onDelete={handleDelete}
+          onRestore={handleRestore}
+          disabled={selectedFiles.length === 0}
+          showBin={showBin}
+        />
       </div>
     );
   }
@@ -154,6 +213,4 @@ const MediaList = ({ files = [] }: { files: MediaFile[] }) => {
       <p>Add some content and come back later.</p>
     </div>
   );
-};
-
-export default MediaList;
+}

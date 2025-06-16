@@ -4,7 +4,11 @@ import { MediaFile } from "@/app/types/MediaFile";
 import { ReactNode, useEffect, useState } from "react";
 import MediaInfoLine from "./MediaInfoLine";
 
-const SingleMedia = ({ file = null }: { file: MediaFile | null }) => {
+export default function SingleMedia({
+  file = null,
+}: {
+  file: MediaFile | null;
+}) {
   const [lines, setLines] = useState<ReactNode[]>([]);
 
   useEffect(() => {
@@ -32,6 +36,4 @@ const SingleMedia = ({ file = null }: { file: MediaFile | null }) => {
   }, [file]);
 
   return <ul>{lines}</ul>;
-};
-
-export default SingleMedia;
+}

@@ -7,13 +7,16 @@ import { formatNumber } from "@/app/libs/files/formatNumber";
 import MediaCheckbox from "./MediaCheckbox";
 import MediaSeason from "./MediaSeason";
 
-const MediaShow = ({
+export default function MediaShow({
   files = [],
   handleSelect = () => {},
 }: {
   files?: MediaFile[];
-  handleSelect?: (e: ChangeEvent<HTMLInputElement>, files: MediaFile | MediaFile[]) => void;
-}) => {
+  handleSelect?: (
+    e: ChangeEvent<HTMLInputElement>,
+    files: MediaFile | MediaFile[],
+  ) => void;
+}) {
   const [nodes, setNodes] = useState<JSX.Element[]>([]);
 
   useEffect(() => {
@@ -53,6 +56,4 @@ const MediaShow = ({
   }, [files, handleSelect]);
 
   return <Accordion isCompact>{nodes}</Accordion>;
-};
-
-export default MediaShow;
+}
