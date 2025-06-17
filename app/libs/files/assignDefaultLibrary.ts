@@ -7,20 +7,21 @@ export function assignDefaultLibrary(
   libraries: MediaLibrary[] = []
 ) {
   const existingMedia = librariesData.find(
-    (data) =>
-      data.title.toLowerCase() === file.mediaInfo.title?.toLowerCase()
+    (data) => data.title.toLowerCase() === file.mediaInfo.title?.toLowerCase()
   );
 
-  let defaultLibrary: MediaLibrary;
+  let defaultLibrary: MediaLibrary | undefined;
   if (existingMedia) {
     defaultLibrary = existingMedia.library;
   } else if (file.mediaInfo.episode !== null) {
-    const library = libraries.find(library => library.type === "show");
-    defaultLibrary = library ?? {};
+    const library = libraries.find((library) => library.type === "show");
+    defaultLibrary = library;
   } else {
-    const library = libraries.find(library => library.type === "movie");
-    defaultLibrary = library ?? {};
+    const library = libraries.find((library) => library.type === "movie");
+    defaultLibrary = library;
   }
-  
-  return defaultLibrary;
+
+  if (!defaultLibrary && libraries.length > 0) defaultLibrary = libraries[0];
+
+  return defaultLibrary ?? {};
 }

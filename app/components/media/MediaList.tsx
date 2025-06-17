@@ -2,7 +2,7 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { SortedMedia } from "@/app/types/SortedMedia";
-import { ChangeEvent, JSX, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import H2 from "../elements/H2";
 import { Accordion, AccordionItem } from "@heroui/react";
 import MediaShow from "./MediaShow";
@@ -14,7 +14,6 @@ import H3 from "../elements/H3";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { MediaLibrary } from "@/app/types/MediaLibrary";
-import { library } from "@fortawesome/fontawesome-svg-core";
 
 export default function MediaList({
   files = [],
@@ -24,7 +23,6 @@ export default function MediaList({
   libraries: MediaLibrary[];
 }) {
   const [sortedFiles, setSortedFiles] = useState<SortedMedia>({});
-  const [unknownFiles, setUnknownFiles] = useState<SortedMedia>({});
   const [binnedFiles, setBinnedFiles] = useState<SortedMedia>({});
   const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
   const [showBin, setShowBin] = useState<boolean>(true);
@@ -117,7 +115,6 @@ export default function MediaList({
 
   function renderNode(files: MediaFile[] = []) {
     const type = files[0]?.library.type ?? null;
-
     if (type === "show")
       return <Accordion isCompact>{createShowsNodes(files)}</Accordion>;
     else if (type === "movie")
@@ -144,18 +141,18 @@ export default function MediaList({
 
   function handleSelect(
     e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[]
+    updatedFiles: MediaFile | MediaFile[]
   ) {
     const selected = e.currentTarget.checked;
-    if (Array.isArray(files)) {
-      files.forEach((file) => (file.isSelected = selected));
+    if (Array.isArray(updatedFiles)) {
+      updatedFiles.forEach((file) => (file.isSelected = selected));
     } else {
-      files.isSelected = selected;
+      updatedFiles.isSelected = selected;
     }
 
-    setSortedFiles((sortedFiles) => {
-      return { ...sortedFiles };
-    });
+    setSortedFiles({ ...sortedFiles });
+    setBinnedFiles({ ...binnedFiles });
+    setSelectedFiles(files.filter((file) => file.isSelected));
   }
 
   function handleDelete() {
@@ -189,15 +186,35 @@ export default function MediaList({
             defaultExpandedKeys={"0"}
             onSelectionChange={handleSelectionChange}
           >
-            {Object.entries(sortedFiles).map(([key, files]) => (
+            {[
+              ...Object.entries(sortedFiles).map(([key, files], i) => (
+                <AccordionItem
+                  key={i}
+                  textValue={key || "Not set"}
+                  title={<H2 className="text-left">{key || "Not set"}</H2>}
+                >
+                  {renderNode(files)}
+                </AccordionItem>
+              )),
               <AccordionItem
-                key={key || "Not set"}
-                textValue={key || "Not set"}
-                title={<H2 className="text-left">{key || "Not set"}</H2>}
+                key={"bin"}
+                textValue="Recycle bin"
+                indicator={<FontAwesomeIcon icon={faTrash} size="2x" />}
+                disableIndicatorAnimation
               >
-                {renderNode(files)}
-              </AccordionItem>
-            ))}
+                <Accordion isCompact>
+                  {Object.entries(binnedFiles).map(([key, files]) => (
+                    <AccordionItem
+                      key={key || "Not set"}
+                      textValue={key || "Not set"}
+                      title={<H3 className="text-left">{key || "Not set"}</H3>}
+                    >
+                      {renderNode(files)}
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </AccordionItem>,
+            ]}
           </Accordion>
         </div>
 
