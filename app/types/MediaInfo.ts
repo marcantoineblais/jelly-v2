@@ -1,6 +1,6 @@
 export interface MediaInfo {
-  title?: string | null;
-  year?: number | null;
-  season?: number | null;
-  episode?: number | null;
+  title?: string;
+  year?: number;
+  season?: number;
+  episode?: number;
 }

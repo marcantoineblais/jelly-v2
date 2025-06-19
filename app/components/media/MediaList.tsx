@@ -14,6 +14,7 @@ import H3 from "../elements/H3";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { MediaLibrary } from "@/app/types/MediaLibrary";
+import MediaEditForm from "./MediaEditForm";
 
 export default function MediaList({
   files = [],
@@ -26,6 +27,7 @@ export default function MediaList({
   const [binnedFiles, setBinnedFiles] = useState<SortedMedia>({});
   const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
   const [showBin, setShowBin] = useState<boolean>(true);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setSortedFiles(sortFiles(files, libraries));
@@ -155,6 +157,10 @@ export default function MediaList({
     setSelectedFiles(files.filter((file) => file.isSelected));
   }
 
+  function handleEdit() {
+    setIsModalOpen(true);
+  }
+
   function handleDelete() {
     selectedFiles.forEach((file) => {
       file.isIgnored = true;
@@ -177,13 +183,17 @@ export default function MediaList({
     setBinnedFiles(sortFiles(files, libraries, true));
   }
 
+  function handleClose() {
+    setIsModalOpen(false);
+    setSortedFiles(sortFiles(files, libraries));
+  }
+
   if (files.length > 0) {
     return (
       <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
         <div className="h-full overflow-hidden">
           <Accordion
             className="flex-col h-full overflow-y-auto px-1 py-3"
-            defaultExpandedKeys={"0"}
             onSelectionChange={handleSelectionChange}
           >
             {[
@@ -219,10 +229,18 @@ export default function MediaList({
         </div>
 
         <FileSelectionBox
+          onEdit={handleEdit}
           onDelete={handleDelete}
           onRestore={handleRestore}
           disabled={selectedFiles.length === 0}
           showBin={showBin}
+        />
+
+        <MediaEditForm
+          files={selectedFiles}
+          libraries={libraries}
+          isOpen={isModalOpen}
+          onClose={handleClose}
         />
       </div>
     );
