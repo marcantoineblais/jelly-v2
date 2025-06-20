@@ -9,4 +9,5 @@ export interface MediaFile {
   library: MediaLibrary;
   isSelected?: boolean;
   isIgnored?: boolean;
+  errors?: string[];
 }

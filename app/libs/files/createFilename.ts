@@ -8,9 +8,9 @@ export function createFilename(info: MediaInfo = {}): string {
   const episode = info.episode;
 
   let se = "";
-  if (season !== null && episode !== null) {
+  if (season !== undefined && episode !== undefined) {
     se = `- S${formatNumber(season)}E${formatNumber(episode)}`;
-  } else if (episode !== null) {
+  } else if (episode !== undefined) {
     se = `- S00E${formatNumber(episode)}`;
   }
 

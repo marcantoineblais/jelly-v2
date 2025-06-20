@@ -15,6 +15,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { MediaLibrary } from "@/app/types/MediaLibrary";
 import MediaEditForm from "./MediaEditForm";
+import { validateData } from "@/app/libs/files/validateData";
+import { createFilename } from "@/app/libs/files/createFilename";
 
 export default function MediaList({
   files = [],
@@ -30,6 +32,7 @@ export default function MediaList({
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
+    files.forEach(file => file.errors = validateData(file));
     setSortedFiles(sortFiles(files, libraries));
   }, [files, libraries]);
 
@@ -95,6 +98,7 @@ export default function MediaList({
   function createMoviesNodes(files: MediaFile[]) {
     return files.map((file, i) => {
       const title = file.mediaInfo.title || "Not set";
+      const label = createFilename(file.mediaInfo);
 
       return (
         <AccordionItem
@@ -103,7 +107,7 @@ export default function MediaList({
           title={
             <MediaCheckbox
               files={file}
-              label={title}
+              label={label}
               isSelected={file.isSelected}
               onSelect={handleSelect}
             />
@@ -183,9 +187,23 @@ export default function MediaList({
     setBinnedFiles(sortFiles(files, libraries, true));
   }
 
-  function handleClose() {
+  function handleClose(unselectAll = false) {
     setIsModalOpen(false);
+
+    if (unselectAll) {
+      selectedFiles.forEach((file) => {
+        file.isSelected = false
+        file.errors = validateData(file);
+      });
+      setSelectedFiles([]);
+    }
+
     setSortedFiles(sortFiles(files, libraries));
+  }
+
+  function handleSave() {
+    const updatedFiles = files.filter((file) => !file.isIgnored);
+    updatedFiles.forEach(file => file.errors = validateData(file));
   }
 
   if (files.length > 0) {
@@ -232,6 +250,7 @@ export default function MediaList({
           onEdit={handleEdit}
           onDelete={handleDelete}
           onRestore={handleRestore}
+          onSave={handleSave}
           disabled={selectedFiles.length === 0}
           showBin={showBin}
         />

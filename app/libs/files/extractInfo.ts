@@ -65,16 +65,14 @@ function extractYear(filename: string = "") {
   if (match) {
     return parseInt(match[2], 10);
   }
-
-  return null;
 }
 
 function extractSeries(filename: string = "") {
   let seriesMatch = filename.match(
     /(^|\-+|\s+)s(\d{2})e(\d{2})(\-?e\d{2})?(\-+|\s+|$)/i,
   );
-  let season = null;
-  let episode = null;
+  let season;
+  let episode;
 
   if (seriesMatch) {
     season = parseInt(seriesMatch[2], 10);

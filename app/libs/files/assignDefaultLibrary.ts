@@ -13,7 +13,7 @@ export function assignDefaultLibrary(
   let defaultLibrary: MediaLibrary | undefined;
   if (existingMedia) {
     defaultLibrary = existingMedia.library;
-  } else if (file.mediaInfo.episode !== null) {
+  } else if (file.mediaInfo.episode !== undefined) {
     const library = libraries.find((library) => library.type === "show");
     defaultLibrary = library;
   } else {
