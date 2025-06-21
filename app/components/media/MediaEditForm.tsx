@@ -88,9 +88,6 @@ export default function MediaEditForm({
       )
     ) {
       setUpdatedSeason(firstFile.mediaInfo.season ?? NaN);
-      setIsSeasonEnabled(
-        files.some((file) => file.mediaInfo.season !== undefined)
-      );
     } else {
       setUpdatedSeason(NaN);
     }
@@ -101,9 +98,6 @@ export default function MediaEditForm({
       )
     ) {
       setUpdatedEpisode(firstFile.mediaInfo.episode ?? NaN);
-      setIsEpisodeEnabled(
-        files.some((file) => file.mediaInfo.episode !== undefined)
-      );
     } else {
       setUpdatedEpisode(NaN);
     }
@@ -112,7 +106,6 @@ export default function MediaEditForm({
       files.every((file) => file.mediaInfo.year === firstFile?.mediaInfo.year)
     ) {
       setUpdatedYear(firstFile.mediaInfo.year ?? NaN);
-      setIsYearEnabled(files.some((file) => file.mediaInfo.year !== undefined));
     } else {
       setUpdatedYear(NaN);
     }
@@ -126,6 +119,13 @@ export default function MediaEditForm({
       setUpdatedLibraryName(undefined);
     }
 
+    setIsEpisodeEnabled(
+      files.some((file) => file.mediaInfo.episode !== undefined)
+    );
+    setIsSeasonEnabled(
+      files.some((file) => file.mediaInfo.season !== undefined)
+    );
+    setIsYearEnabled(files.some((file) => file.mediaInfo.year !== undefined));
     setIncrementEpisodes(false);
   }, [libraries, files]);
 
@@ -143,7 +143,8 @@ export default function MediaEditForm({
       else if (!isNaN(updatedSeason)) file.mediaInfo.season = updatedSeason;
 
       if (!isEpisodeEnabled) file.mediaInfo.episode = undefined;
-      else if (!isNaN(updatedEpisode)) file.mediaInfo.episode = updatedEpisode + counter;
+      else if (!isNaN(updatedEpisode))
+        file.mediaInfo.episode = updatedEpisode + counter;
 
       if (!isYearEnabled) file.mediaInfo.year = undefined;
       else if (!isNaN(updatedYear)) file.mediaInfo.year = updatedYear;

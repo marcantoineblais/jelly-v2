@@ -17,6 +17,7 @@ import { MediaLibrary } from "@/app/types/MediaLibrary";
 import MediaEditForm from "./MediaEditForm";
 import { validateData } from "@/app/libs/files/validateData";
 import { createFilename } from "@/app/libs/files/createFilename";
+import { body } from "framer-motion/client";
 
 export default function MediaList({
   files = [],
@@ -201,9 +202,26 @@ export default function MediaList({
     setSortedFiles(sortFiles(files, libraries));
   }
 
-  function handleSave() {
+  async function handleSave() {
     const updatedFiles = files.filter((file) => !file.isIgnored);
     updatedFiles.forEach(file => file.errors = validateData(file));
+    
+    const incompleteFiles = updatedFiles.filter(file => file.errors && file.errors.length > 0);
+    if (incompleteFiles.length > 0) {
+      console.error("Some files are missing informations.");
+    }
+
+    const response = await fetch("/api/save", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(updatedFiles)
+    });
+
+    const { data } = await response.json();
+    console.log(data);
+    
   }
 
   if (files.length > 0) {

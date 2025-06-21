@@ -1,0 +1,36 @@
+import { createFilename } from "@/app/libs/files/createFilename";
+import { formatNumber } from "@/app/libs/files/formatNumber";
+import { MediaFile } from "@/app/types/MediaFile";
+import { NextRequest, NextResponse } from "next/server";
+import path from "path";
+import fs from "fs";
+
+export async function POST(request: NextRequest) {
+  const files: MediaFile[] = await request.json();
+
+  const newPaths = files.map((file) => {
+    const filename = createFilename(file.mediaInfo);
+    const basepath = file.library.path;
+    const type = file.library.type;
+    const season = file.mediaInfo.season;
+    const title = file.mediaInfo.title;
+
+    if (filename && basepath && title) {
+      const updatedPath = path.join(
+        basepath,
+        type === "show" ? title : "",
+        type === "show" && season ? `Season ${formatNumber(season)}` : "",
+        filename + file.ext
+      );
+
+      return updatedPath;
+      // try {
+      //   fs.renameSync(file.path, updatedPath);
+      // } catch (error) {
+      //   console.error("Error moving file:", error);
+      // }
+    }
+  });
+
+  return NextResponse.json({ data: newPaths });
+}

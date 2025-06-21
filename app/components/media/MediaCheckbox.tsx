@@ -21,15 +21,6 @@ export default function MediaCheckbox({
   ) => void;
 }) {
   const [displayedLabel, setDisplayedLabel] = useState<string>(label);
-  const [errors, setErrors] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (Array.isArray(files)) {
-      setErrors(files.some((file) => file.errors && file.errors.length > 0));
-    } else {
-      setErrors(files.errors !== undefined && files.errors.length > 0);
-    }
-  }, [files]);
 
   useEffect(() => {
     if (label.length > 35) {
@@ -43,6 +34,14 @@ export default function MediaCheckbox({
     onSelect(e, files);
   }
 
+  function isError() {
+    if (Array.isArray(files)) {
+      return files.some((file) => file.errors && file.errors.length > 0);
+    } else {
+      return files.errors !== undefined && files.errors.length > 0;
+    }
+  };
+
   return (
     <div className="flex gap-3 items-center overflow-hidden">
       <Checkbox
@@ -53,11 +52,11 @@ export default function MediaCheckbox({
       />
       <div
         className="flex flex-col data-error:text-red-800 text-nowrap"
-        data-error={errors || undefined}
+        data-error={isError() || undefined}
       >
         {displayedLabel}
 
-        {errors && !Array.isArray(files) && (
+        {isError() && !Array.isArray(files) && (
           <ul className="text-xs text-red-800">
             {files.errors?.map((error, i) => (
               <li key={i}>*{error}</li>
