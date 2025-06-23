@@ -7,8 +7,9 @@ import fs from "fs";
 
 export async function POST(request: NextRequest) {
   const files: MediaFile[] = await request.json();
+  const errors: {file: MediaFile, message: string }[] = [];
 
-  const newPaths = files.map((file) => {
+  files.map((file) => {
     const filename = createFilename(file.mediaInfo);
     const basepath = file.library.path;
     const type = file.library.type;
@@ -23,14 +24,20 @@ export async function POST(request: NextRequest) {
         filename + file.ext
       );
 
-      return updatedPath;
-      // try {
-      //   fs.renameSync(file.path, updatedPath);
-      // } catch (error) {
-      //   console.error("Error moving file:", error);
-      // }
+      try {
+        const destDir = path.dirname(updatedPath);
+        if (!fs.existsSync(destDir)) {
+          fs.mkdirSync(destDir, { recursive: true });
+        }
+        
+        fs.copyFileSync(file.path, updatedPath);
+        fs.unlinkSync(file.path);
+      } catch (error: any) {
+        console.error("Error moving file:", error);
+        errors.push({ file: file, message: error.message })
+      }
     }
   });
 
-  return NextResponse.json({ data: newPaths });
+  return NextResponse.json({ ok: true, errors: errors });
 }
