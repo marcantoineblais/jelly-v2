@@ -12,6 +12,7 @@ export default function FileSelectionBox({
   onRestore = () => {},
   onSave = () => {},
   disabled = true,
+  saveInProgress = false,
   showBin = true,
 }: {
   onEdit?: () => void;
@@ -19,6 +20,7 @@ export default function FileSelectionBox({
   onRestore?: () => void;
   onSave?: () => void;
   disabled?: boolean;
+  saveInProgress?: boolean;
   showBin?: boolean;
 }) {
   return (
@@ -58,8 +60,9 @@ export default function FileSelectionBox({
       <button
         type="button"
         title="Save"
-        className="border-2 border-white py-1.5 px-3 w-16 bg-sky-800 rounded-sm cursor-pointer duration-200"
+        className="border-2 border-white py-1.5 px-3 w-16 bg-sky-800 rounded-sm cursor-pointer duration-200 disabled:opacity-50 disabled:cursor-default"
         onClick={onSave}
+        disabled={saveInProgress}
       >
         <FontAwesomeIcon icon={faSave} size="xl" />
       </button>

@@ -18,6 +18,7 @@ import MediaEditForm from "./MediaEditForm";
 import { validateData } from "@/app/libs/files/validateData";
 import { createFilename } from "@/app/libs/files/createFilename";
 import { body } from "framer-motion/client";
+import FileCopyStatus from "../FileCopyStatus";
 
 export default function MediaList({
   files = [],
@@ -31,6 +32,7 @@ export default function MediaList({
   const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
   const [showBin, setShowBin] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isProgressBarOpen, setIsProgressBarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     files.forEach(file => file.errors = validateData(file));
@@ -211,17 +213,28 @@ export default function MediaList({
       console.error("Some files are missing informations.");
     }
 
-    const response = await fetch("/api/save", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json"
-      },
-      body: JSON.stringify(updatedFiles)
-    });
+    try {
+      setIsProgressBarOpen(true);
+      const response = await fetch("/api/save", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify(updatedFiles)
+      });
+  
+      const data = await response.json();
+      if (data.ok) {
+        console.log("File job started");
+      }
+    } catch (error) {
+      console.error(error);
+      setIsProgressBarOpen(false);
+    }
+  }
 
-    const { data } = await response.json();
-    console.log(data);
-    
+  function closeProgressBar() {
+    setIsProgressBarOpen(false);
   }
 
   if (files.length > 0) {
@@ -279,6 +292,8 @@ export default function MediaList({
           isOpen={isModalOpen}
           onClose={handleClose}
         />
+
+        <FileCopyStatus isOpen={isProgressBarOpen} onClose={closeProgressBar} />
       </div>
     );
   }
