@@ -78,7 +78,7 @@ function extractSeries(filename: string = "") {
     season = parseInt(seriesMatch[2], 10);
     episode = parseInt(seriesMatch[3], 10);
   } else {
-    seriesMatch = filename.match(/(\-+|\s+)(\d{2})(\-+|\s+)/);
+    seriesMatch = filename.match(/(\-+|\s+)e?(\d{2})(\-+|\s+|$)/i);
 
     if (seriesMatch) {
       episode = parseInt(seriesMatch[2], 10);

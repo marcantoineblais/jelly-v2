@@ -1,7 +1,7 @@
 "use client";
 
 import { MediaFile } from "@/app/types/MediaFile";
-import { ChangeEvent, JSX, useEffect, useState } from "react";
+import { ChangeEvent, useMemo } from "react";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { formatNumber } from "@/app/libs/files/formatNumber";
 import MediaCheckbox from "./MediaCheckbox";
@@ -17,43 +17,40 @@ export default function MediaShow({
     files: MediaFile | MediaFile[],
   ) => void;
 }) {
-  const [nodes, setNodes] = useState<JSX.Element[]>([]);
-
-  useEffect(() => {
-    const uniqueSeasons = new Set<number | null | undefined>();
+  // Use useMemo for derived data, but render JSX directly in return
+  const uniqueSeasons = useMemo(() => {
+    const set = new Set<number | null | undefined>();
     files.forEach((file) => {
-      const season = file.mediaInfo.season;
-      uniqueSeasons.add(season);
+      set.add(file.mediaInfo.season);
     });
+    return Array.from(set);
+  }, [files]);
 
-    const nodes = Array.from(uniqueSeasons).map((season, i) => {
-      const formattedSeason = formatNumber(season);
-      const label = formattedSeason ? `Season ${formattedSeason}` : "Not set";
-      const seasonFiles = files.filter((file) => {
-        return season === file.mediaInfo.season;
-      });
-
-      return (
-        <AccordionItem
-          key={i}
-          textValue={label}
-          title={
-            <MediaCheckbox
-              files={seasonFiles}
-              label={label}
-              isSelected={seasonFiles.every((file) => file.isSelected)}
-              isIndeterminate={seasonFiles.some((file) => file.isSelected)}
-              onSelect={handleSelect}
-            />
-          }
-        >
-          <MediaSeason files={seasonFiles} handleSelect={handleSelect} />
-        </AccordionItem>
-      );
-    });
-
-    setNodes(nodes);
-  }, [files, handleSelect]);
-
-  return <Accordion isCompact>{nodes}</Accordion>;
+  return (
+    <Accordion isCompact>
+      {uniqueSeasons.map((season) => {
+        const formattedSeason = season != null ? formatNumber(season) : undefined;
+        const label = formattedSeason ? `Season ${formattedSeason}` : "Not set";
+        const seasonFiles = files.filter((file) => season === file.mediaInfo.season);
+        const key = `${season ?? 'notset'}-${seasonFiles[0]?.id ?? ''}`;
+        return (
+          <AccordionItem
+            key={key}
+            textValue={label}
+            title={
+              <MediaCheckbox
+                files={seasonFiles}
+                label={label}
+                isSelected={seasonFiles.every((file) => file.isSelected)}
+                isIndeterminate={seasonFiles.some((file) => file.isSelected)}
+                onSelect={handleSelect}
+              />
+            }
+          >
+            <MediaSeason files={seasonFiles} handleSelect={handleSelect} />
+          </AccordionItem>
+        );
+      })}
+    </Accordion>
+  );
 }

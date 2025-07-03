@@ -45,7 +45,7 @@ export default function FileCopyStatus({
     if (processedFiles === totalFiles && totalFiles !== 0) {
       setTimeout(onClose, 2000);
     }    
-  }, [isOpen, processedFiles, totalFiles]);
+  }, [isOpen, processedFiles, totalFiles, onClose]);
 
   return (
     <Modal isOpen={isOpen} placement="center" hideCloseButton isDismissable={false}>

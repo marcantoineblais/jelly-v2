@@ -69,9 +69,9 @@ async function copyFile(
 
     await fs.copyFile(file.path, updatedPath);
     await fs.unlink(file.path);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error moving file:", error);
-    errors.push({ file: file, message: error.message });
+    errors.push({ file: file, message: error.message ? error.message : "Unknown error" });
   }
 }
 

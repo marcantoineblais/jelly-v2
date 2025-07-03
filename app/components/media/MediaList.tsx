@@ -2,7 +2,7 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { SortedMedia } from "@/app/types/SortedMedia";
-import { ChangeEvent, useEffect, useState } from "react";
+import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
 import H2 from "../elements/H2";
 import { Accordion, AccordionItem } from "@heroui/react";
 import MediaShow from "./MediaShow";
@@ -17,7 +17,6 @@ import { MediaLibrary } from "@/app/types/MediaLibrary";
 import MediaEditForm from "./MediaEditForm";
 import { validateData } from "@/app/libs/files/validateData";
 import { createFilename } from "@/app/libs/files/createFilename";
-import { body } from "framer-motion/client";
 import FileCopyStatus from "../FileCopyStatus";
 
 export default function MediaList({
@@ -27,17 +26,63 @@ export default function MediaList({
   files: MediaFile[];
   libraries: MediaLibrary[];
 }) {
-  const [sortedFiles, setSortedFiles] = useState<SortedMedia>({});
-  const [binnedFiles, setBinnedFiles] = useState<SortedMedia>({});
-  const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
   const [showBin, setShowBin] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isProgressBarOpen, setIsProgressBarOpen] = useState<boolean>(false);
+  const [selectedKeys, setSelectedKeys] = useState<
+    Set<string | number> | "all"
+  >("all");
+
+  // Store validatedFiles in state so it can be updated for selection
+  const [validatedFiles, setValidatedFiles] = useState<MediaFile[]>([]);
+
+  // Compute selectedFiles from validatedFiles
+  const selectedFiles = useMemo(
+    () => validatedFiles.filter((file) => file.isSelected),
+    [validatedFiles]
+  );
+  const sortedFiles = useMemo(
+    () => sortFiles(validatedFiles, libraries),
+    [validatedFiles, libraries]
+  );
+  const binnedFiles = useMemo(
+    () => sortFiles(validatedFiles, libraries, true),
+    [validatedFiles, libraries]
+  );
 
   useEffect(() => {
-    files.forEach(file => file.errors = validateData(file));
-    setSortedFiles(sortFiles(files, libraries));
-  }, [files, libraries]);
+    setValidatedFiles(
+      files.map((file) => ({
+        ...file,
+        errors: validateData(file),
+        isSelected: false,
+      }))
+    );
+  }, [files]);
+
+  // Re-validate files when they change (e.g., after edit)
+  useEffect(() => {
+    setValidatedFiles((prev) =>
+      prev.map((file) => ({
+        ...file,
+        errors: validateData(file),
+      }))
+    );
+  }, [files]);
+
+  useEffect(() => {
+    const keys = Object.keys(sortedFiles);
+    if (keys.length === 0) return;
+
+    setSelectedKeys((prev) => {
+      const availableKeys = Object.keys(sortedFiles);
+      const keys: (string | number)[] =
+        prev === "all" ? availableKeys : Array.from(prev);
+      return new Set(
+        keys.filter((key) => availableKeys.includes(key.toString()))
+      );
+    });
+  }, [sortedFiles]);
 
   function sortFiles(
     files: MediaFile[],
@@ -75,12 +120,12 @@ export default function MediaList({
 
     files.forEach((file) => uniqueTitles.add(file.mediaInfo.title || ""));
 
-    return Array.from(uniqueTitles).map((title, i) => {
+    return Array.from(uniqueTitles).map((title) => {
       const showFiles = files.filter((file) => file.mediaInfo.title === title);
 
       return (
         <AccordionItem
-          key={i}
+          key={title}
           textValue={title}
           title={
             <MediaCheckbox
@@ -99,13 +144,13 @@ export default function MediaList({
   }
 
   function createMoviesNodes(files: MediaFile[]) {
-    return files.map((file, i) => {
+    return files.map((file) => {
       const title = file.mediaInfo.title || "Not set";
       const label = createFilename(file.mediaInfo);
 
       return (
         <AccordionItem
-          key={i}
+          key={file.id || file.path || label}
           textValue={title}
           title={
             <MediaCheckbox
@@ -131,84 +176,131 @@ export default function MediaList({
     else return <div className="text-center">Empty</div>;
   }
 
-  function handleSelectionChange(keys: "all" | Set<React.Key>) {
-    if (keys === "all") return;
-
-    const selectedKey = Array.from(keys)[0];
-    setShowBin((isShowed) => {
-      const binSelected = selectedKey === "bin";
-      if ((binSelected && isShowed) || (!isShowed && !binSelected)) {
-        selectedFiles.forEach((file) => (file.isSelected = false));
-        setSelectedFiles([]);
-        setSortedFiles(sortFiles(files, libraries));
-        setBinnedFiles(sortFiles(files, libraries, true));
-      }
-
-      return !binSelected;
-    });
-  }
-
   function handleSelect(
     e: ChangeEvent<HTMLInputElement>,
     updatedFiles: MediaFile | MediaFile[]
   ) {
     const selected = e.currentTarget.checked;
-    if (Array.isArray(updatedFiles)) {
-      updatedFiles.forEach((file) => (file.isSelected = selected));
-    } else {
-      updatedFiles.isSelected = selected;
+    setValidatedFiles((prev) => {
+      return prev.map((file) => {
+        if (Array.isArray(updatedFiles)) {
+          if (updatedFiles.some((f) => f.id === file.id)) {
+            return { ...file, isSelected: selected };
+          }
+        } else {
+          if (file.id === updatedFiles.id) {
+            return { ...file, isSelected: selected };
+          }
+        }
+        return file;
+      });
+    });
+  }
+
+  function handleSelectionChange(keys: "all" | Set<string | number>) {
+    let updatedKeys =
+      keys === "all" ? [...Object.keys(sortedFiles), "bin"] : Array.from(keys);
+    const previousKeys =
+      selectedKeys === "all"
+        ? [...Object.keys(sortedFiles), "bin"]
+        : Array.from(selectedKeys);
+
+    if (updatedKeys.includes("bin") && !previousKeys.includes("bin")) {
+      updatedKeys = ["bin"];
+    } else if (updatedKeys.includes("bin") && previousKeys.includes("bin")) {
+      updatedKeys = updatedKeys.filter((key) => key !== "bin");
     }
 
-    setSortedFiles({ ...sortedFiles });
-    setBinnedFiles({ ...binnedFiles });
-    setSelectedFiles(files.filter((file) => file.isSelected));
+    setShowBin((isShowed) => {
+      const binSelected = updatedKeys.includes("bin");
+      if ((binSelected && isShowed) || (!isShowed && !binSelected)) {
+        setValidatedFiles((prev) =>
+          prev.map((file) => ({ ...file, isSelected: false }))
+        );
+      }
+      return !binSelected;
+    });
+    setSelectedKeys(new Set(updatedKeys));
+  }
+
+  function handleDelete() {
+    setValidatedFiles((prev) =>
+      prev.map((file) => ({ ...file, isSelected: false }))
+    );
+  }
+
+  function handleRestore() {
+    setValidatedFiles((prev) =>
+      prev.map((file) => ({ ...file, isSelected: false }))
+    );
+  }
+
+  function handleClose(unselectAll = false) {
+    setIsModalOpen(false);
+    if (unselectAll) {
+      setValidatedFiles((prev) =>
+        prev.map((file) => ({ ...file, isSelected: false }))
+      );
+    }
   }
 
   function handleEdit() {
     setIsModalOpen(true);
   }
 
-  function handleDelete() {
+  function handleSaveMediaInfo(form: {
+    title?: string;
+    isSeasonEnabled?: boolean;
+    season?: number;
+    isEpisodeEnabled?: boolean;
+    episode?: number;
+    isYearEnabled?: boolean;
+    year?: number;
+    library?: string | Set<string>;
+    incrementEpisodes?: boolean;
+  }) {
+    let counter = 0;
     selectedFiles.forEach((file) => {
-      file.isIgnored = true;
-      file.isSelected = false;
+      const newMediaInfo = { ...file.mediaInfo };
+      if (form.title) newMediaInfo.title = form.title.trim();
+      if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
+      else if (!isNaN(form.season as number)) newMediaInfo.season = form.season;
+      if (!form.isEpisodeEnabled) newMediaInfo.episode = undefined;
+      else if (!isNaN(form.episode as number))
+        newMediaInfo.episode = (form.episode as number) + counter;
+      if (!form.isYearEnabled) newMediaInfo.year = undefined;
+      else if (!isNaN(form.year as number)) newMediaInfo.year = form.year;
+      file.mediaInfo = newMediaInfo;
+      if (form.library && form.library !== "all") {
+        const key =
+          typeof form.library === "string"
+            ? form.library
+            : Array.from(form.library)[0];
+        file.library = libraries.find((library) => library.name === key) ?? {};
+      }
+      if (form.incrementEpisodes) counter += 1;
     });
 
-    setSelectedFiles([]);
-    setSortedFiles(sortFiles(files, libraries));
-    setBinnedFiles(sortFiles(files, libraries, true));
-  }
-
-  function handleRestore() {
-    selectedFiles.forEach((file) => {
-      file.isIgnored = false;
-      file.isSelected = false;
-    });
-
-    setSelectedFiles([]);
-    setSortedFiles(sortFiles(files, libraries));
-    setBinnedFiles(sortFiles(files, libraries, true));
-  }
-
-  function handleClose(unselectAll = false) {
+    setValidatedFiles((prev) =>
+      prev.map((file) => ({
+        ...file,
+        errors: validateData(file),
+        isSelected: false,
+      }))
+    );
     setIsModalOpen(false);
-
-    if (unselectAll) {
-      selectedFiles.forEach((file) => {
-        file.isSelected = false
-        file.errors = validateData(file);
-      });
-      setSelectedFiles([]);
-    }
-
-    setSortedFiles(sortFiles(files, libraries));
   }
 
   async function handleSave() {
-    const updatedFiles = files.filter((file) => !file.isIgnored);
-    updatedFiles.forEach(file => file.errors = validateData(file));
-    
-    const incompleteFiles = updatedFiles.filter(file => file.errors && file.errors.length > 0);
+    const updatedFiles = validatedFiles.filter((file) => !file.isIgnored);
+
+    const filesWithErrors = updatedFiles.map((file) => ({
+      ...file,
+      errors: validateData(file),
+    }));
+    const incompleteFiles = filesWithErrors.filter(
+      (file) => file.errors && file.errors.length > 0
+    );
     if (incompleteFiles.length > 0) {
       console.error("Some files are missing informations.");
     }
@@ -218,11 +310,11 @@ export default function MediaList({
       const response = await fetch("/api/save", {
         method: "POST",
         headers: {
-          "content-type": "application/json"
+          "content-type": "application/json",
         },
-        body: JSON.stringify(updatedFiles)
+        body: JSON.stringify(updatedFiles),
       });
-  
+
       const data = await response.json();
       if (data.ok) {
         console.log("File job started");
@@ -244,11 +336,13 @@ export default function MediaList({
           <Accordion
             className="flex-col h-full overflow-y-auto px-1 py-3"
             onSelectionChange={handleSelectionChange}
+            selectedKeys={selectedKeys}
+            selectionMode="multiple"
           >
             {[
-              ...Object.entries(sortedFiles).map(([key, files], i) => (
+              ...Object.entries(sortedFiles).map(([key, files]) => (
                 <AccordionItem
-                  key={i}
+                  key={key || "not-set"}
                   textValue={key || "Not set"}
                   title={<H2 className="text-left">{key || "Not set"}</H2>}
                 >
@@ -264,7 +358,7 @@ export default function MediaList({
                 <Accordion isCompact>
                   {Object.entries(binnedFiles).map(([key, files]) => (
                     <AccordionItem
-                      key={key || "Not set"}
+                      key={key || "not-set"}
                       textValue={key || "Not set"}
                       title={<H3 className="text-left">{key || "Not set"}</H3>}
                     >
@@ -283,6 +377,7 @@ export default function MediaList({
           onRestore={handleRestore}
           onSave={handleSave}
           disabled={selectedFiles.length === 0}
+          saveInProgress={isProgressBarOpen}
           showBin={showBin}
         />
 
@@ -291,6 +386,7 @@ export default function MediaList({
           libraries={libraries}
           isOpen={isModalOpen}
           onClose={handleClose}
+          onSaveMediaInfo={handleSaveMediaInfo}
         />
 
         <FileCopyStatus isOpen={isProgressBarOpen} onClose={closeProgressBar} />

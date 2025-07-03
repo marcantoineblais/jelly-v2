@@ -11,6 +11,7 @@ export function readFolders(
   libraries: MediaLibrary[]
 ) {
   const files: MediaFile[] = [];
+  let idCounter = 1;
   const librariesData: { title: string; library: MediaLibrary }[] = [];
   libraries.forEach((library) => {
     if (library.type === "show" && library.path) {
@@ -22,7 +23,7 @@ export function readFolders(
   });
 
   folders.forEach((folder) => {
-    extractFilesFromFolder(folder, files, videoExt);
+    extractFilesFromFolder(folder, files, videoExt, () => idCounter++);
   });
 
   files.forEach((file) => {
@@ -37,7 +38,8 @@ export function readFolders(
 function extractFilesFromFolder(
   folderPath: string = process.cwd(),
   filesList: MediaFile[] = [],
-  videoExt: string[]
+  videoExt: string[],
+  getId: () => number = (() => 0)
 ) {
   const entries = fs.readdirSync(folderPath);
 
@@ -47,13 +49,14 @@ function extractFilesFromFolder(
 
     if (stats.isDirectory()) {
       if (entry !== "temp") {
-        extractFilesFromFolder(entryPath, filesList, videoExt);
+        extractFilesFromFolder(entryPath, filesList, videoExt, getId);
       }
     } else {
       const ext = path.extname(entry);
 
       if (videoExt.includes(ext)) {
         const file: MediaFile = {
+          id: getId(),
           path: entryPath,
           name: path.basename(entry, ext),
           ext: ext,

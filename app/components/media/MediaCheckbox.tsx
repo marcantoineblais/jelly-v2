@@ -2,7 +2,7 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { Checkbox } from "@heroui/react";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useMemo } from "react";
 
 export default function MediaCheckbox({
   files = [],
@@ -20,27 +20,24 @@ export default function MediaCheckbox({
     files: MediaFile | MediaFile[]
   ) => void;
 }) {
-  const [displayedLabel, setDisplayedLabel] = useState<string>(label);
-
-  useEffect(() => {
+  const displayedLabel = useMemo(() => {
     if (label.length > 35) {
-      setDisplayedLabel(label.slice(0, 32) + "...");
-    } else {
-      setDisplayedLabel(label);
+      return label.slice(0, 32) + "...";
     }
-  }, [label])
+    return label;
+  }, [label]);
 
   function handleSelect(e: ChangeEvent<HTMLInputElement>) {
     onSelect(e, files);
   }
 
-  function isError() {
+  const hasError = useMemo(() => {
     if (Array.isArray(files)) {
       return files.some((file) => file.errors && file.errors.length > 0);
     } else {
       return files.errors !== undefined && files.errors.length > 0;
     }
-  };
+  }, [files]);
 
   return (
     <div className="flex gap-3 items-center overflow-hidden">
@@ -52,11 +49,11 @@ export default function MediaCheckbox({
       />
       <div
         className="flex flex-col data-error:text-red-800 text-nowrap"
-        data-error={isError() || undefined}
+        data-error={hasError || undefined}
       >
         {displayedLabel}
 
-        {isError() && !Array.isArray(files) && (
+        {hasError && !Array.isArray(files) && (
           <ul className="text-xs text-red-800">
             {files.errors?.map((error, i) => (
               <li key={i}>*{error}</li>

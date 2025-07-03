@@ -15,149 +15,124 @@ import {
   Select,
   SelectItem,
 } from "@heroui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function MediaEditForm({
   files = [],
   libraries = [],
   isOpen = false,
   onClose = () => {},
+  onSaveMediaInfo = () => {},
 }: {
   files: MediaFile[];
   libraries?: MediaLibrary[];
   isOpen?: boolean;
-  onClose?: (unselectAll?: boolean) => void;
+  onClose?: () => void;
+  onSaveMediaInfo?: (form: {
+    title?: string;
+    isSeasonEnabled?: boolean;
+    season?: number;
+    isEpisodeEnabled?: boolean;
+    episode?: number;
+    isYearEnabled?: boolean;
+    year?: number;
+    library?: string | Set<string> | undefined;
+    incrementEpisodes?: boolean;
+  }) => void;
 }) {
-  const [updatedTitle, setUpdatedTitle] = useState<string>("");
-  const [updatedSeason, setUpdatedSeason] = useState<number>(NaN);
-  const [updatedEpisode, setUpdatedEpisode] = useState<number>(NaN);
-  const [updatedYear, setUpdatedYear] = useState<number>(NaN);
-  const [updatedLibraryName, setUpdatedLibraryName] = useState<any>({});
-  const [incrementEpisodes, setIncrementEpisodes] = useState<boolean>(false);
-  const [isSeasonEnabled, setIsSeasonEnabled] = useState<boolean>(false);
-  const [isEpisodeEnabled, setIsEpisodeEnabled] = useState<boolean>(false);
-  const [isYearEnabled, setIsYearEnabled] = useState<boolean>(false);
+  const [form, setForm] = useState<{
+    title?: string;
+    isSeasonEnabled?: boolean;
+    season?: number;
+    isEpisodeEnabled?: boolean;
+    episode?: number;
+    isYearEnabled?: boolean;
+    year?: number;
+    library?: string | Set<string> | undefined;
+    incrementEpisodes?: boolean;
+  }>({
+    title: "",
+    season: NaN,
+    episode: NaN,
+    year: NaN,
+    library: undefined,
+    incrementEpisodes: false,
+    isSeasonEnabled: false,
+    isEpisodeEnabled: false,
+    isYearEnabled: false,
+  });
 
   const numberFormat: Intl.NumberFormatOptions = { useGrouping: false };
 
-  useEffect(() => {
-    if (!isNaN(updatedSeason)) setIsSeasonEnabled(true);
-  }, [updatedSeason]);
-
-  useEffect(() => {
-    if (!isNaN(updatedEpisode)) setIsEpisodeEnabled(true);
-  }, [updatedEpisode]);
-
-  useEffect(() => {
-    if (!isNaN(updatedYear)) setIsYearEnabled(true);
-  }, [updatedYear]);
-
-  useEffect(() => {
-    if (!isSeasonEnabled) {
-      setUpdatedSeason(NaN);
-    }
-  }, [isSeasonEnabled]);
-
-  useEffect(() => {
-    if (!isEpisodeEnabled) {
-      setUpdatedEpisode(NaN);
-    }
-  }, [isEpisodeEnabled]);
-
-  useEffect(() => {
-    if (!isYearEnabled) {
-      setUpdatedYear(NaN);
-    }
-  }, [isYearEnabled]);
-
+  // Initialize/reset form state when files or libraries change
   useEffect(() => {
     const firstFile = files[0];
     if (!firstFile) return;
-
-    if (
-      files.every((file) => file.mediaInfo.title === firstFile?.mediaInfo.title)
-    ) {
-      setUpdatedTitle(firstFile.mediaInfo.title ?? "");
-    } else {
-      setUpdatedTitle("");
-    }
-
-    if (
-      files.every(
+    setForm({
+      title: files.every(
+        (file) => file.mediaInfo.title === firstFile?.mediaInfo.title
+      )
+        ? firstFile.mediaInfo.title ?? ""
+        : "",
+      season: files.every(
         (file) => file.mediaInfo.season === firstFile?.mediaInfo.season
       )
-    ) {
-      setUpdatedSeason(firstFile.mediaInfo.season ?? NaN);
-    } else {
-      setUpdatedSeason(NaN);
-    }
-
-    if (
-      files.every(
+        ? firstFile.mediaInfo.season ?? NaN
+        : NaN,
+      episode: files.every(
         (file) => file.mediaInfo.episode === firstFile?.mediaInfo.episode
       )
-    ) {
-      setUpdatedEpisode(firstFile.mediaInfo.episode ?? NaN);
-    } else {
-      setUpdatedEpisode(NaN);
-    }
-
-    if (
-      files.every((file) => file.mediaInfo.year === firstFile?.mediaInfo.year)
-    ) {
-      setUpdatedYear(firstFile.mediaInfo.year ?? NaN);
-    } else {
-      setUpdatedYear(NaN);
-    }
-
-    if (
-      files.every((file) => file.library === firstFile?.library) &&
-      firstFile.library.name
-    ) {
-      setUpdatedLibraryName(new Set([firstFile.library.name]));
-    } else {
-      setUpdatedLibraryName(undefined);
-    }
-
-    setIsEpisodeEnabled(
-      files.some((file) => file.mediaInfo.episode !== undefined)
-    );
-    setIsSeasonEnabled(
-      files.some((file) => file.mediaInfo.season !== undefined)
-    );
-    setIsYearEnabled(files.some((file) => file.mediaInfo.year !== undefined));
-    setIncrementEpisodes(false);
-  }, [libraries, files]);
-
-  function saveMediaInfo() {
-    let counter = 0;
-
-    files.forEach((file) => {
-      if (!file.mediaInfo) {
-        file.mediaInfo = {};
-      }
-
-      if (updatedTitle) file.mediaInfo.title = updatedTitle.trim();
-
-      if (!isSeasonEnabled) file.mediaInfo.season = undefined;
-      else if (!isNaN(updatedSeason)) file.mediaInfo.season = updatedSeason;
-
-      if (!isEpisodeEnabled) file.mediaInfo.episode = undefined;
-      else if (!isNaN(updatedEpisode))
-        file.mediaInfo.episode = updatedEpisode + counter;
-
-      if (!isYearEnabled) file.mediaInfo.year = undefined;
-      else if (!isNaN(updatedYear)) file.mediaInfo.year = updatedYear;
-
-      if (updatedLibraryName && updatedLibraryName !== "all") {
-        const key = Array.from(updatedLibraryName)[0];
-        file.library = libraries.find((library) => library.name === key) ?? {};
-      }
-
-      if (incrementEpisodes) counter += 1;
+        ? firstFile.mediaInfo.episode ?? NaN
+        : NaN,
+      year: files.every(
+        (file) => file.mediaInfo.year === firstFile?.mediaInfo.year
+      )
+        ? firstFile.mediaInfo.year ?? NaN
+        : NaN,
+      library:
+        files.every((file) => file.library === firstFile?.library) &&
+        firstFile.library.name
+          ? new Set([firstFile.library.name])
+          : undefined,
+      incrementEpisodes: false,
+      isSeasonEnabled: files.some(
+        (file) => file.mediaInfo.season !== undefined
+      ),
+      isEpisodeEnabled: files.some(
+        (file) => file.mediaInfo.episode !== undefined
+      ),
+      isYearEnabled: files.some((file) => file.mediaInfo.year !== undefined),
     });
+  }, [files, libraries]);
 
-    onClose(true);
+  // Handlers for form fields
+  function handleChange(field: string, value: string | number | boolean | Set<string>) {
+    setForm((prev) => {
+      // Auto-enable checkboxes when a value is set for season, episode, or year
+      if (field === "season" && typeof value === "number") {
+        return {
+          ...prev,
+          [field]: value,
+          isSeasonEnabled: !isNaN(value),
+        };
+      }
+      if (field === "episode" && typeof value === "number") {
+        return {
+          ...prev,
+          [field]: value,
+          isEpisodeEnabled: !isNaN(value),
+        };
+      }
+      if (field === "year" && typeof value === "number") {
+        return {
+          ...prev,
+          [field]: value,
+          isYearEnabled: !isNaN(value),
+        };
+      }
+
+      return { ...prev, [field]: value };
+    });
   }
 
   return (
@@ -169,24 +144,24 @@ export default function MediaEditForm({
             <Input
               label="Title"
               placeholder="(Unchanged)"
-              value={updatedTitle}
+              value={form.title}
               type="text"
-              onValueChange={setUpdatedTitle}
+              onValueChange={(v) => handleChange("title", v)}
               radius="sm"
             />
 
             <NumberInput
               label="Season"
-              placeholder={isSeasonEnabled ? "(Unchanged)" : ""}
-              value={updatedSeason}
-              onValueChange={setUpdatedSeason}
+              placeholder={form.isSeasonEnabled ? "(Unchanged)" : ""}
+              value={form.season}
+              onValueChange={(v) => handleChange("season", v)}
               radius="sm"
               minValue={0}
               formatOptions={numberFormat}
               endContent={
                 <Checkbox
-                  isSelected={isSeasonEnabled}
-                  onValueChange={setIsSeasonEnabled}
+                  isSelected={form.isSeasonEnabled}
+                  onValueChange={(v) => handleChange("isSeasonEnabled", v)}
                   classNames={{ wrapper: "after:bg-emerald-700" }}
                 />
               }
@@ -194,24 +169,24 @@ export default function MediaEditForm({
 
             <NumberInput
               label="Episode"
-              placeholder={isEpisodeEnabled ? "(Unchanged)" : ""}
-              value={updatedEpisode}
-              onValueChange={setUpdatedEpisode}
+              placeholder={form.isEpisodeEnabled ? "(Unchanged)" : ""}
+              value={form.episode}
+              onValueChange={(v) => handleChange("episode", v)}
               radius="sm"
               minValue={0}
               formatOptions={numberFormat}
               endContent={
                 <Checkbox
-                  isSelected={isEpisodeEnabled}
-                  onValueChange={setIsEpisodeEnabled}
+                  isSelected={form.isEpisodeEnabled}
+                  onValueChange={(v) => handleChange("isEpisodeEnabled", v)}
                   classNames={{ wrapper: "after:bg-emerald-700" }}
                 />
               }
             />
 
             <Checkbox
-              isSelected={incrementEpisodes}
-              onValueChange={setIncrementEpisodes}
+              isSelected={form.incrementEpisodes}
+              onValueChange={(v) => handleChange("incrementEpisodes", v)}
               size="sm"
               classNames={{ wrapper: "after:bg-emerald-700", label: "text-sm" }}
             >
@@ -220,17 +195,17 @@ export default function MediaEditForm({
 
             <NumberInput
               label="Year"
-              placeholder={isYearEnabled ? "(Unchanged)" : ""}
-              value={updatedYear}
-              onValueChange={setUpdatedYear}
+              placeholder={form.isYearEnabled ? "(Unchanged)" : ""}
+              value={form.year}
+              onValueChange={(v) => handleChange("year", v)}
               radius="sm"
               minValue={0}
               maxValue={9999}
               formatOptions={numberFormat}
               endContent={
                 <Checkbox
-                  isSelected={isYearEnabled}
-                  onValueChange={setIsYearEnabled}
+                  isSelected={form.isYearEnabled}
+                  onValueChange={(v) => handleChange("isYearEnabled", v)}
                   classNames={{ wrapper: "after:bg-emerald-700" }}
                 />
               }
@@ -240,8 +215,8 @@ export default function MediaEditForm({
               label="Media library"
               placeholder="(Unchanged)"
               items={libraries}
-              selectedKeys={updatedLibraryName}
-              onSelectionChange={setUpdatedLibraryName}
+              selectedKeys={form.library}
+              onSelectionChange={(v) => handleChange("library", v as (string | Set<string>))}
               radius="sm"
             >
               {(library) => (
@@ -254,7 +229,7 @@ export default function MediaEditForm({
             <Button onPress={() => onClose()}>Cancel</Button>
             <Button
               className="bg-emerald-700 text-white"
-              onPress={saveMediaInfo}
+              onPress={() => onSaveMediaInfo(form)}
             >
               Save
             </Button>
