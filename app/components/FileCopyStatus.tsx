@@ -17,7 +17,7 @@ export default function FileCopyStatus({
   useEffect(() => {
     if (!isOpen) return;
 
-    const socket = new WebSocket(`ws://localhost:3000/api/save`);
+    const socket = new WebSocket(`ws://localhost:3000/api/socket`);
     socket.addEventListener("open", () => {
       socket.addEventListener("message", async (e) => {
         const payload =
