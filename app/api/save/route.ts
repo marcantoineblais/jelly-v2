@@ -36,7 +36,7 @@ async function processFilesJob(files: MediaFile[]) {
       const updatedPath = path.join(
         basepath,
         type === "show" ? title : "",
-        type === "show" && season ? `Season ${formatNumber(season)}` : "",
+        type === "show" && season ? `Season ${formatNumber(season)}` : "Specials",
         filename + file.ext,
       );
       const content = {
