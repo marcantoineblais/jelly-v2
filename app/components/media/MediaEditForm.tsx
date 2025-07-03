@@ -70,24 +70,24 @@ export default function MediaEditForm({
     if (!firstFile) return;
     setForm({
       title: files.every(
-        (file) => file.mediaInfo.title === firstFile?.mediaInfo.title
+        (file) => file.mediaInfo.title === firstFile?.mediaInfo.title,
       )
-        ? firstFile.mediaInfo.title ?? ""
+        ? (firstFile.mediaInfo.title ?? "")
         : "",
       season: files.every(
-        (file) => file.mediaInfo.season === firstFile?.mediaInfo.season
+        (file) => file.mediaInfo.season === firstFile?.mediaInfo.season,
       )
-        ? firstFile.mediaInfo.season ?? NaN
+        ? (firstFile.mediaInfo.season ?? NaN)
         : NaN,
       episode: files.every(
-        (file) => file.mediaInfo.episode === firstFile?.mediaInfo.episode
+        (file) => file.mediaInfo.episode === firstFile?.mediaInfo.episode,
       )
-        ? firstFile.mediaInfo.episode ?? NaN
+        ? (firstFile.mediaInfo.episode ?? NaN)
         : NaN,
       year: files.every(
-        (file) => file.mediaInfo.year === firstFile?.mediaInfo.year
+        (file) => file.mediaInfo.year === firstFile?.mediaInfo.year,
       )
-        ? firstFile.mediaInfo.year ?? NaN
+        ? (firstFile.mediaInfo.year ?? NaN)
         : NaN,
       library:
         files.every((file) => file.library === firstFile?.library) &&
@@ -96,17 +96,20 @@ export default function MediaEditForm({
           : undefined,
       incrementEpisodes: false,
       isSeasonEnabled: files.some(
-        (file) => file.mediaInfo.season !== undefined
+        (file) => file.mediaInfo.season !== undefined,
       ),
       isEpisodeEnabled: files.some(
-        (file) => file.mediaInfo.episode !== undefined
+        (file) => file.mediaInfo.episode !== undefined,
       ),
       isYearEnabled: files.some((file) => file.mediaInfo.year !== undefined),
     });
   }, [files, libraries]);
 
   // Handlers for form fields
-  function handleChange(field: string, value: string | number | boolean | Set<string>) {
+  function handleChange(
+    field: string,
+    value: string | number | boolean | Set<string>,
+  ) {
     setForm((prev) => {
       // Auto-enable checkboxes when a value is set for season, episode, or year
       if (field === "season" && typeof value === "number") {
@@ -216,7 +219,9 @@ export default function MediaEditForm({
               placeholder="(Unchanged)"
               items={libraries}
               selectedKeys={form.library}
-              onSelectionChange={(v) => handleChange("library", v as (string | Set<string>))}
+              onSelectionChange={(v) =>
+                handleChange("library", v as string | Set<string>)
+              }
               radius="sm"
             >
               {(library) => (

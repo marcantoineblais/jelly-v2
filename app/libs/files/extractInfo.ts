@@ -31,7 +31,7 @@ function capitalize(str = "") {
 
     return word.toLowerCase();
   });
-  
+
   return capitalizedList.join("");
 }
 

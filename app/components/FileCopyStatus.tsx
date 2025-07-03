@@ -2,7 +2,6 @@
 
 import { Modal, ModalBody, ModalContent, Progress } from "@heroui/react";
 import { useEffect, useState } from "react";
-import { MediaFile } from "../types/MediaFile";
 
 export default function FileCopyStatus({
   isOpen = false,
@@ -14,9 +13,6 @@ export default function FileCopyStatus({
   const [currentFile, setCurrentFile] = useState<string>("");
   const [totalFiles, setTotalFiles] = useState<number>(0);
   const [processedFiles, setProcessedFiles] = useState<number>(0);
-  const [errors, setErrors] = useState<{ file: MediaFile; message: string }[]>(
-    []
-  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -30,7 +26,6 @@ export default function FileCopyStatus({
         setCurrentFile(data.currentFile);
         setTotalFiles(data.totalFiles);
         setProcessedFiles(data.processedFiles);
-        setErrors(data.errors);
       });
     });
 
@@ -44,17 +39,22 @@ export default function FileCopyStatus({
 
     if (processedFiles === totalFiles && totalFiles !== 0) {
       setTimeout(onClose, 2000);
-    }    
+    }
   }, [isOpen, processedFiles, totalFiles, onClose]);
 
   return (
-    <Modal isOpen={isOpen} placement="center" hideCloseButton isDismissable={false}>
+    <Modal
+      isOpen={isOpen}
+      placement="center"
+      hideCloseButton
+      isDismissable={false}
+    >
       <ModalContent>
         <ModalBody>
           <Progress
             label={currentFile || "Copying files"}
             value={(processedFiles / totalFiles) * 100}
-            classNames={{indicator: "bg-emerald-700"}}
+            classNames={{ indicator: "bg-emerald-700" }}
           />
         </ModalBody>
       </ModalContent>

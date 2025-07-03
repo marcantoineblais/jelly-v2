@@ -4,10 +4,10 @@ import { MediaLibrary } from "@/app/types/MediaLibrary";
 export function assignDefaultLibrary(
   file: MediaFile,
   librariesData: { title: string; library: MediaLibrary }[] = [],
-  libraries: MediaLibrary[] = []
+  libraries: MediaLibrary[] = [],
 ) {
   const existingMedia = librariesData.find(
-    (data) => data.title.toLowerCase() === file.mediaInfo.title?.toLowerCase()
+    (data) => data.title.toLowerCase() === file.mediaInfo.title?.toLowerCase(),
   );
 
   let defaultLibrary: MediaLibrary | undefined;

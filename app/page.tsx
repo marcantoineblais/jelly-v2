@@ -5,7 +5,7 @@ import { readConfig } from "./libs/readConfig";
 import { ConfigFile } from "./types/ConfigFile";
 
 export default function Home() {
-  const { downloadPaths, videosExt, libraries}: ConfigFile = readConfig(); 
+  const { downloadPaths, videosExt, libraries }: ConfigFile = readConfig();
   const files = readFolders(downloadPaths, videosExt, libraries);
 
   return (
@@ -14,4 +14,4 @@ export default function Home() {
       <MediaList files={files} libraries={libraries} />
     </main>
   );
-};
+}

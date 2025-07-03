@@ -37,7 +37,7 @@ async function processFilesJob(files: MediaFile[]) {
         basepath,
         type === "show" ? title : "",
         type === "show" && season ? `Season ${formatNumber(season)}` : "",
-        filename + file.ext
+        filename + file.ext,
       );
       const content = {
         currentFile: filename,
@@ -57,11 +57,12 @@ async function processFilesJob(files: MediaFile[]) {
 async function copyFile(
   file: MediaFile,
   updatedPath: string,
-  errors: { file: MediaFile; message: string }[]
+  errors: { file: MediaFile; message: string }[],
 ) {
   try {
     const destDir = path.dirname(updatedPath);
-    try { // Will create the new path if it doesnt exist
+    try {
+      // Will create the new path if it doesnt exist
       await fs.access(destDir);
     } catch {
       await fs.mkdir(destDir, { recursive: true });
@@ -71,7 +72,16 @@ async function copyFile(
     await fs.unlink(file.path);
   } catch (error) {
     console.error("Error moving file:", error);
-    errors.push({ file: file, message: error.message ? error.message : "Unknown error" });
+    let message = "Unknown error";
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "message" in error &&
+      typeof (error as { message?: unknown }).message === "string"
+    ) {
+      message = (error as { message: string }).message;
+    }
+    errors.push({ file, message });
   }
 }
 
@@ -87,7 +97,7 @@ export async function POST(request: NextRequest) {
 export function SOCKET(
   client: WebSocket,
   _request: IncomingMessage,
-  server: WebSocketServer
+  server: WebSocketServer,
 ) {
   console.log("New client connected");
 

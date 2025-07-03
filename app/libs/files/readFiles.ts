@@ -8,7 +8,7 @@ import { MediaLibrary } from "@/app/types/MediaLibrary";
 export function readFolders(
   folders: string[],
   videoExt: string[],
-  libraries: MediaLibrary[]
+  libraries: MediaLibrary[],
 ) {
   const files: MediaFile[] = [];
   let idCounter = 1;
@@ -17,7 +17,7 @@ export function readFolders(
     if (library.type === "show" && library.path) {
       const files = readLibraryFiles(library.path);
       files.forEach((file) =>
-        librariesData.push({ title: file, library: library })
+        librariesData.push({ title: file, library: library }),
       );
     }
   });
@@ -30,7 +30,7 @@ export function readFolders(
     file.mediaInfo = extractInfo(file.name);
     file.library = assignDefaultLibrary(file, librariesData, libraries);
   });
-  
+
   return files;
 }
 
@@ -39,7 +39,7 @@ function extractFilesFromFolder(
   folderPath: string = process.cwd(),
   filesList: MediaFile[] = [],
   videoExt: string[],
-  getId: () => number = (() => 0)
+  getId: () => number = () => 0,
 ) {
   const entries = fs.readdirSync(folderPath);
 
@@ -73,6 +73,6 @@ function extractFilesFromFolder(
 }
 
 function readLibraryFiles(path: string) {
-  const files = fs.readdirSync(path);  
+  const files = fs.readdirSync(path);
   return files;
 }

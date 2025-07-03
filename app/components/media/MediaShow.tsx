@@ -29,10 +29,13 @@ export default function MediaShow({
   return (
     <Accordion isCompact>
       {uniqueSeasons.map((season) => {
-        const formattedSeason = season != null ? formatNumber(season) : undefined;
+        const formattedSeason =
+          season != null ? formatNumber(season) : undefined;
         const label = formattedSeason ? `Season ${formattedSeason}` : "Not set";
-        const seasonFiles = files.filter((file) => season === file.mediaInfo.season);
-        const key = `${season ?? 'notset'}-${seasonFiles[0]?.id ?? ''}`;
+        const seasonFiles = files.filter(
+          (file) => season === file.mediaInfo.season,
+        );
+        const key = `${season ?? "notset"}-${seasonFiles[0]?.id ?? ""}`;
         return (
           <AccordionItem
             key={key}
