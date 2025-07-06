@@ -1,4 +1,4 @@
-export function formatNumber(number: number) {
+export function formatNumber(number) {
   if (number === undefined || isNaN(number)) return;
 
   const formatter = new Intl.NumberFormat("en-CA", {

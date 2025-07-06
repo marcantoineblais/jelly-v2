@@ -1,6 +1,6 @@
 import H1 from "./components/elements/H1";
 import MediaList from "./components/media/MediaList";
-import { readFolders } from "./libs/files/readFiles";
+import { readFolders } from "./libs/files/readFolders";
 import { readConfig } from "./libs/readConfig";
 import { ConfigFile } from "./types/ConfigFile";
 

@@ -50,6 +50,68 @@ export default function MediaList({
     [validatedFiles, libraries]
   );
 
+  const [isTransferInProgress, setIsTransferInProgress] = useState(false);
+  const [transferStatus, setTransferStatus] = useState<{
+    currentFile: string;
+    processedFiles: number;
+    totalFiles: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const ws = new window.WebSocket("ws://localhost:3001");
+
+    ws.addEventListener("message", async (e) => {
+      try {
+        const json = typeof e.data === "string" ? e.data : await e.data.text();
+        const data = JSON.parse(json);
+        if (data.isCompleted || data.error) {
+          
+          setTimeout(async () => {
+            setIsProgressBarOpen(false);
+            setIsTransferInProgress(false);
+            setTransferStatus(null);
+            await fetchFiles();
+          }, 2000);
+
+          if (data.error) {
+            alert("There was an issue during file transfer");
+            return;
+          }
+        }
+        
+        if (data.totalFiles && data.processedFiles !== undefined) {          
+          setTransferStatus({
+            currentFile: data.currentFile,
+            processedFiles: data.processedFiles,
+            totalFiles: data.totalFiles,
+          });
+          setIsTransferInProgress(true);
+          setIsProgressBarOpen(true);
+        }
+      } catch {
+        await fetchFiles();
+      }
+    });
+
+    ws.addEventListener("close", () => {
+      // If a transfer was in progress, close the modal and reset state
+      setIsTransferInProgress((prev) => {
+        if (prev) {
+          setIsProgressBarOpen(false);
+          setTransferStatus(null);
+          fetchFiles();
+          return false;
+        }
+
+        return prev;
+      });
+    });
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
   useEffect(() => {
     setValidatedFiles(
       files.map((file) => ({
@@ -113,6 +175,29 @@ export default function MediaList({
     });
 
     return sortedFiles;
+  }
+
+  async function fetchFiles() {
+    const response = await fetch("/api/files", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch files");
+      return;
+    }
+
+    const data = await response.json();
+    setValidatedFiles(
+      data.files.map((file: MediaFile) => ({
+        ...file,
+        errors: validateData(file),
+        isSelected: false,
+      }))
+    );
   }
 
   function createShowsNodes(files: MediaFile[]) {
@@ -300,8 +385,9 @@ export default function MediaList({
   }
 
   async function handleSave() {
-    const updatedFiles = validatedFiles.filter((file) => !file.isIgnored);
+    if (isTransferInProgress) return;
 
+    const updatedFiles = validatedFiles.filter((file) => !file.isIgnored);
     const filesWithErrors = updatedFiles.map((file) => ({
       ...file,
       errors: validateData(file),
@@ -314,7 +400,6 @@ export default function MediaList({
     }
 
     try {
-      setIsProgressBarOpen(true);
       const response = await fetch("/api/save", {
         method: "POST",
         headers: {
@@ -329,15 +414,10 @@ export default function MediaList({
       }
     } catch (error) {
       console.error(error);
-      setIsProgressBarOpen(false);
     }
   }
 
-  function closeProgressBar() {
-    setIsProgressBarOpen(false);
-  }
-
-  if (files.length > 0) {
+  if (validatedFiles.length > 0) {
     return (
       <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
         <div className="h-full overflow-hidden">
@@ -384,7 +464,7 @@ export default function MediaList({
           onDelete={handleDelete}
           onRestore={handleRestore}
           onSave={handleSave}
-          disabled={selectedFiles.length === 0}
+          disabled={selectedFiles.length === 0 || isTransferInProgress}
           saveInProgress={isProgressBarOpen}
           showBin={showBin}
         />
@@ -397,7 +477,12 @@ export default function MediaList({
           onSaveMediaInfo={handleSaveMediaInfo}
         />
 
-        <FileCopyStatus isOpen={isProgressBarOpen} onClose={closeProgressBar} />
+        <FileCopyStatus
+          isOpen={isProgressBarOpen}
+          currentFile={transferStatus?.currentFile}
+          processedFiles={transferStatus?.processedFiles}
+          totalFiles={transferStatus?.totalFiles}
+        />
       </div>
     );
   }

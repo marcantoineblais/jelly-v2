@@ -1,47 +1,18 @@
 "use client";
 
 import { Modal, ModalBody, ModalContent, Progress } from "@heroui/react";
-import { useEffect, useState } from "react";
 
 export default function FileCopyStatus({
   isOpen = false,
-  onClose = () => {},
+  currentFile = "",
+  processedFiles = 0,
+  totalFiles = 0,
 }: {
   isOpen?: boolean;
-  onClose?: () => void;
+  currentFile?: string;
+  processedFiles?: number;
+  totalFiles?: number;
 }) {
-  const [currentFile, setCurrentFile] = useState<string>("");
-  const [totalFiles, setTotalFiles] = useState<number>(0);
-  const [processedFiles, setProcessedFiles] = useState<number>(0);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const socket = new WebSocket(`ws://localhost:3001`);
-    socket.addEventListener("open", () => {
-      socket.addEventListener("message", async (e) => {
-        const payload =
-          typeof e.data === "string" ? e.data : await e.data.text();
-        const data = JSON.parse(payload);
-        setCurrentFile(data.currentFile);
-        setTotalFiles(data.totalFiles);
-        setProcessedFiles(data.processedFiles);
-      });
-    });
-
-    return () => {
-      socket.close();
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    if (processedFiles === totalFiles && totalFiles !== 0) {
-      setTimeout(onClose, 2000);
-    }
-  }, [isOpen, processedFiles, totalFiles, onClose]);
-
   return (
     <Modal
       isOpen={isOpen}
@@ -53,7 +24,7 @@ export default function FileCopyStatus({
         <ModalBody>
           <Progress
             label={currentFile || "Copying files"}
-            value={(processedFiles / totalFiles) * 100}
+            value={totalFiles ? (processedFiles / totalFiles) * 100 : 0}
             classNames={{ indicator: "bg-emerald-700" }}
           />
         </ModalBody>
