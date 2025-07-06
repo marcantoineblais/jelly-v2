@@ -47,7 +47,7 @@ export default function MediaInfoLine({
     };
   }, [articleRef]);
   return (
-    <li className="pb-1.5">
+    <li className="w-full pb-1.5">
       <div className="flex flex-col">
         <label className="text-sm">{label}</label>
         <article

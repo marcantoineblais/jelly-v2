@@ -14,7 +14,7 @@ export default function MediaShow({
   files?: MediaFile[];
   handleSelect?: (
     e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[],
+    files: MediaFile | MediaFile[]
   ) => void;
 }) {
   // Use useMemo for derived data, but render JSX directly in return
@@ -33,13 +33,14 @@ export default function MediaShow({
           season != null ? formatNumber(season) : undefined;
         const label = formattedSeason ? `Season ${formattedSeason}` : "Not set";
         const seasonFiles = files.filter(
-          (file) => season === file.mediaInfo.season,
+          (file) => season === file.mediaInfo.season
         );
         const key = `${season ?? "notset"}-${seasonFiles[0]?.id ?? ""}`;
         return (
           <AccordionItem
             key={key}
             textValue={label}
+            classNames={{ titleWrapper: "overflow-hidden" }}
             title={
               <MediaCheckbox
                 files={seasonFiles}

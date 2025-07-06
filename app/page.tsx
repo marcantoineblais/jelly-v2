@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import H1 from "./components/elements/H1";
 import MediaList from "./components/media/MediaList";
 import { readFolders } from "./libs/files/readFolders";

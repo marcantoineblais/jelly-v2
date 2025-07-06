@@ -25,6 +25,7 @@ export default function MediaSeason({
           <AccordionItem
             key={file.id}
             textValue={label}
+          classNames={{titleWrapper: "overflow-hidden"}}
             title={
               <MediaCheckbox
                 files={file}

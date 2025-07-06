@@ -17,16 +17,9 @@ export default function MediaCheckbox({
   isIndeterminate?: boolean;
   onSelect?: (
     e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[],
+    files: MediaFile | MediaFile[]
   ) => void;
 }) {
-  const displayedLabel = useMemo(() => {
-    if (label.length > 35) {
-      return label.slice(0, 32) + "...";
-    }
-    return label;
-  }, [label]);
-
   function handleSelect(e: ChangeEvent<HTMLInputElement>) {
     onSelect(e, files);
   }
@@ -40,7 +33,7 @@ export default function MediaCheckbox({
   }, [files]);
 
   return (
-    <div className="flex gap-3 items-center overflow-hidden">
+    <div className="flex gap-3 items-center">
       <Checkbox
         isSelected={isSelected}
         isIndeterminate={isIndeterminate && !isSelected}
@@ -48,10 +41,10 @@ export default function MediaCheckbox({
         classNames={{ wrapper: "after:bg-emerald-700" }}
       />
       <div
-        className="flex flex-col data-error:text-red-800 text-nowrap"
+        className="w-full data-error:text-red-800 overflow-hidden"
         data-error={hasError || undefined}
       >
-        {displayedLabel}
+        <span className="block w-full truncate">{label}</span>
 
         {hasError && !Array.isArray(files) && (
           <ul className="text-xs text-red-800">

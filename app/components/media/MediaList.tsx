@@ -65,7 +65,6 @@ export default function MediaList({
         const json = typeof e.data === "string" ? e.data : await e.data.text();
         const data = JSON.parse(json);
         if (data.isCompleted || data.error) {
-          
           setTimeout(async () => {
             setIsProgressBarOpen(false);
             setIsTransferInProgress(false);
@@ -78,8 +77,8 @@ export default function MediaList({
             return;
           }
         }
-        
-        if (data.totalFiles && data.processedFiles !== undefined) {          
+
+        if (data.totalFiles && data.processedFiles !== undefined) {
           setTransferStatus({
             currentFile: data.currentFile,
             processedFiles: data.processedFiles,
@@ -212,6 +211,7 @@ export default function MediaList({
         <AccordionItem
           key={title}
           textValue={title}
+          classNames={{ titleWrapper: "overflow-hidden" }}
           title={
             <MediaCheckbox
               files={showFiles}
@@ -237,6 +237,7 @@ export default function MediaList({
         <AccordionItem
           key={file.id || file.path || label}
           textValue={title}
+          classNames={{ titleWrapper: "overflow-hidden" }}
           title={
             <MediaCheckbox
               files={file}
@@ -422,7 +423,7 @@ export default function MediaList({
       <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
         <div className="h-full overflow-hidden">
           <Accordion
-            className="flex-col h-full overflow-y-auto px-1 py-3"
+            className="flex-col h-full overflow-y-auto overflow-x-hidden px-1 py-3"
             onSelectionChange={handleSelectionChange}
             selectedKeys={selectedKeys}
             selectionMode="multiple"
@@ -432,6 +433,7 @@ export default function MediaList({
                 <AccordionItem
                   key={key || "not-set"}
                   textValue={key || "Not set"}
+                  classNames={{ titleWrapper: "overflow-hidden" }}
                   title={<H2 className="text-left">{key || "Not set"}</H2>}
                 >
                   {renderNode(files)}
@@ -446,6 +448,7 @@ export default function MediaList({
                 <Accordion isCompact>
                   {Object.entries(binnedFiles).map(([key, files]) => (
                     <AccordionItem
+                      classNames={{ titleWrapper: "overflow-hidden" }}
                       key={key || "not-set"}
                       textValue={key || "Not set"}
                       title={<H3 className="text-left">{key || "Not set"}</H3>}
