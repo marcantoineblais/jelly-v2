@@ -139,7 +139,7 @@ export default function MediaEditForm({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose()}>
+    <Modal isOpen={isOpen} onClose={() => onClose()} placement="center">
       <ModalContent>
         <>
           <ModalHeader>Edit selected files</ModalHeader>
