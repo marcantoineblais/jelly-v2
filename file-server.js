@@ -1,7 +1,8 @@
 const http = require("http");
 const express = require("express");
 const { WebSocket } = require("ws");
-const { formatNumber } = require("./app/libs/files/formatNumber");
+const { formatNumber } = require("./app/libs/files/formatNumber.js");
+const { createFilename } = require("./app/libs/files/createFilename.js");
 const app = express();
 app.use(express.json({ limit: "50mb" }));
 const fs = require("fs/promises");
@@ -32,9 +33,9 @@ async function copyFile(file, updatedPath, errors) {
   }
 }
 
-async function deleteEmptyFolders(startDir) {
-  let currentDir = startDir;
-  while (currentDir !== path.dirname(currentDir)) {
+async function deleteEmptyFolders(file) {
+  let currentDir = path.dirname(file.path);
+  while (currentDir !== file.root) {
     try {
       const files = await fs.readdir(currentDir);
       if (files.length === 0) {
@@ -61,8 +62,7 @@ async function processFilesJob(files, ws) {
   );
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    const filename =
-      file.mediaInfo?.filename || file.mediaInfo?.title || "unknown";
+    const filename = createFilename(file.mediaInfo);
     const basepath = file.library.path;
     const type = file.library.type;
     const season = file.mediaInfo?.season;

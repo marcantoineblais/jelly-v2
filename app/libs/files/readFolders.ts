@@ -40,6 +40,7 @@ function extractFilesFromFolder(
   filesList: MediaFile[] = [],
   videoExt: string[],
   getId: () => number = () => 0,
+  root: string = folderPath
 ) {
   const entries = fs.readdirSync(folderPath);
 
@@ -49,7 +50,7 @@ function extractFilesFromFolder(
 
     if (stats.isDirectory()) {
       if (entry !== "temp") {
-        extractFilesFromFolder(entryPath, filesList, videoExt, getId);
+        extractFilesFromFolder(entryPath, filesList, videoExt, getId, root);
       }
     } else {
       const ext = path.extname(entry);
@@ -62,6 +63,7 @@ function extractFilesFromFolder(
           ext: ext,
           mediaInfo: {},
           library: {},
+          root: root,
         };
 
         filesList.push(file);

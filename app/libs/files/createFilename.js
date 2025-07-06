@@ -1,7 +1,6 @@
-import { MediaInfo } from "@/app/types/MediaInfo";
-import { formatNumber } from "./formatNumber";
+import { formatNumber } from "./formatNumber.js";
 
-export function createFilename(info: MediaInfo = {}): string {
+export function createFilename(info = {}) {
   const title = info.title || "Not set";
   const year = info.year ? `(${info.year})` : null;
   const season = info.season;

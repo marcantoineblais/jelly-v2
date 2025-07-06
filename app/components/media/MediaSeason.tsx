@@ -14,7 +14,7 @@ export default function MediaSeason({
   files?: MediaFile[];
   handleSelect?: (
     e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[],
+    files: MediaFile | MediaFile[]
   ) => void;
 }) {
   return (
@@ -25,7 +25,7 @@ export default function MediaSeason({
           <AccordionItem
             key={file.id}
             textValue={label}
-          classNames={{titleWrapper: "overflow-hidden"}}
+            classNames={{ titleWrapper: "overflow-hidden" }}
             title={
               <MediaCheckbox
                 files={file}
