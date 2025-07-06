@@ -23,7 +23,7 @@ export function readFolders(
   });
 
   folders.forEach((folder) => {
-    extractFilesFromFolder(folder, files, videoExt, () => idCounter++);
+    extractFilesFromFolder(folder, files, videoExt, () => idCounter++, folder);
   });
 
   files.forEach((file) => {
@@ -37,10 +37,10 @@ export function readFolders(
 // Recursively scan all folders and subfolders for files
 function extractFilesFromFolder(
   folderPath: string = process.cwd(),
-  filesList: MediaFile[] = [],
+  filesList: MediaFile[],
   videoExt: string[],
-  getId: () => number = () => 0,
-  root: string = folderPath
+  getId: () => number,
+  root: string
 ) {
   const entries = fs.readdirSync(folderPath);
 

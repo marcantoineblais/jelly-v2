@@ -1,7 +1,7 @@
 // Minimal standalone WebSocket server using ws
 const { WebSocketServer } = require('ws');
 
-const wss = new WebSocketServer({ port: 4001 });
+const wss = new WebSocketServer({ port: 4001, host: '0.0.0.0' });
 let lastStatus = null;
 let backendClient = null;
 
