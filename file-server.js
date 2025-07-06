@@ -115,6 +115,6 @@ app.post("/process-files", async (req, res) => {
 });
 
 const server = http.createServer(app);
-server.listen(3002, () => {
+server.listen(4002, () => {
   console.log("HTTP server for file jobs running on http://localhost:4002");
 });
