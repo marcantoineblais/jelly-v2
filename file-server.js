@@ -18,7 +18,7 @@ async function copyFile(file, updatedPath, errors) {
     }
     await fs.copyFile(file.path, updatedPath);
     await fs.unlink(file.path);
-    await deleteEmptyFolders(path.dirname(file.path));
+    await deleteEmptyFolders(file);
   } catch (error) {
     let message = "Unknown error";
     if (
@@ -67,15 +67,23 @@ async function processFilesJob(files, ws) {
     const type = file.library.type;
     const season = file.mediaInfo?.season;
     const title = file.mediaInfo?.title;
+
     if (filename && basepath && title) {
-      const updatedPath = path.join(
-        basepath,
-        type === "show" ? title : "",
-        type === "show" && season
-          ? `Season ${formatNumber(season)}`
-          : "Specials",
-        filename + file.ext
-      );
+      let updatedPath = "";
+      if (type === "show") {
+        updatedPath = path.join(
+          basepath,
+          title,
+          season ? `Season ${formatNumber(season)}` : "Specials",
+          filename + file.ext
+        );
+      } else {
+        updatedPath = path.join(
+          basepath,
+          filename + file.ext
+        );
+      }
+
       ws.send(
         JSON.stringify({
           currentFile: filename,

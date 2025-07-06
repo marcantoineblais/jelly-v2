@@ -36,7 +36,7 @@ export function readFolders(
 
 // Recursively scan all folders and subfolders for files
 function extractFilesFromFolder(
-  folderPath: string = process.cwd(),
+  folderPath: string,
   filesList: MediaFile[],
   videoExt: string[],
   getId: () => number,
