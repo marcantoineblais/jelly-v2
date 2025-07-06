@@ -58,7 +58,7 @@ export default function MediaList({
   } | null>(null);
 
   useEffect(() => {
-    const ws = new window.WebSocket("ws://localhost:3001");
+    const ws = new window.WebSocket("ws://localhost:4001");
 
     ws.addEventListener("message", async (e) => {
       try {

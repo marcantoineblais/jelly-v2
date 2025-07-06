@@ -60,4 +60,4 @@ wss.on('connection', (client, request) => {
   });
 });
 
-console.log('WebSocket server running on ws://localhost:3001');
+console.log('WebSocket server running on ws://localhost:4001');

@@ -104,7 +104,7 @@ app.post("/process-files", async (req, res) => {
     return res.status(400).json({ error: "Invalid files array" });
   }
   // Open a real WebSocket connection to the socket server
-  const ws = new WebSocket("ws://localhost:3001");
+  const ws = new WebSocket("ws://localhost:4001");
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
     ws.on("error", reject);
@@ -116,5 +116,5 @@ app.post("/process-files", async (req, res) => {
 
 const server = http.createServer(app);
 server.listen(3002, () => {
-  console.log("HTTP server for file jobs running on http://localhost:3002");
+  console.log("HTTP server for file jobs running on http://localhost:4002");
 });
