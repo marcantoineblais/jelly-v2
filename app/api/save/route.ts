@@ -1,5 +1,3 @@
-export const runtime = "nodejs";
-
 import { createFilename } from "@/app/libs/files/createFilename";
 import { formatNumber } from "@/app/libs/files/formatNumber";
 import { MediaFile } from "@/app/types/MediaFile";
@@ -7,9 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { WebSocket } from "ws";
 import fs from "fs/promises";
+import { readConfig } from "@/app/libs/readConfig";
 
 async function processFilesJob(files: MediaFile[]) {
-  const socket = new WebSocket(`ws://localhost:3000/api/socket`);
+  const socket = new WebSocket(`ws://localhost:3001`);
   const errors: { file: MediaFile; message: string }[] = [];
 
   await new Promise<void>((resolve, reject) => {
@@ -55,6 +54,25 @@ async function processFilesJob(files: MediaFile[]) {
   socket.close();
 }
 
+async function deleteEmptyFolders(startDir: string) {
+  const { downloadPaths } = readConfig();
+  const roots = downloadPaths.map((p: string) => path.resolve(p));
+  let currentDir = startDir;
+  while (!roots.includes(path.resolve(currentDir))) {
+    try {
+      const files = await fs.readdir(currentDir);
+      if (files.length === 0) {
+        await fs.rmdir(currentDir);
+        currentDir = path.dirname(currentDir);
+      } else {
+        break;
+      }
+    } catch {
+      break;
+    }
+  }
+}
+
 async function copyFile(
   file: MediaFile,
   updatedPath: string,
@@ -71,6 +89,7 @@ async function copyFile(
 
     await fs.copyFile(file.path, updatedPath);
     await fs.unlink(file.path);
+    await deleteEmptyFolders(path.dirname(file.path));
   } catch (error) {
     console.error("Error moving file:", error);
     let message = "Unknown error";
