@@ -7,15 +7,18 @@ export async function POST(request: NextRequest) {
 
   try {
     // Send job to file-server.js via HTTP POST
-    const res = await fetch('http://localhost:4002/process-files', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("http://localhost:4002/process-files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ files }),
     });
-    
+
     if (!res.ok) {
       const data = await res.json();
-      return NextResponse.json({ ok: false, error: data.error || 'Failed to submit job' });
+      return NextResponse.json({
+        ok: false,
+        error: data.error || "Failed to submit job",
+      });
     }
   } catch (error) {
     console.log("Encounted error while processing files:", error);

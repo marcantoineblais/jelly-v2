@@ -3,7 +3,7 @@ module.exports = {
     {
       name: "Jelly",
       script: "node_modules/next/dist/bin/next",
-      args: "PORT=4000 start",
+      args: "start -p 4000",
       watch: false,
     },
   ],

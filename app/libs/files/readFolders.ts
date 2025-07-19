@@ -40,7 +40,7 @@ function extractFilesFromFolder(
   filesList: MediaFile[],
   videoExt: string[],
   getId: () => number,
-  root: string
+  root: string,
 ) {
   const entries = fs.readdirSync(folderPath);
 

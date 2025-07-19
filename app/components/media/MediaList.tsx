@@ -39,15 +39,15 @@ export default function MediaList({
   // Compute selectedFiles from validatedFiles
   const selectedFiles = useMemo(
     () => validatedFiles.filter((file) => file.isSelected),
-    [validatedFiles]
+    [validatedFiles],
   );
   const sortedFiles = useMemo(
     () => sortFiles(validatedFiles, libraries),
-    [validatedFiles, libraries]
+    [validatedFiles, libraries],
   );
   const binnedFiles = useMemo(
     () => sortFiles(validatedFiles, libraries, true),
-    [validatedFiles, libraries]
+    [validatedFiles, libraries],
   );
 
   const [isTransferInProgress, setIsTransferInProgress] = useState(false);
@@ -118,7 +118,7 @@ export default function MediaList({
         ...file,
         errors: validateData(file),
         isSelected: false,
-      }))
+      })),
     );
   }, [files]);
 
@@ -128,7 +128,7 @@ export default function MediaList({
       prev.map((file) => ({
         ...file,
         errors: validateData(file),
-      }))
+      })),
     );
   }, [files]);
 
@@ -141,7 +141,7 @@ export default function MediaList({
       const keys: (string | number)[] =
         prev === "all" ? availableKeys : Array.from(prev);
       return new Set(
-        keys.filter((key) => availableKeys.includes(key.toString()))
+        keys.filter((key) => availableKeys.includes(key.toString())),
       );
     });
   }, [sortedFiles]);
@@ -149,7 +149,7 @@ export default function MediaList({
   function sortFiles(
     files: MediaFile[],
     libraries: MediaLibrary[],
-    binned: boolean = false
+    binned: boolean = false,
   ) {
     const names: string[] = libraries
       .map((library) => library.name)
@@ -161,7 +161,7 @@ export default function MediaList({
       const content = files
         .filter(
           (file) =>
-            (file.isIgnored ?? false) === binned && file.library.name === name
+            (file.isIgnored ?? false) === binned && file.library.name === name,
         )
         .sort(sortMediaFiles);
 
@@ -196,7 +196,7 @@ export default function MediaList({
         ...file,
         errors: validateData(file),
         isSelected: false,
-      }))
+      })),
     );
   }
 
@@ -265,7 +265,7 @@ export default function MediaList({
 
   function handleSelect(
     e: ChangeEvent<HTMLInputElement>,
-    updatedFiles: MediaFile | MediaFile[]
+    updatedFiles: MediaFile | MediaFile[],
   ) {
     const selected = e.currentTarget.checked;
     setValidatedFiles((prev) => {
@@ -302,7 +302,7 @@ export default function MediaList({
       const binSelected = updatedKeys.includes("bin");
       if ((binSelected && isShowed) || (!isShowed && !binSelected)) {
         setValidatedFiles((prev) =>
-          prev.map((file) => ({ ...file, isSelected: false }))
+          prev.map((file) => ({ ...file, isSelected: false })),
         );
       }
       return !binSelected;
@@ -316,7 +316,7 @@ export default function MediaList({
         ...file,
         isSelected: false,
         isIgnored: file.isSelected ? true : file.isIgnored,
-      }))
+      })),
     );
   }
 
@@ -326,7 +326,7 @@ export default function MediaList({
         ...file,
         isSelected: false,
         isIgnored: file.isSelected ? false : file.isIgnored,
-      }))
+      })),
     );
   }
 
@@ -334,7 +334,7 @@ export default function MediaList({
     setIsModalOpen(false);
     if (unselectAll) {
       setValidatedFiles((prev) =>
-        prev.map((file) => ({ ...file, isSelected: false }))
+        prev.map((file) => ({ ...file, isSelected: false })),
       );
     }
   }
@@ -381,7 +381,7 @@ export default function MediaList({
         ...file,
         errors: validateData(file),
         isSelected: false,
-      }))
+      })),
     );
     setIsModalOpen(false);
   }
@@ -395,7 +395,7 @@ export default function MediaList({
       errors: validateData(file),
     }));
     const incompleteFiles = filesWithErrors.filter(
-      (file) => file.errors && file.errors.length > 0
+      (file) => file.errors && file.errors.length > 0,
     );
     if (incompleteFiles.length > 0) {
       console.error("Some files are missing informations.");

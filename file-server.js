@@ -58,7 +58,7 @@ async function processFilesJob(files, ws) {
       processedFiles: 0,
       totalFiles: files.length,
       errors,
-    })
+    }),
   );
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -75,13 +75,10 @@ async function processFilesJob(files, ws) {
           basepath,
           title,
           season ? `Season ${formatNumber(season)}` : "Specials",
-          filename + file.ext
+          filename + file.ext,
         );
       } else {
-        updatedPath = path.join(
-          basepath,
-          filename + file.ext
-        );
+        updatedPath = path.join(basepath, filename + file.ext);
       }
 
       ws.send(
@@ -90,7 +87,7 @@ async function processFilesJob(files, ws) {
           processedFiles: i + 1,
           totalFiles: files.length,
           errors,
-        })
+        }),
       );
       await copyFile(file, updatedPath, errors);
     }
@@ -102,7 +99,7 @@ async function processFilesJob(files, ws) {
       totalFiles: files.length,
       isCompleted: true,
       errors,
-    })
+    }),
   );
 }
 

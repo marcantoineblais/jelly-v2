@@ -14,7 +14,7 @@ export default function MediaSeason({
   files?: MediaFile[];
   handleSelect?: (
     e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[]
+    files: MediaFile | MediaFile[],
   ) => void;
 }) {
   return (

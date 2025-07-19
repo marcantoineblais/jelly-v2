@@ -17,7 +17,7 @@ export default function MediaCheckbox({
   isIndeterminate?: boolean;
   onSelect?: (
     e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[]
+    files: MediaFile | MediaFile[],
   ) => void;
 }) {
   function handleSelect(e: ChangeEvent<HTMLInputElement>) {
