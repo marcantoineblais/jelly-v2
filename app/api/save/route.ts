@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ files }),
     });
+    
     if (!res.ok) {
       const data = await res.json();
       return NextResponse.json({ ok: false, error: data.error || 'Failed to submit job' });
