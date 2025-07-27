@@ -34,9 +34,8 @@ async function copyFile(file, updatedPath, errors) {
 }
 
 async function deleteEmptyFolders(file) {
-  const root = path.dirname(file.root);
   let currentDir = path.dirname(file.path);
-  while (currentDir !== root) {
+  while (currentDir !== file.root) {
     try {
       const files = await fs.readdir(currentDir);
       if (files.length === 0) {
@@ -108,13 +107,12 @@ async function processFilesJob(files, ws) {
 }
 
 app.post("/process-files", async (req, res) => {
-  const url = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
   const files = req.body.files;
   if (!Array.isArray(files)) {
     return res.status(400).json({ error: "Invalid files array" });
   }
   // Open a real WebSocket connection to the socket server
-  const ws = new WebSocket(url);
+  const ws = new WebSocket("ws://localhost:4001");
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
     ws.on("error", reject);

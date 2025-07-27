@@ -23,7 +23,7 @@ export function readFolders(
   });
 
   folders.forEach((folder) => {
-    extractFilesFromFolder(folder, files, videoExt, () => idCounter++, folder);
+    extractFilesFromFolder(folder, files, videoExt, () => idCounter++, path.normalize(folder));
   });
 
   files.forEach((file) => {
