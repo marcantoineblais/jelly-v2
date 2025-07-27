@@ -87,7 +87,7 @@ async function processFilesJob(files, ws) {
       ws.send(
         JSON.stringify({
           currentFile: filename,
-          processedFiles: i + 1,
+          processedFiles: i,
           totalFiles: files.length,
           errors,
         })
