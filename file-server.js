@@ -34,8 +34,9 @@ async function copyFile(file, updatedPath, errors) {
 }
 
 async function deleteEmptyFolders(file) {
+  const root = path.dirname(file.root);
   let currentDir = path.dirname(file.path);
-  while (currentDir !== file.root) {
+  while (currentDir !== root) {
     try {
       const files = await fs.readdir(currentDir);
       if (files.length === 0) {
@@ -58,7 +59,7 @@ async function processFilesJob(files, ws) {
       processedFiles: 0,
       totalFiles: files.length,
       errors,
-    }),
+    })
   );
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -75,10 +76,13 @@ async function processFilesJob(files, ws) {
           basepath,
           title,
           season ? `Season ${formatNumber(season)}` : "Specials",
-          filename + file.ext,
+          filename + file.ext
         );
       } else {
-        updatedPath = path.join(basepath, filename + file.ext);
+        updatedPath = path.join(
+          basepath,
+          filename + file.ext
+        );
       }
 
       ws.send(
@@ -87,7 +91,7 @@ async function processFilesJob(files, ws) {
           processedFiles: i + 1,
           totalFiles: files.length,
           errors,
-        }),
+        })
       );
       await copyFile(file, updatedPath, errors);
     }
@@ -99,21 +103,23 @@ async function processFilesJob(files, ws) {
       totalFiles: files.length,
       isCompleted: true,
       errors,
-    }),
+    })
   );
 }
 
 app.post("/process-files", async (req, res) => {
+  const url = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
   const files = req.body.files;
   if (!Array.isArray(files)) {
     return res.status(400).json({ error: "Invalid files array" });
   }
   // Open a real WebSocket connection to the socket server
-  const ws = new WebSocket("ws://localhost:4001");
+  const ws = new WebSocket(url);
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
     ws.on("error", reject);
   });
+  
   await processFilesJob(files, ws);
   ws.close();
   res.json({ ok: true });

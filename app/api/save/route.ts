@@ -4,10 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const files = await request.json();
+  const url = process.env.NEXT_PUBLIC_FILE_SERVER_URL;
 
   try {
     // Send job to file-server.js via HTTP POST
-    const res = await fetch("http://localhost:4002/process-files", {
+    const res = await fetch(url + "/process-files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ files }),
