@@ -42,6 +42,11 @@ function extractFilesFromFolder(
   getId: () => number,
   root: string,
 ) {
+  const exists = fs.existsSync(folderPath);
+  if (!exists) {
+    console.error(`[Read Folders Lib] Folder does not exist: ${folderPath}`);
+    return filesList;
+  }
   const entries = fs.readdirSync(folderPath);
 
   entries.forEach((entry) => {
