@@ -112,11 +112,11 @@ app.post("/process-files", async (req, res) => {
   if (!Array.isArray(files)) {
     return res.status(400).json({ error: "Invalid files array" });
   }
-  // Open a real WebSocket connection to the socket server
-  const socketPort = process.env.SOCKET_SERVER_PORT || "4001";
+  // Open WebSocket to socket-server (SOCKET_SERVER_WS_URL from .env, per machine)
   const socketUrl =
-    process.env.SOCKET_SERVER_WS_URL || `ws://localhost:${socketPort}`;
-  const ws = new WebSocket(socketUrl);
+    process.env.SOCKET_SERVER_WS_URL ||
+    `ws://localhost:${process.env.SOCKET_SERVER_PORT || "4001"}`;
+  const ws = new WebSocket(socketUrl.replace(/\/$/, ""));
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
     ws.on("error", reject);

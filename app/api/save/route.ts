@@ -6,12 +6,11 @@ export async function POST(request: NextRequest) {
   const files = await request.json();
 
   try {
-    // Send job to file-server.js via HTTP POST
-    const fileServerPort = process.env.FILE_SERVER_PORT || "4002";
+    // Send job to file-server via HTTP POST (FILE_SERVER_URL from .env, per machine)
     const fileServerUrl =
       process.env.FILE_SERVER_URL ||
-      `http://localhost:${fileServerPort}`;
-    const res = await fetch(`${fileServerUrl}/process-files`, {
+      `http://localhost:${process.env.FILE_SERVER_PORT || "4002"}`;
+    const res = await fetch(`${fileServerUrl.replace(/\/$/, "")}/process-files`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ files }),
