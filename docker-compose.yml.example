@@ -1,9 +1,8 @@
-# Uses .env for ports and optional config (DOWNLOAD_PATHS, LIBRARIES_JSON, VIDEOS_EXT).
-# Copy .env.example to .env and set values. Mount config.json or use env vars per machine.
+# Per-machine: set host paths in .env (DOWNLOADS_PATH, ENCODE_PATH, TV_SHOWS_PATH, etc.).
 services:
   next:
     build: .
-    command: ["node", "node_modules/next/dist/bin/next", "start", "-H", "0.0.0.0"]
+    command: ["node", "node_modules/next/dist/bin/next", "start", "-H", "0.0.0.0", "-p", "${PORT:-4000}"]
     env_file: .env
     environment:
       - FILE_SERVER_URL=http://file-server:${FILE_SERVER_PORT:-4002}
@@ -11,6 +10,7 @@ services:
       - "${PORT:-4000}:${PORT:-4000}"
     volumes:
       - ./config.json:/app/config.json:ro
+      # Add host paths for file-server to read/write
     depends_on:
       - file-server
 
@@ -20,7 +20,6 @@ services:
     env_file: .env
     ports:
       - "${SOCKET_SERVER_PORT:-4001}:${SOCKET_SERVER_PORT:-4001}"
-    # file-server connects via SOCKET_SERVER_WS_URL (set for Docker)
 
   file-server:
     build: .
@@ -32,5 +31,6 @@ services:
       - "${FILE_SERVER_PORT:-4002}:${FILE_SERVER_PORT:-4002}"
     volumes:
       - ./config.json:/app/config.json:ro
+      # Add host paths for file-server to read/write
     depends_on:
       - socket-server

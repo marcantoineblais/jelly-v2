@@ -28,6 +28,7 @@ COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
 
-# Default: run Next.js (overridden per service in docker-compose)
+# Ports are set at runtime via .env (PORT, SOCKET_SERVER_PORT, FILE_SERVER_PORT)
 EXPOSE 4000 4001 4002
-CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "4000"]
+# Next reads PORT from env; docker-compose overrides CMD per service
+CMD ["node", "node_modules/next/dist/bin/next", "start"]

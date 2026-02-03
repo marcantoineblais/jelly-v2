@@ -42,3 +42,4 @@ next-env.d.ts
 
 # configuration file
 config.json
+docker-compose.yml

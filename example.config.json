@@ -1,5 +1,5 @@
 {
-  "download_paths": ["\\\\sandbox.home.arpa\\blais\\Downloads", "C:/Users/blais/Encode"],
+  "download_paths": ["path_to_downloads", "path_to_encoded_files"],
   "libraries": [
     { "name": "Shows", "path": "E:/TV Shows", "type": "show" },
     { "name": "Movies", "path": "E:/Movies", "type": "movie" },
