@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "concurrently \"next dev --turbopack\" \"node file-server.js\" \"node socket-server.js\"",
     "build": "next build",
-    "start": "concurrently \"next start -p 4000\" \"node file-server.js\" \"node socket-server.js\"",
+    "start": "concurrently \"next start\" \"node file-server.js\" \"node socket-server.js\"",
     "lint": "next lint"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
     "@fortawesome/free-regular-svg-icons": "^6.7.2",

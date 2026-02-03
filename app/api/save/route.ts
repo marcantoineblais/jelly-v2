@@ -7,7 +7,11 @@ export async function POST(request: NextRequest) {
 
   try {
     // Send job to file-server.js via HTTP POST
-    const res = await fetch("http://localhost:4002/process-files", {
+    const fileServerPort = process.env.FILE_SERVER_PORT || "4002";
+    const fileServerUrl =
+      process.env.FILE_SERVER_URL ||
+      `http://localhost:${fileServerPort}`;
+    const res = await fetch(`${fileServerUrl}/process-files`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ files }),

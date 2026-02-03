@@ -1,7 +1,8 @@
-// Minimal standalone WebSocket server using ws
+require("dotenv").config();
 const { WebSocketServer } = require("ws");
 
-const wss = new WebSocketServer({ port: 4001, host: "0.0.0.0" });
+const port = parseInt(process.env.SOCKET_SERVER_PORT || "4001", 10);
+const wss = new WebSocketServer({ port, host: "0.0.0.0" });
 let lastStatus = null;
 let backendClient = null;
 
@@ -62,4 +63,4 @@ wss.on("connection", (client, request) => {
   });
 });
 
-console.log("WebSocket server running on ws://localhost:4001");
+console.log(`WebSocket server running on ws://localhost:${port}`);

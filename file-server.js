@@ -1,3 +1,4 @@
+require("dotenv").config();
 const http = require("http");
 const express = require("express");
 const { WebSocket } = require("ws");
@@ -112,7 +113,10 @@ app.post("/process-files", async (req, res) => {
     return res.status(400).json({ error: "Invalid files array" });
   }
   // Open a real WebSocket connection to the socket server
-  const ws = new WebSocket("ws://localhost:4001");
+  const socketPort = process.env.SOCKET_SERVER_PORT || "4001";
+  const socketUrl =
+    process.env.SOCKET_SERVER_WS_URL || `ws://localhost:${socketPort}`;
+  const ws = new WebSocket(socketUrl);
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
     ws.on("error", reject);
@@ -123,7 +127,8 @@ app.post("/process-files", async (req, res) => {
   res.json({ ok: true });
 });
 
+const port = parseInt(process.env.FILE_SERVER_PORT || "4002", 10);
 const server = http.createServer(app);
-server.listen(4002, () => {
-  console.log("HTTP server for file jobs running on http://localhost:4002");
+server.listen(port, () => {
+  console.log(`HTTP server for file jobs running on http://localhost:${port}`);
 });

@@ -59,7 +59,8 @@ export default function MediaList({
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    const ws = new window.WebSocket(`ws://${hostname}:4001`);
+    const port = process.env.NEXT_PUBLIC_SOCKET_SERVER_PORT || "4001";
+    const ws = new window.WebSocket(`ws://${hostname}:${port}`);
 
     ws.addEventListener("message", async (e) => {
       try {
