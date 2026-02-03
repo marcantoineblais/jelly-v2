@@ -6,10 +6,14 @@ export async function POST(request: NextRequest) {
   const files = await request.json();
 
   try {
-    // Send job to file-server via HTTP POST (FILE_SERVER_URL from .env, per machine)
-    const fileServerUrl =
-      process.env.FILE_SERVER_URL ||
-      `http://localhost:${process.env.FILE_SERVER_PORT || "4002"}`;
+    const fileServerUrl = process.env.FILE_SERVER_URL;
+    if (!fileServerUrl) {
+      console.error("FILE_SERVER_URL is not set");
+      return NextResponse.json(
+        { ok: false, error: "File server URL not configured" },
+        { status: 500 }
+      );
+    }
     const res = await fetch(`${fileServerUrl.replace(/\/$/, "")}/process-files`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

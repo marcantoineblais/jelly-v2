@@ -112,10 +112,10 @@ app.post("/process-files", async (req, res) => {
   if (!Array.isArray(files)) {
     return res.status(400).json({ error: "Invalid files array" });
   }
-  // Open WebSocket to socket-server (SOCKET_SERVER_WS_URL from .env, per machine)
-  const socketUrl =
-    process.env.SOCKET_SERVER_WS_URL ||
-    `ws://localhost:${process.env.SOCKET_SERVER_PORT || "4001"}`;
+  const socketUrl = process.env.SOCKET_SERVER_WS_URL;
+  if (!socketUrl) {
+    return res.status(500).json({ error: "SOCKET_SERVER_WS_URL is not set" });
+  }
   const ws = new WebSocket(socketUrl.replace(/\/$/, ""));
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
@@ -130,5 +130,7 @@ app.post("/process-files", async (req, res) => {
 const port = parseInt(process.env.FILE_SERVER_PORT || "4002", 10);
 const server = http.createServer(app);
 server.listen(port, () => {
-  console.log(`HTTP server for file jobs running on http://localhost:${port}`);
+  console.log(
+    `File server listening on port ${port} (FILE_SERVER_URL=${process.env.FILE_SERVER_URL || "not set"})`
+  );
 });
