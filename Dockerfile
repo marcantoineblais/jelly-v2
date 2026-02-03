@@ -8,7 +8,7 @@ RUN npm install
 
 COPY . .
 RUN mkdir -p public
-RUN npm run build
+RUN set -a && [ -f .env ] && . ./.env && set +a && npm run build
 RUN npm prune --omit=dev
 
 FROM node:20-bookworm-slim AS runner
@@ -21,9 +21,12 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/app ./app
-COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/next.config.mjs ./
 COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
+
+# Next.js config loader may require 'typescript' at runtime; ensure it's present
+RUN npm install typescript --no-save
 
 # docker-compose overrides CMD per service
 CMD ["npm", "start"]
