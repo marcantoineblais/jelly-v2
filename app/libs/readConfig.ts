@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import type { ConfigFile } from "@/app/types/ConfigFile";
+import type { MediaLibrary } from "@/app/types/MediaLibrary";
 
 function fromEnvOrDefault<T>(
   envValue: string | undefined,
@@ -42,11 +44,17 @@ export function readConfig() {
     config.download_paths ?? []
   );
 
-  const libraries = fromEnvOrDefault(
+  const librariesRaw = fromEnvOrDefault(
     librariesJsonFromEnv,
     (s) => JSON.parse(s) as { name?: string; path?: string; type?: string }[],
     config.libraries ?? []
   );
+  const libraries: MediaLibrary[] = librariesRaw.map((lib) => ({
+    name: lib.name,
+    path: lib.path,
+    type:
+      lib.type === "show" || lib.type === "movie" ? lib.type : undefined,
+  }));
 
   const videosExt = fromEnvOrDefault(
     videosExtFromEnv,
@@ -54,9 +62,10 @@ export function readConfig() {
     config.videos_ext ?? [".mp4", ".mkv"]
   );
 
-  return {
+  const result: ConfigFile = {
     downloadPaths,
     libraries,
     videosExt,
   };
+  return result;
 }
