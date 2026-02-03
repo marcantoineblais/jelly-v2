@@ -1,4 +1,3 @@
-# Build stage (Debian base: npm ci works reliably; Alpine often fails on optional/native deps)
 FROM node:20-alpine AS builder
 WORKDIR /app
 
@@ -23,4 +22,4 @@ COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
 
 # Default when running this image alone; docker-compose overrides per service (next / file-server / socket-server)
-CMD ["node", "node_modules/next/dist/bin/next", "start"]
+CMD ["npm", "start"]
