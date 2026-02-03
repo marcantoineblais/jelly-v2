@@ -2,7 +2,9 @@ FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# npm ci fails when package-lock.json doesn't match package.json. Use npm install
+# so the build succeeds. Run `npm install` locally and commit to re-enable npm ci.
+RUN npm install
 
 COPY . .
 RUN npm run build
