@@ -1,10 +1,11 @@
 # Build stage (Debian base: npm ci works reliably; Alpine often fails on optional/native deps)
-FROM node:20-bookworm-slim AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# npm install: more tolerant than npm ci (optional/native deps often fail in CI/Docker)
+RUN npm install --omit=optional
 
 COPY . .
 RUN npm run build
