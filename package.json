@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"next dev --turbopack\" \"node file-server.js\" \"node socket-server.js\"",
     "build": "next build",
-    "start": "concurrently \"next start\" \"node file-server.js\" \"node socket-server.js\"",
+    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
