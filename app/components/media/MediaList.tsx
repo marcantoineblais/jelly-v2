@@ -2,7 +2,7 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { MediaLibrary } from "@/app/types/MediaLibrary";
-import React, {
+import {
   startTransition,
   useCallback,
   useEffect,
@@ -311,6 +311,10 @@ export default function MediaList({
         currentFile={transferStatus?.currentFile}
         processedFiles={transferStatus?.processedFiles}
         totalFiles={transferStatus?.totalFiles}
+        currentFileBytesTransferred={
+          transferStatus?.currentFileBytesTransferred
+        }
+        currentFileSize={transferStatus?.currentFileSize}
       />
     </div>
   );

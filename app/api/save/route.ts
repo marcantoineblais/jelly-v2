@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const fileServerUrl = process.env.FILE_SERVER_URL;
+    const fileServerPath = `${fileServerUrl}/process-files`;
     if (!fileServerUrl) {
       console.error("FILE_SERVER_URL is not set");
       return NextResponse.json(
@@ -14,14 +15,11 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
-    const res = await fetch(
-      `${fileServerUrl.replace(/\/$/, "")}/process-files`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ files }),
-      },
-    );
+    const res = await fetch(fileServerPath, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files }),
+    });
 
     if (!res.ok) {
       const data = await res.json();

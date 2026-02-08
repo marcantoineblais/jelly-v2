@@ -87,6 +87,8 @@ function extractFilesFromFolder(
 }
 
 function readLibraryFiles(path: string) {
+  if (!fs.existsSync(path)) return [];
+
   const files = fs.readdirSync(path);
   return files;
 }

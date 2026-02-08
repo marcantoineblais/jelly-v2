@@ -2,14 +2,30 @@ require("dotenv").config();
 const http = require("http");
 const express = require("express");
 const { WebSocket } = require("ws");
+const { Transform } = require("stream");
 const { formatNumber } = require("./app/libs/files/formatNumber.js");
 const { createFilename } = require("./app/libs/files/createFilename.js");
 const app = express();
 app.use(express.json({ limit: "50mb" }));
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const path = require("path");
 
-async function copyFile(file, updatedPath, errors) {
+const PROGRESS_THROTTLE_MS = 150;
+
+function sendProgress(ws, payload) {
+  try {
+    ws.send(JSON.stringify(payload));
+  } catch (_) {}
+}
+
+async function copyFileWithProgress(
+  file,
+  updatedPath,
+  errors,
+  ws,
+  { processedFiles, totalFiles, currentFile },
+) {
   try {
     const destDir = path.dirname(updatedPath);
     try {
@@ -17,7 +33,73 @@ async function copyFile(file, updatedPath, errors) {
     } catch {
       await fs.mkdir(destDir, { recursive: true });
     }
-    await fs.copyFile(file.path, updatedPath);
+
+    const stat = await fs.stat(file.path);
+    const fileSize = stat.size;
+
+    sendProgress(ws, {
+      currentFile,
+      processedFiles,
+      totalFiles,
+      currentFileBytesTransferred: 0,
+      currentFileSize: fileSize,
+      errors,
+    });
+
+    await new Promise((resolve, reject) => {
+      const readStream = fsSync.createReadStream(file.path);
+      const writeStream = fsSync.createWriteStream(updatedPath);
+      let bytesTransferred = 0;
+      let lastSend = 0;
+      let settled = false;
+
+      function done(err) {
+        if (settled) return;
+        settled = true;
+        readStream.destroy();
+        writeStream.destroy();
+        if (err) reject(err);
+        else resolve();
+      }
+
+      const progressTransform = new Transform({
+        transform(chunk, _encoding, callback) {
+          bytesTransferred += chunk.length;
+          const now = Date.now();
+          if (now - lastSend >= PROGRESS_THROTTLE_MS) {
+            lastSend = now;
+            sendProgress(ws, {
+              currentFile,
+              processedFiles,
+              totalFiles,
+              currentFileBytesTransferred: bytesTransferred,
+              currentFileSize: fileSize,
+              errors,
+            });
+          }
+          callback(null, chunk);
+        },
+      });
+
+      readStream.on("error", (err) => done(err));
+      writeStream.on("error", (err) => done(err));
+      progressTransform.on("error", (err) => done(err));
+
+      writeStream.on("finish", () => {
+        sendProgress(ws, {
+          currentFile,
+          processedFiles,
+          totalFiles,
+          currentFileBytesTransferred: fileSize,
+          currentFileSize: fileSize,
+          errors,
+        });
+        done();
+      });
+
+      readStream.pipe(progressTransform).pipe(writeStream);
+    });
+
     await fs.unlink(file.path);
     await deleteEmptyFolders(file);
   } catch (error) {
@@ -82,15 +164,11 @@ async function processFilesJob(files, ws) {
         updatedPath = path.join(basepath, filename + file.ext);
       }
 
-      ws.send(
-        JSON.stringify({
-          currentFile: filename,
-          processedFiles: i,
-          totalFiles: files.length,
-          errors,
-        }),
-      );
-      await copyFile(file, updatedPath, errors);
+      await copyFileWithProgress(file, updatedPath, errors, ws, {
+        currentFile: filename,
+        processedFiles: i,
+        totalFiles: files.length,
+      });
     }
   }
   ws.send(
@@ -124,7 +202,7 @@ app.post("/process-files", async (req, res) => {
   res.json({ ok: true });
 });
 
-const port = parseInt(process.env.FILE_SERVER_PORT || "4002", 10);
+const port = parseInt(process.env.FILE_SERVER_PORT || "3002", 10);
 const server = http.createServer(app);
 server.listen(port, () => {
   console.log(

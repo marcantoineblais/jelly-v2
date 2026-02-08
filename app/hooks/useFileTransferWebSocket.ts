@@ -7,6 +7,8 @@ export interface TransferStatus {
   currentFile: string;
   processedFiles: number;
   totalFiles: number;
+  currentFileBytesTransferred?: number;
+  currentFileSize?: number;
 }
 
 export function useFileTransferWebSocket(
@@ -64,6 +66,8 @@ export function useFileTransferWebSocket(
               currentFile: data.currentFile,
               processedFiles: data.processedFiles,
               totalFiles: data.totalFiles,
+              currentFileBytesTransferred: data.currentFileBytesTransferred,
+              currentFileSize: data.currentFileSize,
             });
             setIsTransferInProgress(true);
             setIsProgressBarOpen(true);
