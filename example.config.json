@@ -1,10 +1,10 @@
 {
   "download_paths": ["path_to_downloads", "path_to_encoded_files"],
   "libraries": [
-    { "name": "Shows", "path": "E:/TV Shows", "type": "show" },
-    { "name": "Movies", "path": "E:/Movies", "type": "movie" },
     { "name": "Animes", "path": "E:/Anime", "type": "show" },
-    { "name": "Anime movies", "path": "E:/Anime movies", "type": "movie" }
+    { "name": "Anime movies", "path": "E:/Anime movies", "type": "movie" },
+    { "name": "Shows", "path": "E:/TV Shows", "type": "show" },
+    { "name": "Movies", "path": "E:/Movies", "type": "movie" }
   ],
   "videos_ext": [".mp4", ".mkv"]
 }
