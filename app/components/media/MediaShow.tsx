@@ -1,7 +1,7 @@
 "use client";
 
 import { MediaFile } from "@/app/types/MediaFile";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { formatNumber } from "@/app/libs/files/formatNumber";
 import MediaCheckbox from "./MediaCheckbox";
@@ -14,7 +14,10 @@ export default function MediaShow({
   files?: MediaFile[];
   handleSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }) {
-  
+  const [selectedKeys, setSelectedKeys] = useState<
+    Set<string | number> | "all"
+  >(new Set());
+
   const uniqueSeasons = useMemo(() => {
     const set = new Set<number | null | undefined>();
     files.forEach((file) => {
@@ -24,12 +27,24 @@ export default function MediaShow({
   }, [files]);
 
   const accordionKey = useMemo(
-    () => `show-${files.map((f) => f.id).sort((a, b) => a - b).join(",")}`,
+    () =>
+      `show-${files
+        .map((f) => f.id)
+        .sort((a, b) => a - b)
+        .join(",")}`,
     [files],
   );
 
   return (
-    <Accordion key={accordionKey} isCompact>
+    <Accordion
+      key={accordionKey}
+      isCompact
+      selectionMode="multiple"
+      selectedKeys={selectedKeys}
+      onSelectionChange={(keys) =>
+        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
+      }
+    >
       {uniqueSeasons.map((season) => {
         const formattedSeason =
           season != null ? formatNumber(season) : undefined;

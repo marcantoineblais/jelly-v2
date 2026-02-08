@@ -2,7 +2,6 @@ import { createFilename } from "@/app/libs/files/createFilename";
 import { formatNumber } from "@/app/libs/files/formatNumber";
 import { MediaFile } from "@/app/types/MediaFile";
 import MediaInfoLine from "./MediaInfoLine";
-import { useMemo } from "react";
 
 export default function SingleMedia({
   file = null,
@@ -25,15 +24,13 @@ export default function SingleMedia({
     { label: "Episode", content: episode },
     { label: "Year", content: year },
     { label: "Media type", content: type },
-  ]
-  
+  ];
+
   return (
     <ul>
-      {
-        elements.map(({ label, content }) => (
-          <MediaInfoLine key={label} label={label} content={content} />
-        ))
-      }
+      {elements.map(({ label, content }) => (
+        <MediaInfoLine key={label} label={label} content={content} />
+      ))}
     </ul>
-  )
+  );
 }

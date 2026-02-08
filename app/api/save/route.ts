@@ -11,14 +11,17 @@ export async function POST(request: NextRequest) {
       console.error("FILE_SERVER_URL is not set");
       return NextResponse.json(
         { ok: false, error: "File server URL not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
-    const res = await fetch(`${fileServerUrl.replace(/\/$/, "")}/process-files`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ files }),
-    });
+    const res = await fetch(
+      `${fileServerUrl.replace(/\/$/, "")}/process-files`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files }),
+      },
+    );
 
     if (!res.ok) {
       const data = await res.json();

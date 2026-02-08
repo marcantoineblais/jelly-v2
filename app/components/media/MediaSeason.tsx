@@ -2,7 +2,7 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { Accordion, AccordionItem } from "@heroui/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
 import { createFilename } from "@/app/libs/files/createFilename";
@@ -14,13 +14,29 @@ export default function MediaSeason({
   files?: MediaFile[];
   handleSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }) {
+  const [selectedKeys, setSelectedKeys] = useState<
+    Set<string | number> | "all"
+  >(new Set());
+
   const accordionKey = useMemo(
-    () => `season-${files.map((f) => f.id).sort((a, b) => a - b).join(",")}`,
+    () =>
+      `season-${files
+        .map((f) => f.id)
+        .sort((a, b) => a - b)
+        .join(",")}`,
     [files],
   );
 
   return (
-    <Accordion key={accordionKey} isCompact>
+    <Accordion
+      key={accordionKey}
+      isCompact
+      selectionMode="multiple"
+      selectedKeys={selectedKeys}
+      onSelectionChange={(keys) =>
+        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
+      }
+    >
       {files.map((file) => {
         const label = createFilename(file.mediaInfo) ?? "Not set";
         return (

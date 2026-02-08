@@ -2,7 +2,13 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { MediaLibrary } from "@/app/types/MediaLibrary";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Spinner } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
 import FileSelectionBox from "../overlay/FileSelectionBox";
@@ -22,9 +28,6 @@ export default function MediaList({
 }) {
   const [showBin, setShowBin] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedKeys, setSelectedKeys] = useState<
-    Set<string | number> | "all"
-  >("all");
   const [validatedFiles, setValidatedFiles] = useState<MediaFile[]>([]);
 
   const selectedFiles = useMemo(
@@ -39,6 +42,10 @@ export default function MediaList({
     () => sortFilesByLibrary(validatedFiles, libraries, true),
     [validatedFiles, libraries],
   );
+
+  const [selectedKeys, setSelectedKeys] = useState<
+    Set<string | number> | "all"
+  >(new Set([...Object.keys(sortedFiles)]));
 
   const [isFilesLoading, setIsFilesLoading] = useState(false);
 
@@ -66,11 +73,8 @@ export default function MediaList({
     }
   }, []);
 
-  const {
-    isTransferInProgress,
-    transferStatus,
-    isProgressBarOpen,
-  } = useFileTransferWebSocket(fetchFiles);
+  const { isTransferInProgress, transferStatus, isProgressBarOpen } =
+    useFileTransferWebSocket(fetchFiles);
 
   useEffect(() => {
     setValidatedFiles(
@@ -83,14 +87,16 @@ export default function MediaList({
   }, [files]);
 
   useEffect(() => {
-    const availableKeys = Object.keys(sortedFiles);
+    const availableKeys = [...Object.keys(sortedFiles), "bin"];
     if (availableKeys.length === 0) return;
-    setSelectedKeys((prev) => {
-      const keysToKeep: (string | number)[] =
-        prev === "all" ? availableKeys : Array.from(prev);
-      return new Set(
-        keysToKeep.filter((key) => availableKeys.includes(key.toString())),
-      );
+
+    startTransition(() => {
+      setSelectedKeys((prev) => {
+        const validKeys = Array.from(prev).filter((key) =>
+          availableKeys.includes(key.toString()),
+        );
+        return new Set(validKeys);
+      });
     });
   }, [sortedFiles]);
 
@@ -113,29 +119,33 @@ export default function MediaList({
   }
 
   function handleSelectionChange(keys: "all" | Set<string | number>) {
-    let updatedKeys =
-      keys === "all" ? [...Object.keys(sortedFiles), "bin"] : Array.from(keys);
-    const previousKeys =
-      selectedKeys === "all"
-        ? [...Object.keys(sortedFiles), "bin"]
-        : Array.from(selectedKeys);
+    let isBinSelected = true;
+    setSelectedKeys((prev) => {
+      const prevKeys = prev as Set<string | number>;
+      const newKeys = keys as Set<string | number>;
 
-    if (updatedKeys.includes("bin") && !previousKeys.includes("bin")) {
-      updatedKeys = ["bin"];
-    } else if (updatedKeys.includes("bin") && previousKeys.includes("bin")) {
-      updatedKeys = updatedKeys.filter((key) => key !== "bin");
-    }
+      if (newKeys.has("bin") && !prevKeys.has("bin")) {
+        isBinSelected = false;
+        return new Set(["bin"]);
+      }
 
-    setShowBin((isShowed) => {
-      const binSelected = updatedKeys.includes("bin");
-      if ((binSelected && isShowed) || (!isShowed && !binSelected)) {
+      if (prevKeys.has("bin") && newKeys.size === 0) {
+        isBinSelected = false;
+        return new Set([]);
+      }
+
+      newKeys.delete("bin");
+      return newKeys;
+    });
+
+    setShowBin((prev) => {
+      if (prev !== isBinSelected) {
         setValidatedFiles((prev) =>
           prev.map((file) => ({ ...file, isSelected: false })),
         );
       }
-      return !binSelected;
+      return isBinSelected;
     });
-    setSelectedKeys(new Set(updatedKeys));
   }
 
   function handleDelete() {
@@ -192,7 +202,8 @@ export default function MediaList({
         const newMediaInfo = { ...file.mediaInfo };
         if (form.title) newMediaInfo.title = form.title.trim();
         if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
-        else if (!isNaN(form.season as number)) newMediaInfo.season = form.season;
+        else if (!isNaN(form.season as number))
+          newMediaInfo.season = form.season;
         if (!form.isEpisodeEnabled) newMediaInfo.episode = undefined;
         else if (!isNaN(form.episode as number))
           newMediaInfo.episode = (form.episode as number) + counter;

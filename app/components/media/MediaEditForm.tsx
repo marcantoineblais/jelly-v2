@@ -15,7 +15,7 @@ import {
   Select,
   SelectItem,
 } from "@heroui/react";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 export default function MediaEditForm({
   files = [],
@@ -68,40 +68,42 @@ export default function MediaEditForm({
   useEffect(() => {
     const firstFile = files[0];
     if (!firstFile) return;
-    setForm({
-      title: files.every(
-        (file) => file.mediaInfo.title === firstFile?.mediaInfo.title,
-      )
-        ? (firstFile.mediaInfo.title ?? "")
-        : "",
-      season: files.every(
-        (file) => file.mediaInfo.season === firstFile?.mediaInfo.season,
-      )
-        ? (firstFile.mediaInfo.season ?? NaN)
-        : NaN,
-      episode: files.every(
-        (file) => file.mediaInfo.episode === firstFile?.mediaInfo.episode,
-      )
-        ? (firstFile.mediaInfo.episode ?? NaN)
-        : NaN,
-      year: files.every(
-        (file) => file.mediaInfo.year === firstFile?.mediaInfo.year,
-      )
-        ? (firstFile.mediaInfo.year ?? NaN)
-        : NaN,
-      library:
-        files.every((file) => file.library === firstFile?.library) &&
-        firstFile.library.name
-          ? new Set([firstFile.library.name])
-          : undefined,
-      incrementEpisodes: false,
-      isSeasonEnabled: files.some(
-        (file) => file.mediaInfo.season !== undefined,
-      ),
-      isEpisodeEnabled: files.some(
-        (file) => file.mediaInfo.episode !== undefined,
-      ),
-      isYearEnabled: files.some((file) => file.mediaInfo.year !== undefined),
+    startTransition(() => {
+      setForm({
+        title: files.every(
+          (file) => file.mediaInfo.title === firstFile?.mediaInfo.title,
+        )
+          ? (firstFile.mediaInfo.title ?? "")
+          : "",
+        season: files.every(
+          (file) => file.mediaInfo.season === firstFile?.mediaInfo.season,
+        )
+          ? (firstFile.mediaInfo.season ?? NaN)
+          : NaN,
+        episode: files.every(
+          (file) => file.mediaInfo.episode === firstFile?.mediaInfo.episode,
+        )
+          ? (firstFile.mediaInfo.episode ?? NaN)
+          : NaN,
+        year: files.every(
+          (file) => file.mediaInfo.year === firstFile?.mediaInfo.year,
+        )
+          ? (firstFile.mediaInfo.year ?? NaN)
+          : NaN,
+        library:
+          files.every((file) => file.library === firstFile?.library) &&
+          firstFile.library.name
+            ? new Set([firstFile.library.name])
+            : undefined,
+        incrementEpisodes: false,
+        isSeasonEnabled: files.some(
+          (file) => file.mediaInfo.season !== undefined,
+        ),
+        isEpisodeEnabled: files.some(
+          (file) => file.mediaInfo.episode !== undefined,
+        ),
+        isYearEnabled: files.some((file) => file.mediaInfo.year !== undefined),
+      });
     });
   }, [files, libraries]);
 

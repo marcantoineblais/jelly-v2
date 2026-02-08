@@ -23,11 +23,7 @@ export default function LibrarySectionContent({
 
   if (type === "show") {
     return (
-      <ShowsContent
-        sectionKey={sectionKey}
-        files={files}
-        onSelect={onSelect}
-      />
+      <ShowsContent sectionKey={sectionKey} files={files} onSelect={onSelect} />
     );
   }
 

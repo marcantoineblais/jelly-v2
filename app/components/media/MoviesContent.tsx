@@ -2,6 +2,7 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { Accordion, AccordionItem } from "@heroui/react";
+import { useState } from "react";
 import { createFilename } from "@/app/libs/files/createFilename";
 import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
@@ -17,8 +18,20 @@ export default function MoviesContent({
   files,
   onSelect,
 }: MoviesContentProps) {
+  const [selectedKeys, setSelectedKeys] = useState<
+    Set<string | number> | "all"
+  >(new Set());
+
   return (
-    <Accordion key={sectionKey} isCompact>
+    <Accordion
+      key={sectionKey}
+      isCompact
+      selectionMode="multiple"
+      selectedKeys={selectedKeys}
+      onSelectionChange={(keys) =>
+        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
+      }
+    >
       {files.map((file) => {
         const title = file.mediaInfo.title || "Not set";
         const label = createFilename(file.mediaInfo);

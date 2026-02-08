@@ -6,7 +6,7 @@ import type { MediaLibrary } from "@/app/types/MediaLibrary";
 function fromEnvOrDefault<T>(
   envValue: string | undefined,
   parse: (s: string) => T,
-  fallback: T
+  fallback: T,
 ): T {
   if (envValue == null || envValue === "") return fallback;
   try {
@@ -40,26 +40,33 @@ export function readConfig() {
 
   const downloadPaths = fromEnvOrDefault(
     downloadPathsFromEnv,
-    (s) => s.split(",").map((p) => p.trim()).filter(Boolean),
-    config.download_paths ?? []
+    (s) =>
+      s
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean),
+    config.download_paths ?? [],
   );
 
   const librariesRaw = fromEnvOrDefault(
     librariesJsonFromEnv,
     (s) => JSON.parse(s) as { name?: string; path?: string; type?: string }[],
-    config.libraries ?? []
+    config.libraries ?? [],
   );
   const libraries: MediaLibrary[] = librariesRaw.map((lib) => ({
     name: lib.name,
     path: lib.path,
-    type:
-      lib.type === "show" || lib.type === "movie" ? lib.type : undefined,
+    type: lib.type === "show" || lib.type === "movie" ? lib.type : undefined,
   }));
 
   const videosExt = fromEnvOrDefault(
     videosExtFromEnv,
-    (s) => s.split(",").map((e) => e.trim()).filter(Boolean),
-    config.videos_ext ?? [".mp4", ".mkv"]
+    (s) =>
+      s
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean),
+    config.videos_ext ?? [".mp4", ".mkv"],
   );
 
   const result: ConfigFile = {

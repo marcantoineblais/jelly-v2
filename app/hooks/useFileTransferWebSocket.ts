@@ -9,7 +9,9 @@ export interface TransferStatus {
   totalFiles: number;
 }
 
-export function useFileTransferWebSocket(onFilesRefreshed?: () => Promise<void>) {
+export function useFileTransferWebSocket(
+  onFilesRefreshed?: () => Promise<void>,
+) {
   const [isTransferInProgress, setIsTransferInProgress] = useState(false);
   const [transferStatus, setTransferStatus] = useState<TransferStatus | null>(
     null,
@@ -36,7 +38,8 @@ export function useFileTransferWebSocket(onFilesRefreshed?: () => Promise<void>)
 
       const onMessage = async (e: MessageEvent) => {
         try {
-          const json = typeof e.data === "string" ? e.data : await e.data.text();
+          const json =
+            typeof e.data === "string" ? e.data : await e.data.text();
           const data = JSON.parse(json);
           if (data.isCompleted || data.error) {
             setTimeout(async () => {

@@ -30,9 +30,7 @@ export default function MediaCheckbox({
   }, [files]);
 
   return (
-    <div
-      className="flex gap-3 items-center"
-    >
+    <div className="flex gap-3 items-center">
       <Checkbox
         isSelected={isSelected}
         isIndeterminate={isIndeterminate && !isSelected}

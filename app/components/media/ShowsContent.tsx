@@ -2,6 +2,7 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { Accordion, AccordionItem } from "@heroui/react";
+import { useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";
 import MediaShow from "./MediaShow";
 
@@ -16,12 +17,24 @@ export default function ShowsContent({
   files,
   onSelect,
 }: ShowsContentProps) {
+  const [selectedKeys, setSelectedKeys] = useState<
+    Set<string | number> | "all"
+  >(new Set());
+
   const uniqueTitles = Array.from(
     new Set(files.map((file) => file.mediaInfo.title || "")),
   );
 
   return (
-    <Accordion key={sectionKey} isCompact>
+    <Accordion
+      key={sectionKey}
+      isCompact
+      selectionMode="multiple"
+      selectedKeys={selectedKeys}
+      onSelectionChange={(keys) =>
+        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
+      }
+    >
       {uniqueTitles.map((title, index) => {
         const showFiles = files.filter(
           (file) => file.mediaInfo.title === title,

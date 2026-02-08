@@ -3,7 +3,7 @@
 import { MediaFile } from "@/app/types/MediaFile";
 import { SortedMedia } from "@/app/types/SortedMedia";
 import { Accordion, AccordionItem } from "@heroui/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import H2 from "../elements/H2";
@@ -25,25 +25,9 @@ export default function MediaListAccordion({
   onSelectionChange,
   onSelect,
 }: MediaListAccordionProps) {
-  const [expandedBinKeys, setExpandedBinKeys] = useState<
+  const [binSelectedKeys, setBinSelectedKeys] = useState<
     Set<string | number> | "all"
   >(new Set());
-
-  const binSectionKeys = useMemo(
-    () =>
-      Object.keys(binnedFiles)
-        .sort()
-        .map((k) => `bin-${k}`),
-    [binnedFiles],
-  );
-
-  const effectiveExpandedBinKeys = useMemo(() => {
-    const current =
-      expandedBinKeys === "all"
-        ? binSectionKeys
-        : [...expandedBinKeys].filter((k) => binSectionKeys.includes(String(k)));
-    return new Set(current);
-  }, [expandedBinKeys, binSectionKeys]);
 
   const libraryItems = Object.entries(sortedFiles).map(([key, files]) => (
     <AccordionItem
@@ -71,24 +55,19 @@ export default function MediaListAccordion({
         key="bin-inner"
         isCompact
         selectionMode="multiple"
-        selectedKeys={effectiveExpandedBinKeys}
-        onSelectionChange={(keys) =>
-          setExpandedBinKeys(
-            keys === "all" ? "all" : new Set([...keys].map(String)),
-          )
-        }
+        selectedKeys={binSelectedKeys}
+        onSelectionChange={setBinSelectedKeys}
       >
         {Object.entries(binnedFiles).map(([key, files]) => {
-          const itemKey = `bin-${key || "not-set"}`;
           return (
             <AccordionItem
+              key={`bin-${key}`}
               classNames={{ titleWrapper: "overflow-hidden" }}
-              key={itemKey}
               textValue={key || "Not set"}
               title={<H3 className="text-left">{key || "Not set"}</H3>}
             >
               <LibrarySectionContent
-                sectionKey={itemKey}
+                sectionKey={`bin-${key}`}
                 files={files}
                 onSelect={onSelect}
               />

@@ -59,7 +59,7 @@ async function processFilesJob(files, ws) {
       processedFiles: 0,
       totalFiles: files.length,
       errors,
-    })
+    }),
   );
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -76,13 +76,10 @@ async function processFilesJob(files, ws) {
           basepath,
           title,
           season ? `Season ${formatNumber(season)}` : "Specials",
-          filename + file.ext
+          filename + file.ext,
         );
       } else {
-        updatedPath = path.join(
-          basepath,
-          filename + file.ext
-        );
+        updatedPath = path.join(basepath, filename + file.ext);
       }
 
       ws.send(
@@ -91,7 +88,7 @@ async function processFilesJob(files, ws) {
           processedFiles: i,
           totalFiles: files.length,
           errors,
-        })
+        }),
       );
       await copyFile(file, updatedPath, errors);
     }
@@ -103,7 +100,7 @@ async function processFilesJob(files, ws) {
       totalFiles: files.length,
       isCompleted: true,
       errors,
-    })
+    }),
   );
 }
 
@@ -121,7 +118,7 @@ app.post("/process-files", async (req, res) => {
     ws.on("open", resolve);
     ws.on("error", reject);
   });
-  
+
   await processFilesJob(files, ws);
   ws.close();
   res.json({ ok: true });
@@ -131,6 +128,6 @@ const port = parseInt(process.env.FILE_SERVER_PORT || "4002", 10);
 const server = http.createServer(app);
 server.listen(port, () => {
   console.log(
-    `File server listening on port ${port} (FILE_SERVER_URL=${process.env.FILE_SERVER_URL || "not set"})`
+    `File server listening on port ${port} (FILE_SERVER_URL=${process.env.FILE_SERVER_URL || "not set"})`,
   );
 });
