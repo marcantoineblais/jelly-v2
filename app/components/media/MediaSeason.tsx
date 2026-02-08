@@ -33,9 +33,7 @@ export default function MediaSeason({
       isCompact
       selectionMode="multiple"
       selectedKeys={selectedKeys}
-      onSelectionChange={(keys) =>
-        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
-      }
+      onSelectionChange={setSelectedKeys}
     >
       {files.map((file) => {
         const label = createFilename(file.mediaInfo) ?? "Not set";

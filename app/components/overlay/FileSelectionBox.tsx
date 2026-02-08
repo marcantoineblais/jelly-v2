@@ -24,7 +24,7 @@ export default function FileSelectionBox({
   showBin?: boolean;
 }) {
   return (
-    <div className="py-3 px-5 flex items-center justify-center gap-5 bg-gradient-to-b from-emerald-600/35 to-90% to-emerald-950/35 text-white shadow-md shadow-black/50 rounded-sm">
+    <div className="py-3 px-5 flex items-center justify-center gap-5 bg-linear-to-b from-emerald-600/35 to-90% to-emerald-950/35 text-white shadow-md shadow-black/50 rounded-sm">
       <button
         type="button"
         title="Edit"

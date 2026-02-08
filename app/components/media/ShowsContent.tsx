@@ -31,9 +31,7 @@ export default function ShowsContent({
       isCompact
       selectionMode="multiple"
       selectedKeys={selectedKeys}
-      onSelectionChange={(keys) =>
-        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
-      }
+      onSelectionChange={setSelectedKeys}
     >
       {uniqueTitles.map((title, index) => {
         const showFiles = files.filter(

@@ -28,9 +28,7 @@ export default function MoviesContent({
       isCompact
       selectionMode="multiple"
       selectedKeys={selectedKeys}
-      onSelectionChange={(keys) =>
-        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
-      }
+      onSelectionChange={setSelectedKeys}
     >
       {files.map((file) => {
         const title = file.mediaInfo.title || "Not set";

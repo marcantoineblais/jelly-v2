@@ -41,9 +41,7 @@ export default function MediaShow({
       isCompact
       selectionMode="multiple"
       selectedKeys={selectedKeys}
-      onSelectionChange={(keys) =>
-        setSelectedKeys(keys === "all" ? "all" : new Set(keys))
-      }
+      onSelectionChange={setSelectedKeys}
     >
       {uniqueSeasons.map((season) => {
         const formattedSeason =
