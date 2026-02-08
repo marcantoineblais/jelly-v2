@@ -2,9 +2,15 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { SortedMedia } from "@/app/types/SortedMedia";
-import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import H2 from "../elements/H2";
-import { Accordion, AccordionItem } from "@heroui/react";
+import { Accordion, AccordionItem, Spinner } from "@heroui/react";
 import MediaShow from "./MediaShow";
 import sortMediaFiles from "@/app/libs/files/sortMediaFiles";
 import MediaCheckbox from "./MediaCheckbox";
@@ -18,6 +24,37 @@ import MediaEditForm from "./MediaEditForm";
 import { validateData } from "@/app/libs/files/validateData";
 import { createFilename } from "@/app/libs/files/createFilename";
 import FileCopyStatus from "../FileCopyStatus";
+
+function sortFiles(
+  files: MediaFile[],
+  libraries: MediaLibrary[],
+  binned: boolean = false,
+): SortedMedia {
+  const names: string[] = libraries
+    .map((library) => library.name)
+    .filter((name) => typeof name === "string");
+
+  const sorted: SortedMedia = {};
+
+  names.forEach((name) => {
+    const content = files
+      .filter(
+        (file) =>
+          (file.isIgnored ?? false) === binned && file.library.name === name,
+      )
+      .sort(sortMediaFiles);
+
+    sorted[name] = content;
+  });
+
+  Object.entries(sorted).forEach(([key, value]) => {
+    if (value.length === 0) {
+      delete sorted[key];
+    }
+  });
+
+  return sorted;
+}
 
 export default function MediaList({
   files = [],
@@ -56,6 +93,35 @@ export default function MediaList({
     processedFiles: number;
     totalFiles: number;
   } | null>(null);
+  const [isFilesLoading, setIsFilesLoading] = useState(false);
+
+  const fetchFiles = useCallback(async () => {
+    setIsFilesLoading(true);
+    try {
+      const response = await fetch("/api/files", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch files");
+        return;
+      }
+
+      const data = await response.json();
+      setValidatedFiles(
+        data.files.map((file: MediaFile) => ({
+          ...file,
+          errors: validateData(file),
+          isSelected: false,
+        })),
+      );
+    } finally {
+      setIsFilesLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const wsUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
@@ -93,12 +159,11 @@ export default function MediaList({
           setIsProgressBarOpen(true);
         }
       } catch {
-        await fetchFiles();
+        fetchFiles();
       }
     });
 
     ws.addEventListener("close", () => {
-      // If a transfer was in progress, close the modal and reset state
       setIsTransferInProgress((prev) => {
         if (prev) {
           setIsProgressBarOpen(false);
@@ -106,7 +171,6 @@ export default function MediaList({
           fetchFiles();
           return false;
         }
-
         return prev;
       });
     });
@@ -114,7 +178,7 @@ export default function MediaList({
     return () => {
       ws.close();
     };
-  }, []);
+  }, [fetchFiles]);
 
   useEffect(() => {
     setValidatedFiles(
@@ -126,95 +190,31 @@ export default function MediaList({
     );
   }, [files]);
 
-  // Re-validate files when they change (e.g., after edit)
   useEffect(() => {
-    setValidatedFiles((prev) =>
-      prev.map((file) => ({
-        ...file,
-        errors: validateData(file),
-      })),
-    );
-  }, [files]);
-
-  useEffect(() => {
-    const keys = Object.keys(sortedFiles);
-    if (keys.length === 0) return;
+    const availableKeys = Object.keys(sortedFiles);
+    if (availableKeys.length === 0) return;
 
     setSelectedKeys((prev) => {
-      const availableKeys = Object.keys(sortedFiles);
-      const keys: (string | number)[] =
+      const keysToKeep: (string | number)[] =
         prev === "all" ? availableKeys : Array.from(prev);
       return new Set(
-        keys.filter((key) => availableKeys.includes(key.toString())),
+        keysToKeep.filter((key) => availableKeys.includes(key.toString())),
       );
     });
   }, [sortedFiles]);
-
-  function sortFiles(
-    files: MediaFile[],
-    libraries: MediaLibrary[],
-    binned: boolean = false,
-  ) {
-    const names: string[] = libraries
-      .map((library) => library.name)
-      .filter((name) => typeof name === "string");
-
-    const sortedFiles: SortedMedia = {};
-
-    names.forEach((name) => {
-      const content = files
-        .filter(
-          (file) =>
-            (file.isIgnored ?? false) === binned && file.library.name === name,
-        )
-        .sort(sortMediaFiles);
-
-      sortedFiles[name] = content;
-    });
-
-    Object.entries(sortedFiles).forEach(([key, value]) => {
-      if (value.length === 0) {
-        delete sortedFiles[key];
-      }
-    });
-
-    return sortedFiles;
-  }
-
-  async function fetchFiles() {
-    const response = await fetch("/api/files", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      console.error("Failed to fetch files");
-      return;
-    }
-
-    const data = await response.json();
-    setValidatedFiles(
-      data.files.map((file: MediaFile) => ({
-        ...file,
-        errors: validateData(file),
-        isSelected: false,
-      })),
-    );
-  }
 
   function createShowsNodes(files: MediaFile[]) {
     const uniqueTitles = new Set<string>();
 
     files.forEach((file) => uniqueTitles.add(file.mediaInfo.title || ""));
 
-    return Array.from(uniqueTitles).map((title) => {
+    return Array.from(uniqueTitles).map((title, index) => {
       const showFiles = files.filter((file) => file.mediaInfo.title === title);
+      const itemKey = title || `untitled-${index}`;
 
       return (
         <AccordionItem
-          key={title}
+          key={itemKey}
           textValue={title}
           classNames={{ titleWrapper: "overflow-hidden" }}
           title={
@@ -260,9 +260,16 @@ export default function MediaList({
 
   function renderNode(files: MediaFile[] = []) {
     const type = files[0]?.library.type ?? null;
-    if (type === "show")
-      return <Accordion isCompact>{createShowsNodes(files)}</Accordion>;
-    else if (type === "movie")
+    if (type === "show") {
+      const showsKey = [...new Set(files.map((f) => f.mediaInfo.title ?? ""))]
+        .sort()
+        .join(",");
+      return (
+        <Accordion isCompact key={showsKey}>
+          {createShowsNodes(files)}
+        </Accordion>
+      );
+    } else if (type === "movie")
       return <Accordion isCompact>{createMoviesNodes(files)}</Accordion>;
     else return <div className="text-center">Empty</div>;
   }
@@ -358,34 +365,45 @@ export default function MediaList({
     library?: string | Set<string>;
     incrementEpisodes?: boolean;
   }) {
+    const selectedIds = new Set(selectedFiles.map((f) => f.id));
     let counter = 0;
-    selectedFiles.forEach((file) => {
-      const newMediaInfo = { ...file.mediaInfo };
-      if (form.title) newMediaInfo.title = form.title.trim();
-      if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
-      else if (!isNaN(form.season as number)) newMediaInfo.season = form.season;
-      if (!form.isEpisodeEnabled) newMediaInfo.episode = undefined;
-      else if (!isNaN(form.episode as number))
-        newMediaInfo.episode = (form.episode as number) + counter;
-      if (!form.isYearEnabled) newMediaInfo.year = undefined;
-      else if (!isNaN(form.year as number)) newMediaInfo.year = form.year;
-      file.mediaInfo = newMediaInfo;
-      if (form.library && form.library !== "all") {
-        const key =
-          typeof form.library === "string"
-            ? form.library
-            : Array.from(form.library)[0];
-        file.library = libraries.find((library) => library.name === key) ?? {};
-      }
-      if (form.incrementEpisodes) counter += 1;
-    });
 
     setValidatedFiles((prev) =>
-      prev.map((file) => ({
-        ...file,
-        errors: validateData(file),
-        isSelected: false,
-      })),
+      prev.map((file) => {
+        if (!selectedIds.has(file.id)) return file;
+
+        const newMediaInfo = { ...file.mediaInfo };
+        if (form.title) newMediaInfo.title = form.title.trim();
+        if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
+        else if (!isNaN(form.season as number))
+          newMediaInfo.season = form.season;
+        if (!form.isEpisodeEnabled) newMediaInfo.episode = undefined;
+        else if (!isNaN(form.episode as number))
+          newMediaInfo.episode = (form.episode as number) + counter;
+        if (!form.isYearEnabled) newMediaInfo.year = undefined;
+        else if (!isNaN(form.year as number)) newMediaInfo.year = form.year;
+
+        let newLibrary = file.library;
+        if (form.library && form.library !== "all") {
+          const key =
+            typeof form.library === "string"
+              ? form.library
+              : Array.from(form.library)[0];
+          newLibrary =
+            libraries.find((library) => library.name === key) ?? file.library;
+        }
+
+        if (form.incrementEpisodes) counter += 1;
+
+        const updated = {
+          ...file,
+          mediaInfo: newMediaInfo,
+          library: newLibrary,
+          errors: validateData({ ...file, mediaInfo: newMediaInfo, library: newLibrary }),
+          isSelected: false,
+        };
+        return updated;
+      }),
     );
     setIsModalOpen(false);
   }
@@ -403,6 +421,7 @@ export default function MediaList({
     );
     if (incompleteFiles.length > 0) {
       console.error("Some files are missing informations.");
+      return;
     }
 
     try {
@@ -426,6 +445,12 @@ export default function MediaList({
   if (validatedFiles.length > 0) {
     return (
       <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
+        {isFilesLoading && (
+          <div className="flex items-center gap-2 text-sm text-stone-600">
+            <Spinner size="sm" />
+            <span>Refreshing list…</span>
+          </div>
+        )}
         <div className="h-full overflow-hidden">
           <Accordion
             className="flex-col h-full overflow-y-auto overflow-x-hidden px-1 py-3"
@@ -496,9 +521,18 @@ export default function MediaList({
   }
 
   return (
-    <div className="w-full h-full flex flex-col justify-center items-center">
-      <H2>Nothing to show</H2>
-      <p>Add some content and come back later.</p>
+    <div className="w-full h-full flex flex-col justify-center items-center gap-3">
+      {isFilesLoading ? (
+        <>
+          <Spinner size="lg" />
+          <p>Loading files…</p>
+        </>
+      ) : (
+        <>
+          <H2>Nothing to show</H2>
+          <p>Add some content and come back later.</p>
+        </>
+      )}
     </div>
   );
 }
