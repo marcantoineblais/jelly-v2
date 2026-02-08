@@ -1,61 +1,17 @@
 "use client";
 
 import { MediaFile } from "@/app/types/MediaFile";
-import { SortedMedia } from "@/app/types/SortedMedia";
-import React, {
-  ChangeEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import H2 from "../elements/H2";
-import { Accordion, AccordionItem, addToast, Spinner } from "@heroui/react";
-import MediaShow from "./MediaShow";
-import sortMediaFiles from "@/app/libs/files/sortMediaFiles";
-import MediaCheckbox from "./MediaCheckbox";
-import SingleMedia from "./SingleMedia";
-import FileSelectionBox from "../overlay/FileSelectionBox";
-import H3 from "../elements/H3";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { MediaLibrary } from "@/app/types/MediaLibrary";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Spinner } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
-import { validateData } from "@/app/libs/files/validateData";
-import { createFilename } from "@/app/libs/files/createFilename";
+import FileSelectionBox from "../overlay/FileSelectionBox";
 import FileCopyStatus from "../FileCopyStatus";
-
-function sortFiles(
-  files: MediaFile[],
-  libraries: MediaLibrary[],
-  binned: boolean = false,
-): SortedMedia {
-  const names: string[] = libraries
-    .map((library) => library.name)
-    .filter((name) => typeof name === "string");
-
-  const sorted: SortedMedia = {};
-
-  names.forEach((name) => {
-    const content = files
-      .filter(
-        (file) =>
-          (file.isIgnored ?? false) === binned && file.library.name === name,
-      )
-      .sort(sortMediaFiles);
-
-    sorted[name] = content;
-  });
-
-  Object.entries(sorted).forEach(([key, value]) => {
-    if (value.length === 0) {
-      delete sorted[key];
-    }
-  });
-
-  return sorted;
-}
+import { validateData } from "@/app/libs/files/validateData";
+import { sortFilesByLibrary } from "@/app/libs/files/sortFilesByLibrary";
+import { useFileTransferWebSocket } from "@/app/hooks/useFileTransferWebSocket";
+import MediaListEmpty from "./MediaListEmpty";
+import MediaListAccordion from "./MediaListAccordion";
 
 export default function MediaList({
   files = [],
@@ -64,55 +20,39 @@ export default function MediaList({
   files: MediaFile[];
   libraries: MediaLibrary[];
 }) {
-  const [showBin, setShowBin] = useState<boolean>(true);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isProgressBarOpen, setIsProgressBarOpen] = useState<boolean>(false);
+  const [showBin, setShowBin] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<
     Set<string | number> | "all"
   >("all");
-
-  // Store validatedFiles in state so it can be updated for selection
   const [validatedFiles, setValidatedFiles] = useState<MediaFile[]>([]);
 
-  // Compute selectedFiles from validatedFiles
   const selectedFiles = useMemo(
     () => validatedFiles.filter((file) => file.isSelected),
     [validatedFiles],
   );
   const sortedFiles = useMemo(
-    () => sortFiles(validatedFiles, libraries),
+    () => sortFilesByLibrary(validatedFiles, libraries),
     [validatedFiles, libraries],
   );
   const binnedFiles = useMemo(
-    () => sortFiles(validatedFiles, libraries, true),
+    () => sortFilesByLibrary(validatedFiles, libraries, true),
     [validatedFiles, libraries],
   );
 
-  const [isTransferInProgress, setIsTransferInProgress] = useState(false);
-  const [transferStatus, setTransferStatus] = useState<{
-    currentFile: string;
-    processedFiles: number;
-    totalFiles: number;
-  } | null>(null);
   const [isFilesLoading, setIsFilesLoading] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const wsCleanupRef = useRef<(() => void) | null>(null);
 
   const fetchFiles = useCallback(async () => {
     setIsFilesLoading(true);
     try {
       const response = await fetch("/api/files", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
-
       if (!response.ok) {
         console.error("Failed to fetch files");
         return;
       }
-
       const data = await response.json();
       setValidatedFiles(
         data.files.map((file: MediaFile) => ({
@@ -126,96 +66,11 @@ export default function MediaList({
     }
   }, []);
 
-  useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
-    if (!wsUrl) {
-      console.error("NEXT_PUBLIC_SOCKET_SERVER_URL is not set");
-      return;
-    }
-
-    function connect() {
-      wsCleanupRef.current?.();
-      const ws = new window.WebSocket(wsUrl!);
-      wsRef.current = ws;
-
-      const onMessage = async (e: MessageEvent) => {
-        try {
-          const json = typeof e.data === "string" ? e.data : await e.data.text();
-          const data = JSON.parse(json);
-          if (data.isCompleted || data.error) {
-            setTimeout(async () => {
-              setIsProgressBarOpen(false);
-              setIsTransferInProgress(false);
-              setTransferStatus(null);
-              await fetchFiles();
-            }, 2000);
-
-            if (data.error) {
-              addToast({
-                title: "File transfer failed",
-                description: "There was an issue during file transfer.",
-                severity: "danger",
-              });
-              return;
-            }
-          }
-
-          if (data.totalFiles && data.processedFiles !== undefined) {
-            setTransferStatus({
-              currentFile: data.currentFile,
-              processedFiles: data.processedFiles,
-              totalFiles: data.totalFiles,
-            });
-            setIsTransferInProgress(true);
-            setIsProgressBarOpen(true);
-          }
-        } catch {
-          fetchFiles();
-        }
-      };
-
-      const onClose = () => {
-        setIsTransferInProgress((prev) => {
-          if (prev) {
-            setIsProgressBarOpen(false);
-            setTransferStatus(null);
-            fetchFiles();
-            return false;
-          }
-          return prev;
-        });
-      };
-
-      ws.addEventListener("message", onMessage);
-      ws.addEventListener("close", onClose);
-
-      const cleanup = () => {
-        ws.removeEventListener("message", onMessage);
-        ws.removeEventListener("close", onClose);
-        ws.close();
-        wsRef.current = null;
-      };
-      wsCleanupRef.current = cleanup;
-    }
-
-    connect();
-
-    const onVisibilityChange = () => {
-      if (
-        document.visibilityState === "visible" &&
-        (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN)
-      ) {
-        connect();
-      }
-    };
-
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      wsCleanupRef.current?.();
-    };
-  }, [fetchFiles]);
+  const {
+    isTransferInProgress,
+    transferStatus,
+    isProgressBarOpen,
+  } = useFileTransferWebSocket(fetchFiles);
 
   useEffect(() => {
     setValidatedFiles(
@@ -230,7 +85,6 @@ export default function MediaList({
   useEffect(() => {
     const availableKeys = Object.keys(sortedFiles);
     if (availableKeys.length === 0) return;
-
     setSelectedKeys((prev) => {
       const keysToKeep: (string | number)[] =
         prev === "all" ? availableKeys : Array.from(prev);
@@ -240,96 +94,22 @@ export default function MediaList({
     });
   }, [sortedFiles]);
 
-  function createShowsNodes(files: MediaFile[]) {
-    const uniqueTitles = new Set<string>();
-
-    files.forEach((file) => uniqueTitles.add(file.mediaInfo.title || ""));
-
-    return Array.from(uniqueTitles).map((title, index) => {
-      const showFiles = files.filter((file) => file.mediaInfo.title === title);
-      const itemKey = title || `untitled-${index}`;
-
-      return (
-        <AccordionItem
-          key={itemKey}
-          textValue={title}
-          classNames={{ titleWrapper: "overflow-hidden" }}
-          title={
-            <MediaCheckbox
-              files={showFiles}
-              label={title}
-              isSelected={showFiles.every((file) => file.isSelected)}
-              isIndeterminate={showFiles.some((file) => file.isSelected)}
-              onSelect={handleSelect}
-            />
-          }
-        >
-          <MediaShow files={showFiles} handleSelect={handleSelect} />
-        </AccordionItem>
-      );
-    });
-  }
-
-  function createMoviesNodes(files: MediaFile[]) {
-    return files.map((file) => {
-      const title = file.mediaInfo.title || "Not set";
-      const label = createFilename(file.mediaInfo);
-
-      return (
-        <AccordionItem
-          key={file.id || file.path || label}
-          textValue={title}
-          classNames={{ titleWrapper: "overflow-hidden" }}
-          title={
-            <MediaCheckbox
-              files={file}
-              label={label}
-              isSelected={file.isSelected}
-              onSelect={handleSelect}
-            />
-          }
-        >
-          <SingleMedia file={file} />
-        </AccordionItem>
-      );
-    });
-  }
-
-  function renderNode(files: MediaFile[] = []) {
-    const type = files[0]?.library.type ?? null;
-    if (type === "show") {
-      const showsKey = [...new Set(files.map((f) => f.mediaInfo.title ?? ""))]
-        .sort()
-        .join(",");
-      return (
-        <Accordion isCompact key={showsKey}>
-          {createShowsNodes(files)}
-        </Accordion>
-      );
-    } else if (type === "movie")
-      return <Accordion isCompact>{createMoviesNodes(files)}</Accordion>;
-    else return <div className="text-center">Empty</div>;
-  }
-
   function handleSelect(
-    e: ChangeEvent<HTMLInputElement>,
+    selected: boolean,
     updatedFiles: MediaFile | MediaFile[],
   ) {
-    const selected = e.currentTarget.checked;
-    setValidatedFiles((prev) => {
-      return prev.map((file) => {
+    setValidatedFiles((prev) =>
+      prev.map((file) => {
         if (Array.isArray(updatedFiles)) {
           if (updatedFiles.some((f) => f.id === file.id)) {
             return { ...file, isSelected: selected };
           }
-        } else {
-          if (file.id === updatedFiles.id) {
-            return { ...file, isSelected: selected };
-          }
+        } else if (file.id === updatedFiles.id) {
+          return { ...file, isSelected: selected };
         }
         return file;
-      });
-    });
+      }),
+    );
   }
 
   function handleSelectionChange(keys: "all" | Set<string | number>) {
@@ -412,8 +192,7 @@ export default function MediaList({
         const newMediaInfo = { ...file.mediaInfo };
         if (form.title) newMediaInfo.title = form.title.trim();
         if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
-        else if (!isNaN(form.season as number))
-          newMediaInfo.season = form.season;
+        else if (!isNaN(form.season as number)) newMediaInfo.season = form.season;
         if (!form.isEpisodeEnabled) newMediaInfo.episode = undefined;
         else if (!isNaN(form.episode as number))
           newMediaInfo.episode = (form.episode as number) + counter;
@@ -432,14 +211,17 @@ export default function MediaList({
 
         if (form.incrementEpisodes) counter += 1;
 
-        const updated = {
+        return {
           ...file,
           mediaInfo: newMediaInfo,
           library: newLibrary,
-          errors: validateData({ ...file, mediaInfo: newMediaInfo, library: newLibrary }),
+          errors: validateData({
+            ...file,
+            mediaInfo: newMediaInfo,
+            library: newLibrary,
+          }),
           isSelected: false,
         };
-        return updated;
       }),
     );
     setIsModalOpen(false);
@@ -464,112 +246,61 @@ export default function MediaList({
     try {
       const response = await fetch("/api/save", {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify(updatedFiles),
       });
-
       const data = await response.json();
-      if (data.ok) {
-        console.log("File job started");
-      }
+      if (data.ok) console.log("File job started");
     } catch (error) {
       console.error(error);
     }
   }
 
-  if (validatedFiles.length > 0) {
-    return (
-      <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
-        {isFilesLoading && (
-          <div className="flex items-center gap-2 text-sm text-stone-600">
-            <Spinner size="sm" />
-            <span>Refreshing list…</span>
-          </div>
-        )}
-        <div className="h-full overflow-hidden">
-          <Accordion
-            className="flex-col h-full overflow-y-auto overflow-x-hidden px-1 py-3"
-            onSelectionChange={handleSelectionChange}
-            selectedKeys={selectedKeys}
-            selectionMode="multiple"
-          >
-            {[
-              ...Object.entries(sortedFiles).map(([key, files]) => (
-                <AccordionItem
-                  key={key || "not-set"}
-                  textValue={key || "Not set"}
-                  classNames={{ titleWrapper: "overflow-hidden" }}
-                  title={<H2 className="text-left">{key || "Not set"}</H2>}
-                >
-                  {renderNode(files)}
-                </AccordionItem>
-              )),
-              <AccordionItem
-                key={"bin"}
-                textValue="Recycle bin"
-                indicator={<FontAwesomeIcon icon={faTrash} size="2x" />}
-                disableIndicatorAnimation
-              >
-                <Accordion isCompact>
-                  {Object.entries(binnedFiles).map(([key, files]) => (
-                    <AccordionItem
-                      classNames={{ titleWrapper: "overflow-hidden" }}
-                      key={key || "not-set"}
-                      textValue={key || "Not set"}
-                      title={<H3 className="text-left">{key || "Not set"}</H3>}
-                    >
-                      {renderNode(files)}
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </AccordionItem>,
-            ]}
-          </Accordion>
-        </div>
-
-        <FileSelectionBox
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onRestore={handleRestore}
-          onSave={handleSave}
-          disabled={selectedFiles.length === 0 || isTransferInProgress}
-          saveInProgress={isProgressBarOpen}
-          showBin={showBin}
-        />
-
-        <MediaEditForm
-          files={selectedFiles}
-          libraries={libraries}
-          isOpen={isModalOpen}
-          onClose={handleClose}
-          onSaveMediaInfo={handleSaveMediaInfo}
-        />
-
-        <FileCopyStatus
-          isOpen={isProgressBarOpen}
-          currentFile={transferStatus?.currentFile}
-          processedFiles={transferStatus?.processedFiles}
-          totalFiles={transferStatus?.totalFiles}
-        />
-      </div>
-    );
+  if (validatedFiles.length === 0) {
+    return <MediaListEmpty isLoading={isFilesLoading} />;
   }
 
   return (
-    <div className="w-full h-full flex flex-col justify-center items-center gap-3">
+    <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
       {isFilesLoading ? (
-        <>
-          <Spinner size="lg" />
-          <p>Loading files…</p>
-        </>
+        <div className="flex items-center gap-2 text-sm text-stone-600">
+          <Spinner size="sm" />
+          <span>Refreshing list…</span>
+        </div>
       ) : (
-        <>
-          <H2>Nothing to show</H2>
-          <p>Add some content and come back later.</p>
-        </>
+        <MediaListAccordion
+          sortedFiles={sortedFiles}
+          binnedFiles={binnedFiles}
+          selectedKeys={selectedKeys}
+          onSelectionChange={handleSelectionChange}
+          onSelect={handleSelect}
+        />
       )}
+
+      <FileSelectionBox
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onRestore={handleRestore}
+        onSave={handleSave}
+        disabled={selectedFiles.length === 0 || isTransferInProgress}
+        saveInProgress={isProgressBarOpen}
+        showBin={showBin}
+      />
+
+      <MediaEditForm
+        files={selectedFiles}
+        libraries={libraries}
+        isOpen={isModalOpen}
+        onClose={handleClose}
+        onSaveMediaInfo={handleSaveMediaInfo}
+      />
+
+      <FileCopyStatus
+        isOpen={isProgressBarOpen}
+        currentFile={transferStatus?.currentFile}
+        processedFiles={transferStatus?.processedFiles}
+        totalFiles={transferStatus?.totalFiles}
+      />
     </div>
   );
 }

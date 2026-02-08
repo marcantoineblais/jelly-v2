@@ -1,7 +1,7 @@
 "use client";
 
 import { MediaFile } from "@/app/types/MediaFile";
-import { ChangeEvent, useMemo } from "react";
+import { useMemo } from "react";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { formatNumber } from "@/app/libs/files/formatNumber";
 import MediaCheckbox from "./MediaCheckbox";
@@ -12,12 +12,9 @@ export default function MediaShow({
   handleSelect = () => {},
 }: {
   files?: MediaFile[];
-  handleSelect?: (
-    e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[],
-  ) => void;
+  handleSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }) {
-  // Use useMemo for derived data, but render JSX directly in return
+  
   const uniqueSeasons = useMemo(() => {
     const set = new Set<number | null | undefined>();
     files.forEach((file) => {
@@ -26,8 +23,13 @@ export default function MediaShow({
     return Array.from(set);
   }, [files]);
 
+  const accordionKey = useMemo(
+    () => `show-${files.map((f) => f.id).sort((a, b) => a - b).join(",")}`,
+    [files],
+  );
+
   return (
-    <Accordion isCompact>
+    <Accordion key={accordionKey} isCompact>
       {uniqueSeasons.map((season) => {
         const formattedSeason =
           season != null ? formatNumber(season) : undefined;

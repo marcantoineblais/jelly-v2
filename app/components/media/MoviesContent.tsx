@@ -2,38 +2,38 @@
 
 import { MediaFile } from "@/app/types/MediaFile";
 import { Accordion, AccordionItem } from "@heroui/react";
-import { useMemo } from "react";
+import { createFilename } from "@/app/libs/files/createFilename";
 import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
-import { createFilename } from "@/app/libs/files/createFilename";
 
-export default function MediaSeason({
-  files = [],
-  handleSelect = () => {},
-}: {
-  files?: MediaFile[];
-  handleSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
-}) {
-  const accordionKey = useMemo(
-    () => `season-${files.map((f) => f.id).sort((a, b) => a - b).join(",")}`,
-    [files],
-  );
+interface MoviesContentProps {
+  sectionKey: string;
+  files: MediaFile[];
+  onSelect: (selected: boolean, updatedFiles: MediaFile | MediaFile[]) => void;
+}
 
+export default function MoviesContent({
+  sectionKey,
+  files,
+  onSelect,
+}: MoviesContentProps) {
   return (
-    <Accordion key={accordionKey} isCompact>
+    <Accordion key={sectionKey} isCompact>
       {files.map((file) => {
-        const label = createFilename(file.mediaInfo) ?? "Not set";
+        const title = file.mediaInfo.title || "Not set";
+        const label = createFilename(file.mediaInfo);
+
         return (
           <AccordionItem
-            key={file.id}
-            textValue={label}
+            key={file.id || file.path || label}
+            textValue={title}
             classNames={{ titleWrapper: "overflow-hidden" }}
             title={
               <MediaCheckbox
                 files={file}
                 label={label}
                 isSelected={file.isSelected}
-                onSelect={handleSelect}
+                onSelect={onSelect}
               />
             }
           >

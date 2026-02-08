@@ -15,13 +15,10 @@ export default function MediaCheckbox({
   label?: string;
   isSelected?: boolean;
   isIndeterminate?: boolean;
-  onSelect?: (
-    e: ChangeEvent<HTMLInputElement>,
-    files: MediaFile | MediaFile[],
-  ) => void;
+  onSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }) {
-  function handleSelect(e: ChangeEvent<HTMLInputElement>) {
-    onSelect(e, files);
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    onSelect(e.target.checked, files);
   }
 
   const hasError = useMemo(() => {
@@ -33,11 +30,13 @@ export default function MediaCheckbox({
   }, [files]);
 
   return (
-    <div className="flex gap-3 items-center">
+    <div
+      className="flex gap-3 items-center"
+    >
       <Checkbox
         isSelected={isSelected}
         isIndeterminate={isIndeterminate && !isSelected}
-        onChange={handleSelect}
+        onChange={handleChange}
         classNames={{ wrapper: "after:bg-emerald-700" }}
       />
       <div

@@ -9,26 +9,31 @@ export default function SingleMedia({
 }: {
   file: MediaFile | null;
 }) {
-  const lines = useMemo(() => {
-    if (!file) return null;
-    const filename = createFilename(file.mediaInfo) || "No title";
-    const info = file.mediaInfo ?? {};
-    const season = info.season ? `${formatNumber(info.season)}` : "None";
-    const episode = info.episode ? `${formatNumber(info.episode)}` : "None";
-    const year = info.year ? info.year.toString() : "None";
-    const type = file.library.type ? file.library.type : "No type";
-    return [
-      { label: "File path", content: file.path },
-      { label: "Original file name", content: file.name },
-      { label: "Title", content: filename },
-      { label: "Season", content: season },
-      { label: "Episode", content: episode },
-      { label: "Year", content: year },
-      { label: "Media type", content: type },
-    ].map(({ label, content }) => (
-      <MediaInfoLine key={label} label={label} content={content} />
-    ));
-  }, [file]);
+  if (!file) return null;
 
-  return <ul>{lines}</ul>;
+  const filename = createFilename(file.mediaInfo) || "No title";
+  const info = file.mediaInfo ?? {};
+  const season = info.season ? `${formatNumber(info.season)}` : "None";
+  const episode = info.episode ? `${formatNumber(info.episode)}` : "None";
+  const year = info.year ? info.year.toString() : "None";
+  const type = file.library.type ? file.library.type : "No type";
+  const elements = [
+    { label: "File path", content: file.path },
+    { label: "Original file name", content: file.name },
+    { label: "Title", content: filename },
+    { label: "Season", content: season },
+    { label: "Episode", content: episode },
+    { label: "Year", content: year },
+    { label: "Media type", content: type },
+  ]
+  
+  return (
+    <ul>
+      {
+        elements.map(({ label, content }) => (
+          <MediaInfoLine key={label} label={label} content={content} />
+        ))
+      }
+    </ul>
+  )
 }
