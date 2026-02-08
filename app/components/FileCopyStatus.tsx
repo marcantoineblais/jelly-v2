@@ -58,9 +58,13 @@ export default function FileCopyStatus({
   }
 
   function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes}B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+    const ref = currentFileSize ?? bytes;
+
+    if (ref < 1024) return `${bytes}B`;
+    if (ref < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    if (ref < 1024 * 1024 * 1024)
+      return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
   }
 
   return (
@@ -74,8 +78,8 @@ export default function FileCopyStatus({
         <ModalHeader>{getHeader()}</ModalHeader>
 
         <ModalBody>
-          <div className="w-full pb-12 overflow-hidden">
-            <div className="w-full max-w-full text-nowrap text-ellipsis overflow-hidden">
+          <div className="w-full max-w-full pb-12 overflow-hidden">
+            <div className="w-full text-nowrap text-ellipsis overflow-hidden">
               {currentFile || "Copying"}
             </div>
 
