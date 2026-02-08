@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Spinner } from "@heroui/react";
@@ -28,7 +29,17 @@ export default function MediaList({
 }) {
   const [showBin, setShowBin] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [validatedFiles, setValidatedFiles] = useState<MediaFile[]>([]);
+  const [isFilesLoading, setIsFilesLoading] = useState(false);
+  const [validatedFiles, setValidatedFiles] = useState<MediaFile[]>(
+    files.map((file) => ({
+      ...file,
+      errors: validateData(file),
+      isSelected: false,
+    })),
+  );
+  const [selectedKeys, setSelectedKeys] = useState<
+    Set<string | number> | "all"
+  >(new Set());
 
   const selectedFiles = useMemo(
     () => validatedFiles.filter((file) => file.isSelected),
@@ -43,11 +54,7 @@ export default function MediaList({
     [validatedFiles, libraries],
   );
 
-  const [selectedKeys, setSelectedKeys] = useState<
-    Set<string | number> | "all"
-  >(new Set([...Object.keys(sortedFiles)]));
-
-  const [isFilesLoading, setIsFilesLoading] = useState(false);
+  const availableKeysRef = useRef<string[]>([]);
 
   const fetchFiles = useCallback(async () => {
     setIsFilesLoading(true);
@@ -77,16 +84,6 @@ export default function MediaList({
     useFileTransferWebSocket(fetchFiles);
 
   useEffect(() => {
-    setValidatedFiles(
-      files.map((file) => ({
-        ...file,
-        errors: validateData(file),
-        isSelected: false,
-      })),
-    );
-  }, [files]);
-
-  useEffect(() => {
     const availableKeys = [...Object.keys(sortedFiles), "bin"];
     if (availableKeys.length === 0) return;
 
@@ -99,6 +96,18 @@ export default function MediaList({
       });
     });
   }, [sortedFiles]);
+
+  useEffect(() => {
+    if (!showBin) return;
+    const currentKeys = Object.keys(sortedFiles);
+    const newKeys = currentKeys.filter(
+      (key) => !availableKeysRef.current.includes(key),
+    );
+    availableKeysRef.current = currentKeys;
+    if (newKeys.length > 0) {
+      setSelectedKeys((prev) => new Set([...prev, ...newKeys]));
+    }
+  }, [sortedFiles, showBin]);
 
   function handleSelect(
     selected: boolean,
