@@ -74,11 +74,11 @@ export default function FileCopyStatus({
       hideCloseButton
       isDismissable={false}
     >
-      <ModalContent>
+      <ModalContent  className="overflow-hidden">
         <ModalHeader>{getHeader()}</ModalHeader>
 
-        <ModalBody>
-          <div className="w-full max-w-full pb-12 overflow-hidden">
+        <ModalBody className="overflow-hidden">
+          <div className="w-full pb-12 overflow-hidden">
             <div className="w-full text-nowrap text-ellipsis overflow-hidden">
               {currentFile || "Copying"}
             </div>
