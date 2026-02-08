@@ -7,10 +7,11 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import H2 from "../elements/H2";
-import { Accordion, AccordionItem, Spinner } from "@heroui/react";
+import { Accordion, AccordionItem, addToast, Spinner } from "@heroui/react";
 import MediaShow from "./MediaShow";
 import sortMediaFiles from "@/app/libs/files/sortMediaFiles";
 import MediaCheckbox from "./MediaCheckbox";
@@ -94,6 +95,8 @@ export default function MediaList({
     totalFiles: number;
   } | null>(null);
   const [isFilesLoading, setIsFilesLoading] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const wsCleanupRef = useRef<(() => void) | null>(null);
 
   const fetchFiles = useCallback(async () => {
     setIsFilesLoading(true);
@@ -129,54 +132,88 @@ export default function MediaList({
       console.error("NEXT_PUBLIC_SOCKET_SERVER_URL is not set");
       return;
     }
-    const ws = new window.WebSocket(wsUrl);
 
-    ws.addEventListener("message", async (e) => {
-      try {
-        const json = typeof e.data === "string" ? e.data : await e.data.text();
-        const data = JSON.parse(json);
-        if (data.isCompleted || data.error) {
-          setTimeout(async () => {
-            setIsProgressBarOpen(false);
-            setIsTransferInProgress(false);
-            setTransferStatus(null);
-            await fetchFiles();
-          }, 2000);
+    function connect() {
+      wsCleanupRef.current?.();
+      const ws = new window.WebSocket(wsUrl!);
+      wsRef.current = ws;
 
-          if (data.error) {
-            alert("There was an issue during file transfer");
-            return;
+      const onMessage = async (e: MessageEvent) => {
+        try {
+          const json = typeof e.data === "string" ? e.data : await e.data.text();
+          const data = JSON.parse(json);
+          if (data.isCompleted || data.error) {
+            setTimeout(async () => {
+              setIsProgressBarOpen(false);
+              setIsTransferInProgress(false);
+              setTransferStatus(null);
+              await fetchFiles();
+            }, 2000);
+
+            if (data.error) {
+              addToast({
+                title: "File transfer failed",
+                description: "There was an issue during file transfer.",
+                severity: "danger",
+              });
+              return;
+            }
           }
-        }
 
-        if (data.totalFiles && data.processedFiles !== undefined) {
-          setTransferStatus({
-            currentFile: data.currentFile,
-            processedFiles: data.processedFiles,
-            totalFiles: data.totalFiles,
-          });
-          setIsTransferInProgress(true);
-          setIsProgressBarOpen(true);
-        }
-      } catch {
-        fetchFiles();
-      }
-    });
-
-    ws.addEventListener("close", () => {
-      setIsTransferInProgress((prev) => {
-        if (prev) {
-          setIsProgressBarOpen(false);
-          setTransferStatus(null);
+          if (data.totalFiles && data.processedFiles !== undefined) {
+            setTransferStatus({
+              currentFile: data.currentFile,
+              processedFiles: data.processedFiles,
+              totalFiles: data.totalFiles,
+            });
+            setIsTransferInProgress(true);
+            setIsProgressBarOpen(true);
+          }
+        } catch {
           fetchFiles();
-          return false;
         }
-        return prev;
-      });
-    });
+      };
+
+      const onClose = () => {
+        setIsTransferInProgress((prev) => {
+          if (prev) {
+            setIsProgressBarOpen(false);
+            setTransferStatus(null);
+            fetchFiles();
+            return false;
+          }
+          return prev;
+        });
+      };
+
+      ws.addEventListener("message", onMessage);
+      ws.addEventListener("close", onClose);
+
+      const cleanup = () => {
+        ws.removeEventListener("message", onMessage);
+        ws.removeEventListener("close", onClose);
+        ws.close();
+        wsRef.current = null;
+      };
+      wsCleanupRef.current = cleanup;
+    }
+
+    connect();
+
+    const onVisibilityChange = () => {
+      if (
+        document.visibilityState === "visible" &&
+        (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN)
+      ) {
+        connect();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      ws.close();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      wsCleanupRef.current?.();
     };
   }, [fetchFiles]);
 

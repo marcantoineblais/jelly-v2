@@ -1,6 +1,7 @@
 import { MediaInfo } from "@/app/types/MediaInfo";
 
-const nonCapitalizedWords = [
+const MIN_TITLE_LENGTH = 4;
+const NON_CAPITALIZED_WORDS = [
   "a",
   "an",
   "the",
@@ -23,7 +24,7 @@ const nonCapitalizedWords = [
 function capitalize(str = "") {
   const words = str.split(/(\s|\-)/);
   const capitalizedList = words.map((word, i) => {
-    if (i === 0 || !nonCapitalizedWords.includes(word)) {
+    if (i === 0 || !NON_CAPITALIZED_WORDS.includes(word)) {
       const firstLetter = word.slice(0, 1).toUpperCase();
       const restOfWord = word.slice(1).toLowerCase();
       return firstLetter + restOfWord;
@@ -35,10 +36,20 @@ function capitalize(str = "") {
   return capitalizedList.join("");
 }
 
-export function extractInfo(filename: string = ""): MediaInfo {
-  filename = filename.replaceAll(/[_\.]/g, " "); // replace spacing symbols with actual space
+export function extractInfo(
+  filename: string = "",
+  parentName: string = "",
+): MediaInfo {
+  filename = filename.replaceAll(/[_\.\,]/g, " "); // replace spacing symbols with actual space
 
-  const title = extractTitle(filename);
+  let title = extractTitle(filename);
+
+  // When title from filename is very short, it was likely in the parent folder name
+  if (title.length < MIN_TITLE_LENGTH && parentName) {
+    parentName = parentName.replaceAll(/[_\.\,]/g, " ").trim();
+    title = extractTitle(parentName);
+  }
+
   const year = extractYear(filename);
   const [season, episode] = extractSeries(filename);
 

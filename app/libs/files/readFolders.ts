@@ -27,7 +27,8 @@ export function readFolders(
   });
 
   files.forEach((file) => {
-    file.mediaInfo = extractInfo(file.name);
+    const parentName = path.basename(path.dirname(file.path));
+    file.mediaInfo = extractInfo(file.name, parentName);
     file.library = assignDefaultLibrary(file, librariesData, libraries);
   });
 
