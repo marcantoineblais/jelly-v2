@@ -75,15 +75,16 @@ export default function FileCopyStatus({
 
         <ModalBody>
           <div className="w-full pb-12">
-            <div className="w-full flex justify-between items-center gap-4">
-              <span>{currentFile || "Copying"}</span>
-              <span>{getLabel()}</span>
+            <div className="w-full max-w-full text-ellipsis">
+              {currentFile || "Copying"}
             </div>
 
             <Progress
               value={getProgressPercent()}
               classNames={{ indicator: "bg-emerald-700" }}
             />
+            
+            <div className="w-full flex justify-center">{getLabel()}</div>
           </div>
         </ModalBody>
       </ModalContent>
