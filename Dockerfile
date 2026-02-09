@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 # so the build succeeds. Run `npm install` locally and commit to re-enable npm ci.
 RUN npm install
 
-COPY . .
+COPY stack.env ./.env
 RUN mkdir -p public
 RUN set -a && [ -f .env ] && . ./.env && set +a && npm run build
 RUN npm prune --omit=dev
