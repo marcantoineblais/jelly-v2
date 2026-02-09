@@ -6,9 +6,9 @@ COPY package.json package-lock.json ./
 # so the build succeeds. Run `npm install` locally and commit to re-enable npm ci.
 RUN npm install
 
-COPY stack.env ./.env
+COPY . .
 RUN mkdir -p public
-RUN set -a && [ -f .env ] && . ./.env && set +a && npm run build
+RUN npm run build
 RUN npm prune --omit=dev
 
 FROM node:20-bookworm-slim AS runner
@@ -24,6 +24,8 @@ COPY --from=builder /app/app ./app
 COPY --from=builder /app/next.config.mjs ./
 COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
+
+COPY stack.env ./.env
 
 # Next.js config loader may require 'typescript' at runtime; ensure it's present
 RUN npm install typescript --no-save
