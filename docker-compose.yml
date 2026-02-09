@@ -33,7 +33,7 @@ services:
     ports:
       - "${FILE_SERVER_PORT:-4002}:${FILE_SERVER_PORT:-4002}"
     volumes:
-      - ./config.json:/app/config.json:ro
+      - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
       - /mnt/downloads:/mnt/downloads
       - /mnt/encodes:/mnt/encodes
