@@ -14,21 +14,16 @@ RUN npm prune --omit=dev
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY package.json package-lock.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
+# Standalone output is self-contained; no npm ci needed
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/app ./app
-COPY --from=builder /app/next.config.mjs ./
+
 COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
 
-COPY stack.env .
+# Env file for runtime (SERVER_URL, DOMAIN_NAME, etc.)
+COPY stack.env .env
 
-# Next.js config loader may require 'typescript' at runtime; ensure it's present
-RUN npm install typescript --no-save
-
-# docker-compose overrides CMD per service
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
