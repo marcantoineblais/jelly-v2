@@ -25,7 +25,7 @@ COPY --from=builder /app/next.config.mjs ./
 COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
 
-COPY stack.env ./.env
+COPY stack.env .
 
 # Next.js config loader may require 'typescript' at runtime; ensure it's present
 RUN npm install typescript --no-save
