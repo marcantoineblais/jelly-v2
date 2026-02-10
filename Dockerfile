@@ -1,6 +1,11 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
+ARG NEXT_PUBLIC_SOCKET_SERVER_URL
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_SOCKET_SERVER_URL=${NEXT_PUBLIC_SOCKET_SERVER_URL}
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+
 COPY package.json package-lock.json ./
 # npm ci fails when package-lock.json doesn't match package.json. Use npm install
 # so the build succeeds. Run `npm install` locally and commit to re-enable npm ci.
@@ -25,6 +30,6 @@ COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
 
-COPY stack.env .
+COPY stack.env .env
 
 CMD ["npm", "start"]
