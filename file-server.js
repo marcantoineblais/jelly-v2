@@ -12,6 +12,7 @@ const fsSync = require("fs");
 const path = require("path");
 
 const PROGRESS_THROTTLE_MS = 150;
+let isTransferActive = false;
 
 function sendProgress(ws, payload) {
   try {
@@ -149,19 +150,21 @@ async function processFilesJob(files, ws) {
     const basepath = file.library.path;
     const type = file.library.type;
     const season = file.mediaInfo?.season;
-    const title = file.mediaInfo?.title;
+    const year = file.mediaInfo?.year;
+    let folderName = file.mediaInfo?.title;
+    if (year && folderName) folderName = `${folderName} (${year})`;
 
-    if (filename && basepath && title) {
+    if (filename && basepath && folderName) {
       let updatedPath = "";
       if (type === "show") {
         updatedPath = path.join(
           basepath,
-          title,
+          folderName,
           season ? `Season ${formatNumber(season)}` : "Specials",
           filename + file.ext,
         );
       } else {
-        updatedPath = path.join(basepath, filename + file.ext);
+        updatedPath = path.join(basepath, folderName, filename + file.ext);
       }
 
       await copyFileWithProgress(file, updatedPath, errors, ws, {
@@ -183,23 +186,46 @@ async function processFilesJob(files, ws) {
 }
 
 app.post("/process-files", async (req, res) => {
+  if (isTransferActive) {
+    return res
+      .status(409)
+      .json({ error: "A file transfer is already in progress" });
+  }
+
   const files = req.body.files;
   if (!Array.isArray(files)) {
     return res.status(400).json({ error: "Invalid files array" });
   }
-  const socketUrl = process.env.SOCKET_SERVER_WS_URL;
+
+  const socketUrl = process.env.SOCKET_SERVER_URL;
   if (!socketUrl) {
     return res.status(500).json({ error: "SOCKET_SERVER_WS_URL is not set" });
   }
-  const ws = new WebSocket(socketUrl.replace(/\/$/, ""));
-  await new Promise((resolve, reject) => {
-    ws.on("open", resolve);
-    ws.on("error", reject);
-  });
 
-  await processFilesJob(files, ws);
-  ws.close();
-  res.json({ ok: true });
+  isTransferActive = true;
+  let ws;
+
+  try {
+    ws = new WebSocket(socketUrl.replace(/\/$/, ""));
+    await new Promise((resolve, reject) => {
+      ws.on("open", resolve);
+      ws.on("error", reject);
+    });
+
+    await processFilesJob(files, ws);
+    ws.close();
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Error during file transfer", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Error processing files" });
+    }
+  } finally {
+    isTransferActive = false;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
+  }
 });
 
 const port = parseInt(process.env.FILE_SERVER_PORT || "3002", 10);

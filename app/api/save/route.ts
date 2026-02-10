@@ -23,11 +23,38 @@ export async function POST(request: NextRequest) {
     });
 
     if (!res.ok) {
-      const data = await res.json();
-      return NextResponse.json({
-        ok: false,
-        error: data.error || "Failed to submit job",
-      });
+      let message = "Failed to submit job";
+      try {
+        const data = await res.json();
+        if (data && typeof data === "object" && "error" in data) {
+          message =
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (data as any).error || message;
+        }
+      } catch {
+        // ignore JSON parse errors and fall back to default message
+      }
+
+      if (res.status === 409) {
+        // File server is busy with an active transfer
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              message ||
+              "File server is busy. Please wait for the current transfer to finish.",
+          },
+          { status: 409 },
+        );
+      }
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: message,
+        },
+        { status: res.status || 500 },
+      );
     }
   } catch (error) {
     console.log("Encounted error while processing files:", error);
@@ -40,7 +67,7 @@ export async function POST(request: NextRequest) {
     ) {
       message = (error as { message: string }).message;
     }
-    return NextResponse.json({ ok: false, error: message });
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

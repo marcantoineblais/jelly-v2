@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Spinner } from "@heroui/react";
+import { Spinner, addToast } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
 import FileSelectionBox from "../modals/FileSelectionBox";
 import FileCopyStatus from "../modals/FileCopyStatus";
@@ -248,7 +248,14 @@ export default function MediaList({
   }
 
   async function handleSave() {
-    if (isTransferInProgress) return;
+    if (isTransferInProgress) {
+      addToast({
+        title: "Transfer already in progress",
+        description: "Please wait for the current transfer to finish.",
+        color: "warning",
+      });
+      return;
+    }
 
     const updatedFiles = validatedFiles.filter((file) => !file.isIgnored);
     const filesWithErrors = updatedFiles.map((file) => ({
@@ -269,10 +276,29 @@ export default function MediaList({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(updatedFiles),
       });
-      const data = await response.json();
-      if (data.ok) console.log("File job started");
+      const data = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok) {
+        addToast({
+          title: "Failed to start transfer",
+          description:
+            data.error ||
+            "The file server is busy or an error occurred. Please try again.",
+          color: "danger",
+        });
+        return;
+      }
     } catch (error) {
       console.error(error);
+      addToast({
+        title: "Unexpected error",
+        description:
+          error instanceof Error ? error.message : "Something went wrong.",
+        color: "danger",
+      });
     }
   }
 

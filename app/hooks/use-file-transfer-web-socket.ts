@@ -22,7 +22,6 @@ export function useFileTransferWebSocket(
   );
   const [isProgressBarOpen, setIsProgressBarOpen] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const wsCleanupRef = useRef<(() => void) | null>(null);
 
   const fetchFiles = useCallback(async () => {
     if (onFilesRefreshed) await onFilesRefreshed();
@@ -35,15 +34,25 @@ export function useFileTransferWebSocket(
     }
 
     function connect() {
-      wsCleanupRef.current?.();
-      const ws = new window.WebSocket(socketServerUrl!);
+      // Always reset the WebSocket when (re)connecting
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch {
+          // ignore
+        }
+        wsRef.current = null;
+      }
+
+      const ws = new window.WebSocket(socketServerUrl);
       wsRef.current = ws;
 
-      const onMessage = async (e: MessageEvent) => {
+      ws.onmessage = async (e: MessageEvent) => {
         try {
           const json =
             typeof e.data === "string" ? e.data : await e.data.text();
           const data = JSON.parse(json);
+
           if (data.isCompleted || data.error) {
             setTimeout(async () => {
               setIsProgressBarOpen(false);
@@ -78,7 +87,7 @@ export function useFileTransferWebSocket(
         }
       };
 
-      const onClose = () => {
+      ws.onclose = () => {
         setIsTransferInProgress((prev) => {
           if (prev) {
             setIsProgressBarOpen(false);
@@ -89,37 +98,30 @@ export function useFileTransferWebSocket(
           return prev;
         });
       };
-
-      ws.addEventListener("message", onMessage);
-      ws.addEventListener("close", onClose);
-
-      const cleanup = () => {
-        ws.removeEventListener("message", onMessage);
-        ws.removeEventListener("close", onClose);
-        ws.close();
-        wsRef.current = null;
-      };
-      wsCleanupRef.current = cleanup;
     }
 
     connect();
 
-    const onVisibilityChange = () => {
-      if (
-        document.visibilityState === "visible" &&
-        (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN)
-      ) {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
         connect();
       }
     };
 
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      wsCleanupRef.current?.();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch {
+          // ignore
+        }
+        wsRef.current = null;
+      }
     };
-  }, [fetchFiles]);
+  }, [fetchFiles, socketServerUrl]);
 
   return {
     isTransferInProgress,
