@@ -2,6 +2,7 @@
 
 import { addToast } from "@heroui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useConfig } from "./use-config";
 
 export interface TransferStatus {
   currentFile: string;
@@ -14,6 +15,7 @@ export interface TransferStatus {
 export function useFileTransferWebSocket(
   onFilesRefreshed?: () => Promise<void>,
 ) {
+  const { socketServerUrl } = useConfig();
   const [isTransferInProgress, setIsTransferInProgress] = useState(false);
   const [transferStatus, setTransferStatus] = useState<TransferStatus | null>(
     null,
@@ -27,15 +29,14 @@ export function useFileTransferWebSocket(
   }, [onFilesRefreshed]);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
-    if (!wsUrl) {
-      console.error("NEXT_PUBLIC_SOCKET_SERVER_URL is not set");
+    if (!socketServerUrl) {
+      console.error("SOCKET_SERVER_URL is not set");
       return;
     }
 
     function connect() {
       wsCleanupRef.current?.();
-      const ws = new window.WebSocket(wsUrl!);
+      const ws = new window.WebSocket(socketServerUrl!);
       wsRef.current = ws;
 
       const onMessage = async (e: MessageEvent) => {

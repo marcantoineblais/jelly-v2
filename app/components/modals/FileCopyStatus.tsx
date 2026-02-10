@@ -74,7 +74,7 @@ export default function FileCopyStatus({
       hideCloseButton
       isDismissable={false}
     >
-      <ModalContent  className="overflow-hidden">
+      <ModalContent className="overflow-hidden">
         <ModalHeader>{getHeader()}</ModalHeader>
 
         <ModalBody className="overflow-hidden">

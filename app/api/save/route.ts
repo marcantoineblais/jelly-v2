@@ -1,20 +1,21 @@
 export const runtime = "nodejs";
 
+import { FILE_SERVER_URL } from "@/app/config";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const files = await request.json();
 
   try {
-    const fileServerUrl = process.env.FILE_SERVER_URL;
-    const fileServerPath = `${fileServerUrl}/process-files`;
-    if (!fileServerUrl) {
+    if (!FILE_SERVER_URL) {
       console.error("FILE_SERVER_URL is not set");
       return NextResponse.json(
         { ok: false, error: "File server URL not configured" },
         { status: 500 },
       );
     }
+    
+    const fileServerPath = `${FILE_SERVER_URL}/process-files`;
     const res = await fetch(fileServerPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

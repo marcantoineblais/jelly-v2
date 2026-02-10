@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { roboto } from "./fonts";
-import Providers from "./components/Providers";
+import ToastMessagesProvider from "./hooks/use-toast-messages";
+import { APP_URL, FILE_SERVER_URL, SOCKET_SERVER_URL } from "./config";
+import { ConfigProvider } from "./hooks/use-config";
 
 export const metadata: Metadata = {
   title: "Jelly",
@@ -13,10 +15,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const config = {
+    socketServerUrl: SOCKET_SERVER_URL,
+    appUrl: APP_URL,
+    fileServerUrl: FILE_SERVER_URL,
+  };
+
   return (
     <html lang="en">
       <body className={`${roboto.className}`}>
-        <Providers>{children}</Providers>
+        <ConfigProvider config={config}>
+          <ToastMessagesProvider>{children}</ToastMessagesProvider>
+        </ConfigProvider>
       </body>
     </html>
   );
