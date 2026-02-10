@@ -14,7 +14,6 @@ RUN npm prune --omit=dev
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
@@ -24,7 +23,5 @@ COPY --from=builder /app/app ./app
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/file-server.js ./
 COPY --from=builder /app/socket-server.js ./
-
-COPY stack.env .env
 
 CMD ["npm", "start"]
