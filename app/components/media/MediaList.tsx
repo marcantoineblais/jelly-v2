@@ -12,11 +12,11 @@ import {
 } from "react";
 import { Spinner } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
-import FileSelectionBox from "../overlay/FileSelectionBox";
-import FileCopyStatus from "../FileCopyStatus";
+import FileSelectionBox from "../modals/FileSelectionBox";
+import FileCopyStatus from "../modals/FileCopyStatus";
 import { validateData } from "@/app/libs/files/validateData";
 import { sortFilesByLibrary } from "@/app/libs/files/sortFilesByLibrary";
-import { useFileTransferWebSocket } from "@/app/hooks/useFileTransferWebSocket";
+import { useFileTransferWebSocket } from "@/app/hooks/use-file-transfer-web-socket";
 import MediaListEmpty from "./MediaListEmpty";
 import MediaListAccordion from "./MediaListAccordion";
 
