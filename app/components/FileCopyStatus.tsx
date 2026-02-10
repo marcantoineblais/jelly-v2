@@ -78,7 +78,7 @@ export default function FileCopyStatus({
         <ModalHeader>{getHeader()}</ModalHeader>
 
         <ModalBody className="overflow-hidden">
-          <div className="w-full pb-12 overflow-hidden">
+          <div className="w-full pb-8 overflow-hidden">
             <div className="w-full text-nowrap text-ellipsis overflow-hidden">
               {currentFile || "Copying"}
             </div>
