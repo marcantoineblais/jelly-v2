@@ -13,7 +13,7 @@ services:
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
     depends_on:
-      - file-server
+      - jelly-files-server
     restart: unless-stopped
     networks:
       - private
@@ -46,7 +46,7 @@ services:
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
     depends_on:
-      - socket-server
+      - jelly-socket-server
     networks:
       - private
 
