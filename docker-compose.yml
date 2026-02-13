@@ -4,8 +4,6 @@ services:
     image: ${JELLY_IMAGE:-jelly:latest}
     container_name: jelly
     env_file: stack.env
-    ports:
-      - "${PORT:-4000}:${PORT:-4000}"
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
@@ -13,7 +11,7 @@ services:
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
     depends_on:
-      - jelly-files-server
+      - files-server
     restart: unless-stopped
     networks:
       - private
@@ -46,7 +44,7 @@ services:
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
     depends_on:
-      - jelly-socket-server
+      - socket-server
     networks:
       - private
 
