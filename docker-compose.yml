@@ -2,6 +2,7 @@
 services:
   jelly:
     image: ${JELLY_IMAGE:-jelly:latest}
+    container_name: jelly
     env_file: stack.env
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
@@ -17,13 +18,15 @@ services:
 
   socket-server:
     image: ${JELLY_IMAGE:-jelly:latest}
+    container_name: jelly-socket-server
     command: ["node", "socket-server.js"]
     env_file: stack.env
     ports:
       - "${SOCKET_SERVER_PORT:-4001}:${SOCKET_SERVER_PORT:-4001}"
 
-  file-server:
+  files-server:
     image: ${JELLY_IMAGE:-jelly:latest}
+    container_name: jelly-files-server
     command: ["node", "file-server.js"]
     env_file: stack.env
     environment:
