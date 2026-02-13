@@ -13,7 +13,9 @@ RUN npm prune --omit=dev
 
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 
 COPY package.json package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
