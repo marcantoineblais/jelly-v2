@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
     networks:
       - private
-      - proxy
+      - caddy_proxy
 
   socket-server:
     image: ${JELLY_IMAGE:-jelly:latest}
@@ -24,7 +24,7 @@ services:
     env_file: stack.env
     networks:
       - private
-      - proxy
+      - caddy_proxy
 
   files-server:
     image: ${JELLY_IMAGE:-jelly:latest}
@@ -45,5 +45,5 @@ services:
 networks:
   private:
     driver: bridge
-  proxy:
+  caddy_proxy:
     external: true
