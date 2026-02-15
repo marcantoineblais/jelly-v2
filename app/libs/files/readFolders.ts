@@ -73,6 +73,7 @@ function extractFilesFromFolder(
           path: entryPath,
           name: path.basename(entry, ext),
           ext: ext,
+          size: stats.size,
           mediaInfo: {},
           library: {},
           root: root,

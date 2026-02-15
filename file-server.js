@@ -25,7 +25,7 @@ async function copyFileWithProgress(
   updatedPath,
   errors,
   ws,
-  { processedFiles, totalFiles, currentFile },
+  { processedFiles, totalFiles, currentFile, totalBytesTransferred, totalSize },
 ) {
   try {
     const destDir = path.dirname(updatedPath);
@@ -44,6 +44,8 @@ async function copyFileWithProgress(
       totalFiles,
       currentFileBytesTransferred: 0,
       currentFileSize: fileSize,
+      totalBytesTransferred,
+      totalSize,
       errors,
     });
 
@@ -75,6 +77,8 @@ async function copyFileWithProgress(
               totalFiles,
               currentFileBytesTransferred: bytesTransferred,
               currentFileSize: fileSize,
+              totalBytesTransferred: totalBytesTransferred + bytesTransferred,
+              totalSize,
               errors,
             });
           }
@@ -93,6 +97,8 @@ async function copyFileWithProgress(
           totalFiles,
           currentFileBytesTransferred: fileSize,
           currentFileSize: fileSize,
+          totalBytesTransferred: totalBytesTransferred + fileSize,
+          totalSize,
           errors,
         });
         done();
@@ -136,14 +142,9 @@ async function deleteEmptyFolders(file) {
 
 async function processFilesJob(files, ws) {
   const errors = [];
-  ws.send(
-    JSON.stringify({
-      currentFile: "Process started",
-      processedFiles: 0,
-      totalFiles: files.length,
-      errors,
-    }),
-  );
+  const filesToProcess = [];
+  let totalSize = 0;
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const filename = createFilename(file.mediaInfo);
@@ -167,18 +168,46 @@ async function processFilesJob(files, ws) {
         updatedPath = path.join(basepath, folderName, filename + file.ext);
       }
 
-      await copyFileWithProgress(file, updatedPath, errors, ws, {
-        currentFile: filename,
-        processedFiles: i,
-        totalFiles: files.length,
-      });
+      try {
+        const stat = await fs.stat(file.path);
+        totalSize += stat.size;
+        filesToProcess.push({ file, updatedPath, filename, fileSize: stat.size });
+      } catch {
+        filesToProcess.push({ file, updatedPath, filename, fileSize: 0 });
+      }
     }
+  }
+
+  ws.send(
+    JSON.stringify({
+      currentFile: "Process started",
+      processedFiles: 0,
+      totalFiles: filesToProcess.length,
+      totalBytesTransferred: 0,
+      totalSize,
+      errors,
+    }),
+  );
+
+  let totalBytesTransferred = 0;
+  for (let i = 0; i < filesToProcess.length; i++) {
+    const { file, updatedPath, filename, fileSize } = filesToProcess[i];
+
+    await copyFileWithProgress(file, updatedPath, errors, ws, {
+      currentFile: filename,
+      processedFiles: i,
+      totalFiles: filesToProcess.length,
+      totalBytesTransferred,
+      totalSize,
+    });
+
+    totalBytesTransferred += fileSize;
   }
   ws.send(
     JSON.stringify({
       currentFile: "Files transfer completed",
-      processedFiles: files.length,
-      totalFiles: files.length,
+      processedFiles: filesToProcess.length,
+      totalFiles: filesToProcess.length,
       isCompleted: true,
       errors,
     }),

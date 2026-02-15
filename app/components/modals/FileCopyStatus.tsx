@@ -7,6 +7,7 @@ import {
   ModalHeader,
   Progress,
 } from "@heroui/react";
+import { formatBytes } from "@/app/libs/files/formatBytes";
 
 export default function FileCopyStatus({
   isOpen = false,
@@ -15,6 +16,8 @@ export default function FileCopyStatus({
   totalFiles = 0,
   currentFileBytesTransferred,
   currentFileSize,
+  totalBytesTransferred,
+  totalSize,
 }: {
   isOpen?: boolean;
   currentFile?: string;
@@ -22,6 +25,8 @@ export default function FileCopyStatus({
   totalFiles?: number;
   currentFileBytesTransferred?: number;
   currentFileSize?: number;
+  totalBytesTransferred?: number;
+  totalSize?: number;
 }) {
   function getProgressPercent() {
     if (!totalFiles) return 0;
@@ -45,26 +50,18 @@ export default function FileCopyStatus({
     return `Files processed: ${processedFiles} / ${totalFiles}`;
   }
 
-  function getLabel() {
+  function getProgress() {
     if (
-      currentFileSize != null &&
-      currentFileSize > 0 &&
-      currentFileBytesTransferred != null
+      totalSize != null &&
+      totalSize > 0 &&
+      totalBytesTransferred != null
     ) {
-      return `${formatBytes(currentFileBytesTransferred)} / ${formatBytes(currentFileSize)}`;
+      const remaining = Math.max(0, totalSize - totalBytesTransferred);
+      const formattedBytes = formatBytes(remaining, { sizeRef: totalSize });
+      return `${formattedBytes} remaining`;
     }
 
     return "";
-  }
-
-  function formatBytes(bytes: number): string {
-    const ref = currentFileSize ?? bytes;
-
-    if (ref < 1024) return `${bytes}B`;
-    if (ref < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-    if (ref < 1024 * 1024 * 1024)
-      return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
   }
 
   return (
@@ -88,7 +85,7 @@ export default function FileCopyStatus({
               classNames={{ indicator: "bg-emerald-700" }}
             />
 
-            <div className="w-full flex justify-center">{getLabel()}</div>
+            <div className="w-full flex justify-center">{getProgress()}</div>
           </div>
         </ModalBody>
       </ModalContent>

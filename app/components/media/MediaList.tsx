@@ -350,6 +350,8 @@ export default function MediaList({
           transferStatus?.currentFileBytesTransferred
         }
         currentFileSize={transferStatus?.currentFileSize}
+        totalBytesTransferred={transferStatus?.totalBytesTransferred}
+        totalSize={transferStatus?.totalSize}
       />
     </div>
   );

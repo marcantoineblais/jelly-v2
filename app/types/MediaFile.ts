@@ -7,6 +7,7 @@ export interface MediaFile {
   root: string;
   name: string;
   ext: string;
+  size?: number;
   mediaInfo: MediaInfo;
   library: MediaLibrary;
   isSelected?: boolean;
