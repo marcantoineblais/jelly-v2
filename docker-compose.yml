@@ -1,7 +1,9 @@
 # Per-machine: set host paths in .env (DOWNLOADS_PATH, ENCODE_PATH, TV_SHOWS_PATH, etc.).
+x-common-image: &common-image ghcr.io/marcantoineblais/jelly:2.1.2
+
 services:
   jelly:
-    image: ghcr.io/marcantoineblais/jelly:2.1.2
+    image: *common-image
     container_name: jelly
     env_file: stack.env
     volumes:
@@ -18,7 +20,7 @@ services:
       - caddy_proxy
 
   socket-server:
-    image: ghcr.io/marcantoineblais/jelly:v2.1.2
+    image: *common-image
     container_name: jelly-socket-server
     command: ["node", "socket-server.js"]
     env_file: stack.env
@@ -27,7 +29,7 @@ services:
       - caddy_proxy
 
   files-server:
-    image: ghcr.io/marcantoineblais/jelly:v2.1.2
+    image: *common-image
     container_name: jelly-files-server
     command: ["node", "file-server.js"]
     env_file: stack.env
