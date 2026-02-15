@@ -1,7 +1,7 @@
 # Per-machine: set host paths in .env (DOWNLOADS_PATH, ENCODE_PATH, TV_SHOWS_PATH, etc.).
 services:
   jelly:
-    image: ghcr.io/marcantoineblais/jelly:v2.1.2
+    image: ghcr.io/marcantoineblais/jelly:2.1.2
     container_name: jelly
     env_file: stack.env
     volumes:
