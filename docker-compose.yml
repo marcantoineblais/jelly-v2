@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     networks:
       - private
-      - caddy_proxy
+      - nginx_proxy
 
   socket-server:
     image: *common-image
@@ -26,7 +26,7 @@ services:
     env_file: stack.env
     networks:
       - private
-      - caddy_proxy
+      - nginx_proxy
 
   files-server:
     image: *common-image
@@ -47,5 +47,5 @@ services:
 networks:
   private:
     driver: bridge
-  caddy_proxy:
+  nginx_proxy:
     external: true
