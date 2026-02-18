@@ -1,10 +1,11 @@
 export const dynamic = "force-dynamic";
 
-import H1 from "./components/elements/H1";
-import MediaList from "./components/media/MediaList";
-import { readFolders } from "./libs/files/readFolders";
-import { readConfig } from "./libs/readConfig";
-import { ConfigFile } from "./types/ConfigFile";
+import Link from "next/link";
+import H1 from "@/src/components/elements/H1";
+import MediaList from "@/src/components/media/MediaList";
+import { readFolders } from "@/src/libs/files/readFolders";
+import { readConfig } from "@/src/libs/readConfig";
+import { ConfigFile } from "@/src/types/ConfigFile";
 
 export default function Home() {
   const { downloadPaths, videosExt, libraries }: ConfigFile = readConfig();
@@ -12,7 +13,15 @@ export default function Home() {
 
   return (
     <main className="h-full max-h-full w-full flex flex-col gap-3 bg-stone-100">
-      <H1 className="mt-5">Jelly</H1>
+      <div className="flex items-center justify-center gap-4 mt-5">
+        <H1 className="mt-0!">Jelly</H1>
+        <Link
+          href="/torrents"
+          className="text-emerald-700 hover:text-emerald-900 underline text-lg"
+        >
+          Torrents
+        </Link>
+      </div>
       <MediaList files={files} libraries={libraries} />
     </main>
   );

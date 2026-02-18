@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { roboto } from "./fonts";
-import ToastMessagesProvider from "./hooks/use-toast-messages";
-import { APP_URL, FILE_SERVER_URL, SOCKET_SERVER_URL } from "./config";
-import { ConfigProvider } from "./hooks/use-config";
+import { roboto } from "@/src/fonts";
+import ToastMessagesProvider from "@/src/hooks/use-toast-messages";
+import { APP_URL, FILE_SERVER_URL, SOCKET_SERVER_URL } from "@/src/config";
+import { ConfigProvider } from "@/src/hooks/use-config";
 
 export const metadata: Metadata = {
   title: "Jelly",

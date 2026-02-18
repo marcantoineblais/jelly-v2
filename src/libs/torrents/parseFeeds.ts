@@ -91,11 +91,8 @@ export async function parseFeeds(feedUrls: string[]): Promise<FeedTorrentItem[]>
   return all;
 }
 
+import { TORRENT_FEED_URLS } from "@/src/config";
+
 export function getDefaultFeedUrls(): string[] {
-  const env = process.env.TORRENT_FEED_URLS;
-  if (!env || typeof env !== "string") return [];
-  return env
-    .split(",")
-    .map((u) => u.trim())
-    .filter(Boolean);
+  return [...TORRENT_FEED_URLS];
 }

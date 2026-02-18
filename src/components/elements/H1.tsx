@@ -1,4 +1,4 @@
-import { pressStart2p } from "@/app/fonts";
+import { pressStart2p } from "@/src/fonts";
 
 export default function H1({
   className = "",

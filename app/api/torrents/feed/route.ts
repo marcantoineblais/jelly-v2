@@ -2,7 +2,7 @@ import {
   parseFeeds,
   getDefaultFeedUrls,
   type FeedTorrentItem,
-} from "@/app/libs/torrents/parseFeeds";
+} from "@/src/libs/torrents/parseFeeds";
 import { NextResponse } from "next/server";
 
 type SortKey = "date" | "seed" | "leech" | "title" | "size";
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
         {
           ok: false,
           error:
-            "No feed URLs. Set TORRENT_FEED_URLS in env or pass ?url= or ?urls=.",
+            "No feed URLs. Add feeds in src/config.ts (TORRENT_FEED_URLS) or pass ?url= or ?urls=.",
         },
         { status: 400 },
       );
