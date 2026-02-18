@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Button, Input, Select, SelectItem, Spinner, addToast } from "@heroui/react";
+import { useCallback, useState } from "react";
+import { Button, Input, Spinner, addToast } from "@heroui/react";
 import Link from "next/link";
 import H1 from "@/src/components/elements/H1";
 
@@ -17,14 +17,6 @@ type FeedItem = {
   source: string;
 };
 
-const SORT_OPTIONS = [
-  { value: "date", label: "Date" },
-  { value: "seed", label: "Seeds" },
-  { value: "leech", label: "Leech" },
-  { value: "title", label: "Title" },
-  { value: "size", label: "Size" },
-];
-
 function formatDate(isoOrRfc: string): string {
   if (!isoOrRfc) return "—";
   const d = new Date(isoOrRfc);
@@ -32,45 +24,44 @@ function formatDate(isoOrRfc: string): string {
 }
 
 export default function TorrentsPage() {
-  const [feedUrl, setFeedUrl] = useState("");
-  const [nameFilter, setNameFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [sort, setSort] = useState("date");
-  const [reverse, setReverse] = useState(false);
+  const [title, setTitle] = useState("");
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
 
-  const fetchFeed = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (feedUrl.trim()) params.set("url", feedUrl.trim());
-      if (nameFilter.trim()) params.set("name", nameFilter.trim());
-      if (typeFilter.trim()) params.set("type", typeFilter.trim());
-      params.set("sort", sort);
-      if (reverse) params.set("reverse", "true");
-      const res = await fetch(`/api/torrents/feed?${params}`);
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? `HTTP ${res.status}`);
+  const search = useCallback(
+    async (searchTitle: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        if (searchTitle.trim()) params.set("name", searchTitle.trim());
+        const res = await fetch(`/api/torrents/feed?${params}`);
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? `HTTP ${res.status}`);
+          setItems([]);
+          return;
+        }
+        setItems(data.items ?? []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to fetch");
         setItems([]);
-        return;
+      } finally {
+        setLoading(false);
       }
-      setItems(data.items ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to fetch");
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [feedUrl, nameFilter, typeFilter, sort, reverse]);
+    },
+    [],
+  );
 
-  useEffect(() => {
-    fetchFeed();
-  }, [sort, reverse]);
+  const handleSubmit = useCallback(
+    (e: React.SubmitEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      search(title);
+    },
+    [title, search],
+  );
 
   const addToQbit = useCallback(
     async (item: FeedItem, index: number) => {
@@ -131,53 +122,23 @@ export default function TorrentsPage() {
         </div>
       </div>
 
-      <section className="flex flex-wrap items-end gap-3 p-3 bg-white/80 rounded-lg border border-stone-200">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-wrap items-end gap-3 p-3 bg-white/80 rounded-lg border border-stone-200"
+      >
         <Input
-          label="Feed URL"
-          placeholder="Optional: override default feeds from config.ts"
-          value={feedUrl}
-          onChange={(e) => setFeedUrl(e.target.value)}
+          type="text"
+          label="Title"
+          placeholder="Search by title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           className="max-w-md"
+          autoComplete="off"
         />
-        <Input
-          label="Name"
-          placeholder="Filter by name"
-          value={nameFilter}
-          onChange={(e) => setNameFilter(e.target.value)}
-          className="max-w-[200px]"
-        />
-        <Input
-          label="Type"
-          placeholder="Filter by type"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="max-w-[200px]"
-        />
-        <Select
-          label="Sort"
-          selectedKeys={[sort]}
-          onSelectionChange={(keys) => {
-            const v = Array.from(keys)[0];
-            if (v) setSort(String(v));
-          }}
-          className="max-w-[120px]"
-        >
-          {SORT_OPTIONS.map((o) => (
-            <SelectItem key={o.value}>{o.label}</SelectItem>
-          ))}
-        </Select>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={reverse}
-            onChange={(e) => setReverse(e.target.checked)}
-          />
-          <span className="text-sm">Reverse</span>
-        </label>
-        <Button color="primary" onPress={fetchFeed} isLoading={loading}>
-          {feedUrl.trim() ? "Refresh" : "Load feed (enter URL)"}
+        <Button type="submit" color="primary" isLoading={loading}>
+          Search
         </Button>
-      </section>
+      </form>
 
       {error && (
         <p className="text-red-600 text-sm" role="alert">
@@ -193,8 +154,7 @@ export default function TorrentsPage() {
 
       {!loading && items.length === 0 && !error && (
         <p className="text-stone-500 text-sm">
-          Enter a feed URL above and click Load, or use default feeds from
-          src/config.ts (TORRENT_FEED_URLS) and refresh.
+          Enter a title and click Search to query Jackett indexers.
         </p>
       )}
 

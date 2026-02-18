@@ -2,23 +2,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Run the app and Jackett in Docker so the app can reach services:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **App:** http://localhost:3000 (Next.js dev with hot reload)
+- **Jackett UI:** http://localhost:9117 — add indexers, then copy the API key into `.env` as `JACKETT_API_KEY`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The dev stack sets `JACKETT_URL=http://jackett:9117`. Ensure `.env` has `JACKETT_API_KEY` set so the Torrents page search works.
 
 ### qBittorrent (Docker)
 
@@ -28,6 +21,16 @@ When using the optional qBittorrent service, completed downloads are written to 
 2. Go to **Tools → Options → Downloads** and set **Default Save Path** to `/downloads`.
 
 Completed files will then appear under `/mnt/downloads` and show up in the app.
+
+### Jackett (Docker)
+
+The optional Jackett service provides torrent search via the Torrents page. It proxies multiple indexers (1337x, Torlock, etc.) through one API. After first start:
+
+1. Open the Jackett Web UI (port 9117).
+2. Add indexers (e.g. **Add indexer** → choose one, configure if needed).
+3. Copy your **API key** from the top-right of the Jackett UI and set `JACKETT_API_KEY` in your env (and `JACKETT_URL=http://jackett:9117` when using Docker).
+
+Then use the **Torrents** page: enter a title and click Search to query all configured indexers.
 
 ## Learn More
 

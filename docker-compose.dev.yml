@@ -1,0 +1,46 @@
+# Dev stack: Next.js in dev mode + Jackett for torrent search testing.
+# Run: docker compose -f docker-compose.dev.yml up --build
+# App: http://localhost:3000  |  Jackett UI: http://localhost:9117
+# Use .env for JACKETT_URL=http://jackett:9117 and JACKETT_API_KEY (from Jackett UI).
+
+services:
+  jackett:
+    image: linuxserver/jackett:latest
+    container_name: jelly-jackett-dev
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Toronto
+    volumes:
+      - jackett-config-dev:/config
+    ports:
+      - "9117:9117"
+    networks:
+      - dev
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: jelly-app-dev
+    env_file:
+      - .env
+    environment:
+      - JACKETT_URL=http://jackett:9117
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - jackett
+    networks:
+      - dev
+
+networks:
+  dev:
+    driver: bridge
+
+volumes:
+  jackett-config-dev:
