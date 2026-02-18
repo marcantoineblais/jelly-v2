@@ -20,6 +20,15 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+### qBittorrent (Docker)
+
+When using the optional qBittorrent service, completed downloads are written to the same path the app uses for transfers (`/mnt/downloads` on the host). Incomplete torrents use the default `downloads/temp` subfolder. After first start:
+
+1. Open the qBittorrent Web UI (port 8080).
+2. Go to **Tools → Options → Downloads** and set **Default Save Path** to `/downloads`.
+
+Completed files will then appear under `/mnt/downloads` and show up in the app.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -1,7 +1,23 @@
 # Per-machine: set host paths in .env (DOWNLOADS_PATH, ENCODE_PATH, TV_SHOWS_PATH, etc.).
+# qBittorrent: set Default save path = /downloads in Web UI. Incomplete use default downloads/temp.
 x-common-image: &common-image ghcr.io/marcantoineblais/jelly:2.1.3
 
 services:
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    container_name: jelly-qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Toronto
+      - WEBUI_PORT=8080
+    volumes:
+      - /opt/qbittorrent/config:/config
+      - /mnt/downloads:/downloads
+    restart: unless-stopped
+    networks:
+      - private
+
   jelly:
     image: *common-image
     container_name: jelly
