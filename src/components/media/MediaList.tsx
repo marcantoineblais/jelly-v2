@@ -1,7 +1,7 @@
 "use client";
 
-import { MediaFile } from "@/app/types/MediaFile";
-import { MediaLibrary } from "@/app/types/MediaLibrary";
+import { MediaFile } from "@/src/types/MediaFile";
+import { MediaLibrary } from "@/src/types/MediaLibrary";
 import {
   startTransition,
   useCallback,
@@ -14,9 +14,9 @@ import { Spinner, addToast } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
 import FileSelectionBox from "../modals/FileSelectionBox";
 import FileCopyStatus from "../modals/FileCopyStatus";
-import { validateData } from "@/app/libs/files/validateData";
-import { sortFilesByLibrary } from "@/app/libs/files/sortFilesByLibrary";
-import { useFileTransferWebSocket } from "@/app/hooks/use-file-transfer-web-socket";
+import { validateData } from "@/src/libs/files/validateData";
+import { sortFilesByLibrary } from "@/src/libs/files/sortFilesByLibrary";
+import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-socket";
 import MediaListEmpty from "./MediaListEmpty";
 import MediaListAccordion from "./MediaListAccordion";
 

@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import { FILE_SERVER_URL } from "@/app/config";
+import { FILE_SERVER_URL } from "@/src/config";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

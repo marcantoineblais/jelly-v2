@@ -7,7 +7,7 @@ import {
   ModalHeader,
   Progress,
 } from "@heroui/react";
-import { formatBytes } from "@/app/libs/files/formatBytes";
+import { formatBytes } from "@/src/libs/files/formatBytes";
 
 export default function FileCopyStatus({
   isOpen = false,

@@ -1,46 +1,53 @@
-# Dev stack: Next.js in dev mode + Jackett for torrent search testing.
-# Run: docker compose -f docker-compose.dev.yml up --build
-# App: http://localhost:3000  |  Jackett UI: http://localhost:9117
-# Use .env for JACKETT_URL=http://jackett:9117 and JACKETT_API_KEY (from Jackett UI).
+# Per-machine: set host paths in .env (DOWNLOADS_PATH, ENCODE_PATH, TV_SHOWS_PATH, etc.).
+# qBittorrent: set Default save path = /downloads in Web UI. Incomplete use default downloads/temp.
 
 services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: jelly-flaresolverr
+    environment:
+      - TZ=America/Toronto
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    ports:
+      - ${FLARESOLVERR_PORT:-8191}:8191
+    networks:
+      - private
+
   jackett:
     image: linuxserver/jackett:latest
-    container_name: jelly-jackett-dev
+    container_name: jelly-jackett
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Toronto
     volumes:
-      - jackett-config-dev:/config
-    ports:
-      - "9117:9117"
-    networks:
-      - dev
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: jelly-app-dev
-    env_file:
-      - stack.env
-    environment:
-      - JACKETT_URL=http://jackett:9117
-      - NODE_ENV=development
-    volumes:
-      - .:/app
-      - /app/node_modules
-    ports:
-      - "3000:3000"
+      - /opt/jackett/config:/config
     depends_on:
-      - jackett
+      - flaresolverr
+    restart: unless-stopped
+    ports:
+      - ${JACKETT_PORT:-9117}:9117
     networks:
-      - dev
+      - private
+
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    container_name: jelly-qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Toronto
+      - WEBUI_PORT=8080
+    volumes:
+      - /opt/qbittorrent/config:/config
+      - /mnt/downloads:/downloads
+    restart: unless-stopped
+    ports:
+      - ${QBITTORRENT_PORT:-8080}:8080
+    networks:
+      - private
 
 networks:
-  dev:
+  private:
     driver: bridge
-
-volumes:
-  jackett-config-dev:

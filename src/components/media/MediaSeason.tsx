@@ -1,11 +1,11 @@
 "use client";
 
-import { MediaFile } from "@/app/types/MediaFile";
+import { MediaFile } from "@/src/types/MediaFile";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { useMemo, useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
-import { createFilename } from "@/app/libs/files/createFilename";
+import { createFilename } from "@/src/libs/files/createFilename";
 
 export default function MediaSeason({
   files = [],

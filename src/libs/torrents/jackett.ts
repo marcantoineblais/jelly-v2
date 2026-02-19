@@ -23,7 +23,7 @@ function formatSize(bytes: number): string {
   return `${mb.toFixed(1)} MB`;
 }
 
-function parseTorznabXml(xml: string, source: string): TorrentSearchItem[] {
+function parseTorznabXml(xml: string, defaultSource: string): TorrentSearchItem[] {
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
@@ -57,6 +57,7 @@ function parseTorznabXml(xml: string, source: string): TorrentSearchItem[] {
     let size: string | null = null;
     let seeds: number | null = null;
     let leech: number | null = null;
+    let itemSource = defaultSource;
     const attrs = it["torznab:attr"] ?? it.attr;
     const attrList = Array.isArray(attrs) ? attrs : attrs ? [attrs] : [];
     for (const a of attrList) {
@@ -68,6 +69,7 @@ function parseTorznabXml(xml: string, source: string): TorrentSearchItem[] {
       if (name === "peers" && val != null && leech == null)
         leech = parseInt(String(val), 10);
       if (name === "leechers" && val != null) leech = parseInt(String(val), 10);
+      if (name === "jackettindexer" && val != null) itemSource = String(val);
     }
     if (seeds != null && leech == null) leech = 0;
 
@@ -80,58 +82,33 @@ function parseTorznabXml(xml: string, source: string): TorrentSearchItem[] {
       size,
       seeds,
       leech,
-      source,
+      source: itemSource,
     });
   }
   return result;
 }
 
-async function getIndexerIds(): Promise<string[]> {
-  const url = `${JACKETT_URL.replace(/\/$/, "")}/api/v2.0/indexers`;
-  const res = await fetch(
-    JACKETT_API_KEY ? `${url}?apikey=${encodeURIComponent(JACKETT_API_KEY)}` : url,
-    {
-      headers: JACKETT_API_KEY
-        ? { "X-Api-Key": JACKETT_API_KEY }
-        : undefined,
-    },
-  );
-  if (!res.ok) throw new Error(`Jackett indexers: ${res.status}`);
-  const data = await res.json();
-  const raw = data?.Indexers ?? data?.indexers ?? data ?? [];
-  const list = Array.isArray(raw) ? raw : [];
-  return list
-    .map((i: { id?: string; ID?: string }) => i.id ?? i.ID)
-    .filter(Boolean);
-}
-
+/**
+ * Search Jackett using the "all" indexer (single Torznab request).
+ * This avoids the /api/v2.0/indexers list endpoint, which returns 400 when
+ * Jackett has admin auth enabled and only accepts cookie-based login.
+ */
 export async function searchJackett(query: string): Promise<TorrentSearchItem[]> {
   if (!JACKETT_API_KEY) {
     throw new Error("JACKETT_API_KEY is not set");
   }
-  const indexers = await getIndexerIds();
-  if (indexers.length === 0) {
-    throw new Error("No Jackett indexers configured. Add indexers in Jackett UI.");
-  }
 
   const baseUrl = JACKETT_URL.replace(/\/$/, "");
-  const q = query.trim() || "";
-  const searchParam = q ? `&q=${encodeURIComponent(q)}` : "";
-  const results: TorrentSearchItem[] = [];
+  const q = query.trim();
+  if (!q) return [];
 
-  const settled = await Promise.allSettled(
-    indexers.map(async (id: string) => {
-      const url = `${baseUrl}/api/v2.0/indexers/${id}/results/torznab/api?apikey=${encodeURIComponent(JACKETT_API_KEY)}&t=search${searchParam}`;
-      const res = await fetch(url);
-      if (!res.ok) return [];
-      const xml = await res.text();
-      return parseTorznabXml(xml, id);
-    }),
-  );
-
-  for (const r of settled) {
-    if (r.status === "fulfilled") results.push(...r.value);
+  const url = `${baseUrl}/api/v2.0/indexers/all/results/torznab/api?apikey=${encodeURIComponent(JACKETT_API_KEY)}&t=search&q=${encodeURIComponent(q)}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Jackett search: ${res.status}`);
   }
+  const xml = await res.text();
+  const results = parseTorznabXml(xml, "all");
   results.sort((a, b) => b.pubDateMs - a.pubDateMs);
   return results;
 }

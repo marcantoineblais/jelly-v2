@@ -1,4 +1,4 @@
-import { deleteTorrent } from "@/app/libs/qbit/client";
+import { deleteTorrent } from "@/src/libs/qbit/client";
 import { NextResponse } from "next/server";
 
 export async function DELETE(

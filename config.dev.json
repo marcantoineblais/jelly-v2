@@ -1,0 +1,8 @@
+{
+  "download_paths": ["/mnt/downloads", "/mnt/encodes"],
+  "libraries": [
+    { "name": "Movies", "path": "/mnt/media/movies", "type": "movie" },
+    { "name": "Shows", "path": "/mnt/media/shows", "type": "show" }
+  ],
+  "videos_ext": [".mp4", ".mkv"]
+}

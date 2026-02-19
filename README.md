@@ -2,16 +2,19 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-Run the app and Jackett in Docker so the app can reach services:
+Run the full dev stack (Next.js, Jackett, qBittorrent, socket-server, files-server):
 
 ```bash
+cp .env.dev .env
+# Edit .env and set JACKETT_API_KEY (from Jackett UI after first start)
 docker compose -f docker-compose.dev.yml up --build
 ```
 
 - **App:** http://localhost:3000 (Next.js dev with hot reload)
-- **Jackett UI:** http://localhost:9117 — add indexers, then copy the API key into `.env` as `JACKETT_API_KEY`
+- **Jackett:** http://localhost:9117 — add indexers, copy API key into `.env`
+- **qBittorrent:** http://localhost:8080 — set Default save path to `/downloads` in Options
 
-The dev stack sets `JACKETT_URL=http://jackett:9117`. Ensure `.env` has `JACKETT_API_KEY` set so the Torrents page search works.
+The app uses `config.dev.json` for download/library paths (dev volumes: `downloads-dev`, `encodes-dev`, `media-dev`).
 
 ### qBittorrent (Docker)
 

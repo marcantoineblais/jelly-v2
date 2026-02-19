@@ -1,5 +1,5 @@
-import { readFolders } from "@/app/libs/files/readFolders";
-import { readConfig } from "@/app/libs/readConfig";
+import { readFolders } from "@/src/libs/files/readFolders";
+import { readConfig } from "@/src/libs/readConfig";
 import { NextResponse } from "next/server";
 
 export function POST() {

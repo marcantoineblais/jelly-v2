@@ -1,7 +1,7 @@
-import { createFilename } from "@/app/libs/files/createFilename";
-import { formatBytes } from "@/app/libs/files/formatBytes";
-import { formatNumber } from "@/app/libs/files/formatNumber";
-import { MediaFile } from "@/app/types/MediaFile";
+import { createFilename } from "@/src/libs/files/createFilename";
+import { formatBytes } from "@/src/libs/files/formatBytes";
+import { formatNumber } from "@/src/libs/files/formatNumber";
+import { MediaFile } from "@/src/types/MediaFile";
 import MediaInfoLine from "./MediaInfoLine";
 
 export default function SingleMedia({
