@@ -2,7 +2,7 @@ import { deleteTorrent } from "@/src/libs/qbit/client";
 import { NextResponse } from "next/server";
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ hash: string }> },
 ) {
   try {
@@ -13,7 +13,9 @@ export async function DELETE(
         { status: 400 },
       );
     }
-    await deleteTorrent(hash, false);
+    const { searchParams } = new URL(request.url);
+    const deleteFiles = searchParams.get("deleteFiles") === "true";
+    await deleteTorrent(hash, deleteFiles);
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Delete torrent failed";

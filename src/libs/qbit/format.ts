@@ -50,11 +50,12 @@ export function formatState(state: string): string {
 /** ETA in seconds; 8640000 or negative = unknown in qBittorrent. */
 export function formatEta(seconds: number): string {
   if (seconds <= 0 || !Number.isFinite(seconds) || seconds >= 8640000) return "-";
-  if (seconds < 60) return `${Math.round(seconds)} s`;
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+
   const min = Math.floor(seconds / 60);
-  if (min < 60) return `${min} min`;
+  if (min < 60) return `${min}min`;
+
   const h = Math.floor(min / 60);
   const m = min % 60;
-  if (m === 0) return `${h} h`;
-  return `${h} h ${m} min`;
+  return `${h}h${m < 10 ? `0${m}` : m}`;
 }

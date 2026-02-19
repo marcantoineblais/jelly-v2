@@ -2,14 +2,20 @@
 
 import {
   Button,
+  Checkbox,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
+  useDisclosure,
 } from "@heroui/react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   formatEta,
   formatSize,
@@ -19,6 +25,7 @@ import {
 import useFetch from "@/src/hooks/use-fetch";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
 import LoadIndicator from "@/src/components/ui/load-indicator";
+import { POLL_INTERVAL_MS } from "@/src/config";
 
 type QbitTorrent = {
   hash: string;
@@ -27,48 +34,74 @@ type QbitTorrent = {
   progress: number;
   size: number;
   dlspeed: number;
-  upspeed: number;
   eta: number;
 };
 
-const POLL_INTERVAL_MS = 3000;
-
 export default function DownloadsPage() {
   const { fetchData } = useFetch();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
+  function handleOpenChange(open: boolean) {
+    if (!open) {
+      setHashToDelete(null);
+      onClose();
+    }
+    onOpenChange();
+  }
   const [torrents, setTorrents] = useState<QbitTorrent[]>([]);
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [deletingHash, setDeletingHash] = useState<string | null>(null);
-
-  const deleteTorrent = useCallback(async (hash: string) => {
-    setDeletingHash(hash);
-    try {
-      const res = await fetch(`/api/qbit/torrents/${encodeURIComponent(hash)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) return;
-      setTorrents((prev) => prev.filter((t) => t.hash !== hash));
-    } finally {
-      setDeletingHash(null);
-    }
-  }, []);
-
-  const fetchTorrents = useCallback(async () => {
-    try {
-      const { data } =
-        await fetchData<QbittorrentResponse>("/api/qbit/torrents");
-      setTorrents(data.torrents);
-    } catch {
-      setTorrents([]);
-    } finally {
-      setIsPageLoading(false);
-    }
-  }, []);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [hashToDelete, setHashToDelete] = useState<string | null>(null);
+  const [deleteFiles, setDeleteFiles] = useState(false);
 
   useEffect(() => {
-    fetchTorrents();
-    const id = setInterval(fetchTorrents, POLL_INTERVAL_MS);
+    const fetchTorrent = async () => {
+      try {
+        const { data } =
+          await fetchData<QbittorrentResponse>("/api/qbit/torrents");
+        setTorrents(data.torrents);
+      } catch {
+        setTorrents([]);
+      }
+    };
+
+    // First fetch
+    fetchTorrent();
+    setIsPageLoading(false);
+
+    // Poll interval
+    const id = setInterval(fetchTorrent, POLL_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [fetchTorrents]);
+  }, []);
+
+  async function deleteTorrent(hash: string, deleteFiles: boolean) {
+    try {
+      const url = `/api/qbit/torrents/${encodeURIComponent(hash)}${deleteFiles ? "?deleteFiles=true" : ""}`;
+      const { data } = await fetchData<QbittorrentResponse>(url, {
+        method: "DELETE",
+      });
+      if (!data.ok) return;
+      setTorrents((prev) => prev.filter((t) => t.hash !== hash));
+    } catch {}
+  }
+
+  function handleDeleteClick(hash: string) {
+    setHashToDelete(hash);
+    setDeleteFiles(false);
+    onOpen();
+  }
+
+  async function handleConfirmDelete() {
+    if (!hashToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteTorrent(hashToDelete, deleteFiles);
+      onClose();
+      setHashToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   return (
     <main className="min-h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8">
@@ -81,9 +114,10 @@ export default function DownloadsPage() {
           <TableColumn>Progress</TableColumn>
           <TableColumn>Size</TableColumn>
           <TableColumn>Down</TableColumn>
-          <TableColumn>Up</TableColumn>
           <TableColumn>ETA</TableColumn>
-          <TableColumn align="end">Delete</TableColumn>
+          <TableColumn>
+            <></>
+          </TableColumn>
         </TableHeader>
         <TableBody items={torrents} emptyContent="No torrents in qBittorrent.">
           {(t) => (
@@ -91,18 +125,21 @@ export default function DownloadsPage() {
               <TableCell className="min-w-[200px]">{t.name || "—"}</TableCell>
               <TableCell>{formatState(t.state)}</TableCell>
               <TableCell>{(t.progress * 100).toFixed(1)}%</TableCell>
-              <TableCell className="whitespace-nowrap">{formatSize(t.size)}</TableCell>
-              <TableCell className="whitespace-nowrap">{formatSpeed(t.dlspeed)}</TableCell>
-              <TableCell className="whitespace-nowrap">{formatSpeed(t.upspeed)}</TableCell>
-              <TableCell className="whitespace-nowrap">{formatEta(t.eta)}</TableCell>
+              <TableCell className="whitespace-nowrap">
+                {formatSize(t.size)}
+              </TableCell>
+              <TableCell className="whitespace-nowrap">
+                {formatSpeed(t.dlspeed)}
+              </TableCell>
+              <TableCell className="whitespace-nowrap">
+                {formatEta(t.eta)}
+              </TableCell>
               <TableCell>
                 <Button
                   size="sm"
                   color="danger"
                   variant="flat"
-                  isDisabled={deletingHash !== null}
-                  isLoading={deletingHash === t.hash}
-                  onPress={() => deleteTorrent(t.hash)}
+                  onPress={() => handleDeleteClick(t.hash)}
                 >
                   Delete
                 </Button>
@@ -111,6 +148,54 @@ export default function DownloadsPage() {
           )}
         </TableBody>
       </Table>
+
+      <Modal isOpen={isOpen} onOpenChange={handleOpenChange} placement="center">
+        <ModalContent>
+          <ModalHeader>Delete Torrent</ModalHeader>
+          <ModalBody>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleConfirmDelete();
+              }}
+            >
+              <div className="flex flex-col gap-2">
+                <p>Are you sure you want to delete this torrent?</p>
+                <Checkbox
+                  isSelected={deleteFiles}
+                  onValueChange={setDeleteFiles}
+                >
+                  Delete files
+                </Checkbox>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  color="default"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => {
+                    setHashToDelete(null);
+                    onClose();
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  color="danger"
+                  isLoading={isDeleting}
+                  size="sm"
+                >
+                  Delete
+                </Button>
+              </div>
+            </form>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </main>
   );
 }

@@ -119,11 +119,13 @@ export async function addTorrent(magnetOrUrl: string): Promise<void> {
 }
 
 export async function deleteTorrent(hash: string, deleteFiles = false): Promise<void> {
+  const body = new URLSearchParams({
+    hashes: hash,
+    deleteFiles: String(deleteFiles),
+  });
   await qbitRequest("/torrents/delete", {
     method: "POST",
-    searchParams: {
-      hashes: hash,
-      deleteFiles: String(deleteFiles),
-    },
+    contentType: "application/x-www-form-urlencoded",
+    body: body.toString(),
   });
 }

@@ -175,6 +175,8 @@ export default function TorrentsPage() {
     } catch (e) {
       setItems([]);
     }
+    
+    setHasSearched(true);
   }
 
   return (
