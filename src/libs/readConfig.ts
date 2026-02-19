@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import type { ConfigFile } from "@/app/types/ConfigFile";
-import type { MediaLibrary } from "@/app/types/MediaLibrary";
+import type { ConfigFile } from "@/src/types/ConfigFile";
+import type { MediaLibrary } from "@/src/types/MediaLibrary";
 
 function fromEnvOrDefault<T>(
   envValue: string | undefined,

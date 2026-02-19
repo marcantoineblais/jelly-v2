@@ -1,4 +1,4 @@
-import { MediaFile } from "@/app/types/MediaFile";
+import { MediaFile } from "@/src/types/MediaFile";
 
 export const VALIDATION_ERROR = {
   title: "Missing title",

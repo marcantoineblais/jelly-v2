@@ -1,7 +1,7 @@
 "use client";
 
-import { MediaFile } from "@/app/types/MediaFile";
-import { SortedMedia } from "@/app/types/SortedMedia";
+import { MediaFile } from "@/src/types/MediaFile";
+import { SortedMedia } from "@/src/types/SortedMedia";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

@@ -1,6 +1,6 @@
-import { MediaFile } from "@/app/types/MediaFile";
-import { MediaLibrary } from "@/app/types/MediaLibrary";
-import { SortedMedia } from "@/app/types/SortedMedia";
+import { MediaFile } from "@/src/types/MediaFile";
+import { MediaLibrary } from "@/src/types/MediaLibrary";
+import { SortedMedia } from "@/src/types/SortedMedia";
 import sortMediaFiles from "./sortMediaFiles";
 
 export function sortFilesByLibrary(

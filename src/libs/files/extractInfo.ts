@@ -1,4 +1,4 @@
-import { MediaInfo } from "@/app/types/MediaInfo";
+import { MediaInfo } from "@/src/types/MediaInfo";
 
 const MIN_TITLE_LENGTH = 4;
 const NON_CAPITALIZED_WORDS = [

@@ -3,7 +3,7 @@ import path from "path";
 import { MediaFile } from "../../types/MediaFile";
 import { extractInfo } from "./extractInfo";
 import { assignDefaultLibrary } from "./assignDefaultLibrary";
-import { MediaLibrary } from "@/app/types/MediaLibrary";
+import { MediaLibrary } from "@/src/types/MediaLibrary";
 
 export function readFolders(
   folders: string[],

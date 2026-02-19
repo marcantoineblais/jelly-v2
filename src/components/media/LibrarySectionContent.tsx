@@ -1,6 +1,6 @@
 "use client";
 
-import { MediaFile } from "@/app/types/MediaFile";
+import { MediaFile } from "@/src/types/MediaFile";
 import ShowsContent from "./ShowsContent";
 import MoviesContent from "./MoviesContent";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { MediaFile } from "@/app/types/MediaFile";
+import { MediaFile } from "@/src/types/MediaFile";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";

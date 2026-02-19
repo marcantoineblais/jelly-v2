@@ -1,5 +1,5 @@
-import { MediaFile } from "@/app/types/MediaFile";
-import { MediaLibrary } from "@/app/types/MediaLibrary";
+import { MediaFile } from "@/src/types/MediaFile";
+import { MediaLibrary } from "@/src/types/MediaLibrary";
 
 export function assignDefaultLibrary(
   file: MediaFile,

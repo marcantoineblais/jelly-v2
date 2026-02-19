@@ -1,6 +1,6 @@
 "use client";
 
-import { MediaFile } from "@/app/types/MediaFile";
+import { MediaFile } from "@/src/types/MediaFile";
 import { Checkbox } from "@heroui/react";
 import { ChangeEvent, useMemo } from "react";
 

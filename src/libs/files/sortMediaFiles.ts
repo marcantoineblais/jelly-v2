@@ -1,4 +1,4 @@
-import { MediaFile } from "@/app/types/MediaFile";
+import { MediaFile } from "@/src/types/MediaFile";
 
 export default function sortMediaFiles(file1: MediaFile, file2: MediaFile) {
   const title1 = file1.mediaInfo.title || "";
