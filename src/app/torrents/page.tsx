@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Button,
   Input,
-  Pagination,
   Select,
   SelectItem,
   Table,
@@ -48,9 +47,6 @@ export default function TorrentsPage() {
     (FeedItem & { isAddingToQbittorrent: boolean })[]
   >([]);
   const [indexers, setIndexers] = useState<JackettIndexer[]>([]);
-  const [total, setTotal] = useState<number | null>(null);
-  const [page, setPage] = useState(1);
-  const limit = 25;
 
   // Loading states
   const [isPageLoading, setIsPageLoading] = useState(true);
@@ -73,7 +69,7 @@ export default function TorrentsPage() {
     };
 
     fetchIndexers();
-  }, []);
+  }, [fetchData]);
 
   function toggleSelectedItem(item: FeedItem, state: boolean) {
     setItems((prevItems) =>
@@ -149,7 +145,7 @@ export default function TorrentsPage() {
       setItems(
         data.items.map((item) => ({ ...item, isAddingToQbittorrent: false })),
       );
-    } catch (e) {
+    } catch {
       setItems([]);
     }
 

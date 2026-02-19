@@ -171,7 +171,12 @@ async function processFilesJob(files, ws) {
       try {
         const stat = await fs.stat(file.path);
         totalSize += stat.size;
-        filesToProcess.push({ file, updatedPath, filename, fileSize: stat.size });
+        filesToProcess.push({
+          file,
+          updatedPath,
+          filename,
+          fileSize: stat.size,
+        });
       } catch {
         filesToProcess.push({ file, updatedPath, filename, fileSize: 0 });
       }

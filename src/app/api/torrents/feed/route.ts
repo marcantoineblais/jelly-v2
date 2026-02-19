@@ -2,9 +2,6 @@ import { FeedItem } from "@/src/libs/torrents/feed-format";
 import { searchJackett } from "@/src/libs/torrents/jackett";
 import { NextResponse } from "next/server";
 
-const DEFAULT_LIMIT = 25;
-const MAX_LIMIT = 100;
-
 export type FeedResponse = {
   ok: boolean;
   items: FeedItem[];
@@ -26,8 +23,6 @@ export async function GET(request: Request) {
         ok: true,
         items: [],
         total: null,
-        page: 1,
-        limit: DEFAULT_LIMIT,
       });
     }
 

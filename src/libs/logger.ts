@@ -13,5 +13,5 @@ export function log({
   if (data) {
     dataString = JSON.stringify(data);
   }
-  console[level](`[${source}] ${message}`, data);
+  console[level](`[${source}] ${message}`, dataString);
 }

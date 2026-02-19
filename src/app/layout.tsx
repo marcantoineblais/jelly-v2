@@ -25,14 +25,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`h-lvh w-lvh ${roboto.className}`}>
-          <ConfigProvider config={config}>
-            <ToastMessagesProvider>
-              <div className="h-dvh w-dvw flex flex-col">
-                <Navigation />
-                {children}
-              </div>
-            </ToastMessagesProvider>
-          </ConfigProvider>
+        <ConfigProvider config={config}>
+          <ToastMessagesProvider>
+            <div className="h-dvh w-dvw flex flex-col">
+              <Navigation />
+              {children}
+            </div>
+          </ToastMessagesProvider>
+        </ConfigProvider>
       </body>
     </html>
   );

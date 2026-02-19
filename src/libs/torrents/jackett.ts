@@ -83,7 +83,6 @@ export type SearchJackettResult = {
 export async function searchJackett(
   query: string,
   indexerId: string,
-  options: SearchJackettOptions = {},
 ): Promise<SearchJackettResult> {
   if (!JACKETT_API_KEY) {
     throw new Error("JACKETT_API_KEY is not set");
@@ -137,11 +136,11 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
       attrs?.find(
         (a: any) => a["@_name"] === "leechers" || a["@_name"] === "peers",
       )?.["@_value"] ?? 0;
-      log({
-        source: "url",
-        message: "URL: ",
-        data: url,
-      });
+    log({
+      source: "url",
+      message: "URL: ",
+      data: url,
+    });
     return {
       id: index,
       title,

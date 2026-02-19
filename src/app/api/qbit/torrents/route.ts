@@ -20,7 +20,8 @@ export async function GET(request: Request) {
     });
     return NextResponse.json({ ok: true, torrents });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "qBittorrent request failed";
+    const message =
+      err instanceof Error ? err.message : "qBittorrent request failed";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });
   }
 }

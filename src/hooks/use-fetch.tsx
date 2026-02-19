@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { log } from "../libs/logger";
 import { FetchError } from "../libs/fetch-error";
 import { addToast } from "@heroui/react";
@@ -23,7 +23,7 @@ export default function useFetch() {
     ): Promise<{ data: T; status: number }> => {
       setIsLoading(true);
       setIsDisabled(true);
-      
+
       try {
         const response = await fetch(url, { method, body, headers });
         log({
@@ -67,7 +67,10 @@ export default function useFetch() {
         });
         addToast({
           title: "Error",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred",
           severity: "danger",
         });
 

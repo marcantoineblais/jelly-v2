@@ -51,11 +51,7 @@ export default function FileCopyStatus({
   }
 
   function getProgress() {
-    if (
-      totalSize != null &&
-      totalSize > 0 &&
-      totalBytesTransferred != null
-    ) {
+    if (totalSize != null && totalSize > 0 && totalBytesTransferred != null) {
       const remaining = Math.max(0, totalSize - totalBytesTransferred);
       const formattedBytes = formatBytes(remaining, { sizeRef: totalSize });
       return `${formattedBytes} remaining`;

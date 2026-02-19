@@ -72,7 +72,7 @@ export default function DownloadsPage() {
     // Poll interval
     const id = setInterval(fetchTorrent, POLL_INTERVAL_MS);
     return () => clearInterval(id);
-  }, []);
+  }, [fetchData]);
 
   async function deleteTorrent(hash: string, deleteFiles: boolean) {
     try {

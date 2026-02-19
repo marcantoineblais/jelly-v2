@@ -118,7 +118,10 @@ export async function addTorrent(url: string): Promise<void> {
   });
 }
 
-export async function deleteTorrent(hash: string, deleteFiles = false): Promise<void> {
+export async function deleteTorrent(
+  hash: string,
+  deleteFiles = false,
+): Promise<void> {
   const body = new URLSearchParams({
     hashes: hash,
     deleteFiles: String(deleteFiles),

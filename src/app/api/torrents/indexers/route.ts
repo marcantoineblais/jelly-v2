@@ -1,4 +1,7 @@
-import { getJackettIndexers, JackettIndexer } from "@/src/libs/torrents/jackett";
+import {
+  getJackettIndexers,
+  JackettIndexer,
+} from "@/src/libs/torrents/jackett";
 import { NextResponse } from "next/server";
 
 export type JackettIndexerResponse = {

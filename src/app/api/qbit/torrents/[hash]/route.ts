@@ -18,7 +18,8 @@ export async function DELETE(
     await deleteTorrent(hash, deleteFiles);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Delete torrent failed";
+    const message =
+      err instanceof Error ? err.message : "Delete torrent failed";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });
   }
 }

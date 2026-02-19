@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
-    
+
     const fileServerPath = `${FILE_SERVER_URL}/process-files`;
     const res = await fetch(fileServerPath, {
       method: "POST",
@@ -27,9 +27,7 @@ export async function POST(request: NextRequest) {
       try {
         const data = await res.json();
         if (data && typeof data === "object" && "error" in data) {
-          message =
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (data as any).error || message;
+          message = (data as any).error || message;
         }
       } catch {
         // ignore JSON parse errors and fall back to default message

@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Spinner, addToast } from "@heroui/react";
+import { addToast } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
 import FileSelectionBox from "../modals/FileSelectionBox";
 import FileCopyStatus from "../modals/FileCopyStatus";
