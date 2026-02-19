@@ -27,15 +27,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const magnet = typeof body?.urls === "string" ? body.urls : body?.magnet;
-    if (!magnet || typeof magnet !== "string") {
-      return NextResponse.json(
-        { ok: false, error: "Missing urls or magnet in body" },
-        { status: 400 },
-      );
-    }
-    await addTorrent(magnet.trim());
+    const { url } = await request.json();
+    await addTorrent(url.trim());
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Add torrent failed";

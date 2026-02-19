@@ -18,7 +18,6 @@ import {
 import type { JackettIndexer } from "@/src/libs/torrents/jackett";
 import {
   formatDate,
-  getAddableUrl,
   SortBy,
   type FeedItem,
 } from "@/src/libs/torrents/feed-format";
@@ -30,7 +29,7 @@ import { FeedResponse } from "../api/torrents/feed/route";
 
 type FormData = {
   title: string;
-  indexers: Set<string>;
+  indexer: string;
   sortBy: SortBy;
 };
 
@@ -40,7 +39,7 @@ export default function TorrentsPage() {
   // Form states
   const [formData, setFormData] = useState<FormData>({
     title: "",
-    indexers: new Set<string>(),
+    indexer: "",
     sortBy: "date",
   });
 
@@ -79,42 +78,17 @@ export default function TorrentsPage() {
   function toggleSelectedItem(item: FeedItem, state: boolean) {
     setItems((prevItems) =>
       prevItems.map((prevItem) => {
-        if (
-          prevItem.link === item.link &&
-          prevItem.pubDateMs === item.pubDateMs &&
-          prevItem.title === item.title
-        ) {
+        if (prevItem.id === item.id) {
           return { ...prevItem, isAddingToQbittorrent: state };
         }
+
         return prevItem;
       }),
     );
   }
 
-  async function fetchPage(pageNum: number) {
-    const { title, indexers: selectedIndexers, sortBy } = formData;
-    const titleQuery = title.trim();
-    const indexersQuery = Array.from(selectedIndexers).join(",");
-    const searchParams = new URLSearchParams();
-    searchParams.set("name", titleQuery);
-    searchParams.set("indexers", indexersQuery);
-    searchParams.set("sortBy", sortBy);
-    searchParams.set("page", String(pageNum));
-    searchParams.set("limit", String(limit));
-    const { data } = await fetchData<FeedResponse>(
-      `/api/torrents/feed?${searchParams.toString()}`,
-      { setIsLoading: setIsSearchLoading },
-    );
-    setItems(
-      data.items.map((item) => ({ ...item, isAddingToQbittorrent: false })),
-    );
-    setTotal(data.total);
-    setPage(data.page);
-  }
-
   async function addToQbittorrent(item: FeedItem) {
-    const url = getAddableUrl(item);
-    if (!url) {
+    if (!item.url) {
       addToast({
         title: "No link",
         description: "This item has no magnet or torrent link to add.",
@@ -122,12 +96,13 @@ export default function TorrentsPage() {
       });
       return;
     }
+    const body = { url: item.url };
     try {
       toggleSelectedItem(item, true);
       await fetchData<QbittorrentResponse>("/api/qbit/torrents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ magnet: url }),
+        body: JSON.stringify(body),
       });
 
       addToast({
@@ -148,9 +123,9 @@ export default function TorrentsPage() {
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    const { title, indexers, sortBy } = formData;
+    const { title, indexer, sortBy } = formData;
     const titleQuery = title.trim();
-    const indexersQuery = Array.from(indexers).join(",");
+    const indexerQuery = indexer;
     const sortByQuery = sortBy;
 
     if (!titleQuery) {
@@ -165,17 +140,19 @@ export default function TorrentsPage() {
     try {
       const searchParams = new URLSearchParams();
       searchParams.set("name", titleQuery);
-      searchParams.set("indexers", indexersQuery);
+      searchParams.set("indexers", indexerQuery);
       searchParams.set("sortBy", sortByQuery);
       const { data } = await fetchData<FeedResponse>(
         `/api/torrents/feed?${searchParams.toString()}`,
         { setIsLoading: setIsSearchLoading },
       );
-      setItems(data.items.map((item) => ({ ...item, isAddingToQbittorrent: false })));
+      setItems(
+        data.items.map((item) => ({ ...item, isAddingToQbittorrent: false })),
+      );
     } catch (e) {
       setItems([]);
     }
-    
+
     setHasSearched(true);
   }
 
@@ -206,12 +183,12 @@ export default function TorrentsPage() {
               aria-labelledby="Indexers selection"
               label="Indexers"
               placeholder="All indexers"
-              selectionMode="multiple"
-              selectedKeys={formData.indexers}
+              selectionMode="single"
+              selectedKeys={[formData.indexer]}
               onSelectionChange={(selection) =>
                 setFormData({
                   ...formData,
-                  indexers: new Set(selection as string),
+                  indexer: [...selection][0]?.toString() ?? "",
                 })
               }
             >
@@ -254,18 +231,6 @@ export default function TorrentsPage() {
           <Table
             aria-label="Torrents results"
             className="w-full text-left text-sm"
-            bottomContent={
-              total != null && total > limit ? (
-                <div className="flex w-full justify-center">
-                  <Pagination
-                    total={Math.ceil(total / limit)}
-                    page={page}
-                    onChange={(p) => fetchPage(p)}
-                    showControls
-                  />
-                </div>
-              ) : null
-            }
           >
             <TableHeader className="bg-stone-100 sticky top-0">
               <TableColumn>Title</TableColumn>
@@ -273,16 +238,13 @@ export default function TorrentsPage() {
               <TableColumn>Size</TableColumn>
               <TableColumn>Seeds</TableColumn>
               <TableColumn>Leech</TableColumn>
-              <TableColumn>Source</TableColumn>
               <TableColumn>Action</TableColumn>
             </TableHeader>
 
             <TableBody items={items} emptyContent={"No torrents found."}>
               {(item) => {
-                const addUrl = getAddableUrl(item);
-                const rowKey = `${item.link ?? item.magnet ?? ""}-${item.pubDateMs}-${item.title}`;
                 return (
-                  <TableRow key={rowKey}>
+                  <TableRow key={item.id.toString()}>
                     <TableCell
                       title={item.title}
                       className="max-w-[50%] truncate"
@@ -301,21 +263,16 @@ export default function TorrentsPage() {
                     <TableCell className="whitespace-nowrap">
                       {item.leech ?? "—"}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {item.source}
-                    </TableCell>
                     <TableCell>
-                      {addUrl && (
-                        <Button
-                          size="sm"
-                          color="default"
-                          variant="ghost"
-                          isLoading={item.isAddingToQbittorrent}
-                          onPress={() => addToQbittorrent(item)}
-                        >
-                          Add to qBittorrent
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        color="default"
+                        variant="ghost"
+                        isLoading={item.isAddingToQbittorrent}
+                        onPress={() => addToQbittorrent(item)}
+                      >
+                        Add to qBittorrent
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );

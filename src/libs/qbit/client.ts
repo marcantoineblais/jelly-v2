@@ -109,12 +109,12 @@ export async function listTorrents(params?: {
   );
 }
 
-export async function addTorrent(magnetOrUrl: string): Promise<void> {
-  const body = new URLSearchParams({ urls: magnetOrUrl });
+export async function addTorrent(url: string): Promise<void> {
+  const body = { urls: url };
   await qbitRequest("/torrents/add", {
     method: "POST",
     contentType: "application/x-www-form-urlencoded",
-    body: body.toString(),
+    body: new URLSearchParams(body).toString(),
   });
 }
 
