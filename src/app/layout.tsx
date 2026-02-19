@@ -8,7 +8,7 @@ import Navigation from "../components/ui/navigation";
 
 export const metadata: Metadata = {
   title: "Jelly",
-  description: "Media files rename tool for jellyfin",
+  description: "Media files manager for Jellyfin",
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className={`h-lvh w-lvh ${roboto.className}`}>
         <ConfigProvider config={config}>
           <ToastMessagesProvider>
-            <div className="h-dvh w-dvw flex flex-col">
+            <div className="h-dvh w-dvw flex flex-col overflow-hidden">
               <Navigation />
               {children}
             </div>

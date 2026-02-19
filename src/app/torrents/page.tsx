@@ -155,7 +155,7 @@ export default function TorrentsPage() {
   return (
     <>
       {isPageLoading && <LoadIndicator />}
-      <main className="min-h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8">
+      <main className="h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
         <form
           onSubmit={handleSubmit}
           className="flex flex-col gap-3 p-3 bg-white/80 rounded-lg border border-stone-200"
@@ -226,7 +226,7 @@ export default function TorrentsPage() {
         {hasSearched && (
           <Table
             aria-label="Torrents results"
-            className="w-full text-left text-sm"
+            className="h-full w-full text-left text-sm overflow-y-auto"
           >
             <TableHeader className="bg-stone-100 sticky top-0">
               <TableColumn>Title</TableColumn>
