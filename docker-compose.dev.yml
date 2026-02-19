@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: jelly-app-dev
     env_file:
-      - .env
+      - stack.env
     environment:
       - JACKETT_URL=http://jackett:9117
       - NODE_ENV=development
