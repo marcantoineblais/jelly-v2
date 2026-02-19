@@ -6,7 +6,7 @@ export default function ToastMessagesProvider({ children }: { children: React.Re
   return (
     <HeroUIProvider className="h-full">
       {children}
-      <ToastProvider />
+      <ToastProvider placement="bottom-center" />
     </HeroUIProvider>
   );
 }

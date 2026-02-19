@@ -1,5 +1,11 @@
-import { listTorrents, addTorrent } from "@/src/libs/qbit/client";
+import { listTorrents, addTorrent, QbitTorrent } from "@/src/libs/qbit/client";
 import { NextResponse } from "next/server";
+
+export type QbittorrentResponse = {
+  ok: boolean;
+  torrents: QbitTorrent[];
+  error?: string;
+};
 
 export async function GET(request: Request) {
   try {

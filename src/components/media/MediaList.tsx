@@ -19,6 +19,7 @@ import { sortFilesByLibrary } from "@/src/libs/files/sortFilesByLibrary";
 import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-socket";
 import MediaListEmpty from "./MediaListEmpty";
 import MediaListAccordion from "./MediaListAccordion";
+import LoadIndicator from "../ui/load-indicator";
 
 export default function MediaList({
   files = [],
@@ -302,26 +303,23 @@ export default function MediaList({
     }
   }
 
+  if (isFilesLoading) {
+    return <LoadIndicator />;
+  }
+
   if (validatedFiles.length === 0) {
     return <MediaListEmpty isLoading={isFilesLoading} />;
   }
 
   return (
     <div className="px-1 py-5 h-full max-h-full flex flex-col gap-3 overflow-hidden">
-      {isFilesLoading ? (
-        <div className="flex items-center gap-2 text-sm text-stone-600">
-          <Spinner size="sm" />
-          <span>Refreshing list…</span>
-        </div>
-      ) : (
-        <MediaListAccordion
-          sortedFiles={sortedFiles}
-          binnedFiles={binnedFiles}
-          selectedKeys={selectedKeys}
-          onSelectionChange={handleSelectionChange}
-          onSelect={handleSelect}
-        />
-      )}
+      <MediaListAccordion
+        sortedFiles={sortedFiles}
+        binnedFiles={binnedFiles}
+        selectedKeys={selectedKeys}
+        onSelectionChange={handleSelectionChange}
+        onSelect={handleSelect}
+      />
 
       <FileSelectionBox
         onEdit={handleEdit}

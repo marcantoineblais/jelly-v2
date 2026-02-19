@@ -82,7 +82,7 @@ export default function FileCopyStatus({
 
             <Progress
               value={getProgressPercent()}
-              classNames={{ indicator: "bg-emerald-700" }}
+              classNames={{ indicator: "bg-primary" }}
             />
 
             <div className="w-full flex justify-center">{getProgress()}</div>

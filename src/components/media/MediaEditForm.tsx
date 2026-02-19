@@ -167,7 +167,7 @@ export default function MediaEditForm({
                 <Checkbox
                   isSelected={form.isSeasonEnabled}
                   onValueChange={(v) => handleChange("isSeasonEnabled", v)}
-                  classNames={{ wrapper: "after:bg-emerald-700" }}
+                  classNames={{ wrapper: "after:bg-primary" }}
                 />
               }
             />
@@ -184,7 +184,7 @@ export default function MediaEditForm({
                 <Checkbox
                   isSelected={form.isEpisodeEnabled}
                   onValueChange={(v) => handleChange("isEpisodeEnabled", v)}
-                  classNames={{ wrapper: "after:bg-emerald-700" }}
+                  classNames={{ wrapper: "after:bg-primary" }}
                 />
               }
             />
@@ -193,7 +193,7 @@ export default function MediaEditForm({
               isSelected={form.incrementEpisodes}
               onValueChange={(v) => handleChange("incrementEpisodes", v)}
               size="sm"
-              classNames={{ wrapper: "after:bg-emerald-700", label: "text-sm" }}
+              classNames={{ wrapper: "after:bg-primary", label: "text-sm" }}
             >
               Increment episodes
             </Checkbox>
@@ -211,7 +211,7 @@ export default function MediaEditForm({
                 <Checkbox
                   isSelected={form.isYearEnabled}
                   onValueChange={(v) => handleChange("isYearEnabled", v)}
-                  classNames={{ wrapper: "after:bg-emerald-700" }}
+                  classNames={{ wrapper: "after:bg-primary" }}
                 />
               }
             />
@@ -235,7 +235,7 @@ export default function MediaEditForm({
           <ModalFooter>
             <Button onPress={() => onClose()}>Cancel</Button>
             <Button
-              className="bg-emerald-700 text-white"
+              className="bg-primary text-white"
               onPress={() => onSaveMediaInfo(form)}
             >
               Save

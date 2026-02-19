@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @plugin './hero.mts';
-@source '@/node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
+@theme {
+  /* Primary palette (replaces emerald-700/900 for brand color) */
+  --color-primary: #047857;
+  --color-primary-hover: #064e3b;
+}
 
 body {
   width: 100dvw;

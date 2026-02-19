@@ -4,6 +4,7 @@ import { roboto } from "@/src/fonts";
 import ToastMessagesProvider from "@/src/hooks/use-toast-messages";
 import { APP_URL, FILE_SERVER_URL, SOCKET_SERVER_URL } from "@/src/config";
 import { ConfigProvider } from "@/src/hooks/use-config";
+import Navigation from "../components/ui/navigation";
 
 export const metadata: Metadata = {
   title: "Jelly",
@@ -23,10 +24,15 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${roboto.className}`}>
-        <ConfigProvider config={config}>
-          <ToastMessagesProvider>{children}</ToastMessagesProvider>
-        </ConfigProvider>
+      <body className={`h-lvh w-lvh ${roboto.className}`}>
+          <ConfigProvider config={config}>
+            <ToastMessagesProvider>
+              <div className="h-dvh w-dvw flex flex-col">
+                <Navigation />
+                {children}
+              </div>
+            </ToastMessagesProvider>
+          </ConfigProvider>
       </body>
     </html>
   );

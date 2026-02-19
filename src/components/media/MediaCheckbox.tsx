@@ -35,7 +35,7 @@ export default function MediaCheckbox({
         isSelected={isSelected}
         isIndeterminate={isIndeterminate && !isSelected}
         onChange={handleChange}
-        classNames={{ wrapper: "after:bg-emerald-700" }}
+        classNames={{ wrapper: "after:bg-primary" }}
       />
       <div
         className="w-full data-error:text-red-800 overflow-hidden"

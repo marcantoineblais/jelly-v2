@@ -13,15 +13,6 @@ export default function Home() {
 
   return (
     <main className="h-full max-h-full w-full flex flex-col gap-3 bg-stone-100">
-      <div className="flex items-center justify-center gap-4 mt-5">
-        <H1 className="mt-0!">Jelly</H1>
-        <Link
-          href="/torrents"
-          className="text-emerald-700 hover:text-emerald-900 underline text-lg"
-        >
-          Torrents
-        </Link>
-      </div>
       <MediaList files={files} libraries={libraries} />
     </main>
   );
