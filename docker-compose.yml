@@ -12,7 +12,6 @@ services:
     restart: unless-stopped
     networks:
       - private
-      - caddy_proxy
 
   jackett:
     image: linuxserver/jackett:latest
@@ -28,6 +27,7 @@ services:
     restart: unless-stopped
     networks:
       - private
+      - caddy_proxy
 
   qbittorrent:
     image: linuxserver/qbittorrent:latest
