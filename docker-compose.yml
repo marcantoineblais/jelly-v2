@@ -39,7 +39,7 @@ services:
       - WEBUI_PORT=8080
     volumes:
       - /opt/qbittorrent/config:/config
-      - /mnt/downloads:/downloads
+      - /mnt/media/Downloads:/downloads
     restart: unless-stopped
     networks:
       - private
@@ -52,7 +52,6 @@ services:
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
-      - /mnt/downloads:/mnt/downloads
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
     depends_on:
