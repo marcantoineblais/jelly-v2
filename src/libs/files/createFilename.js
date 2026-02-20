@@ -3,8 +3,8 @@ import { formatNumber } from "./formatNumber.js";
 export function createFilename(info = {}) {
   const title = info.title || "Not set";
   const year = info.year ? `(${info.year})` : null;
-  let se = ""; 
-  if (info.mediaType === "show") {
+  let se = "";
+  if (info.season !== undefined || info.episode !== undefined) {
     se = " - " + createEpisodeLabel(info);
   }
 
