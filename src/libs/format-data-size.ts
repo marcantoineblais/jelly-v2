@@ -1,5 +1,3 @@
-import { log } from "./logger";
-
 export function formatDataSize(bytes?: number | string | null): string {
   if (!bytes) return "-";
 
@@ -10,11 +8,6 @@ export function formatDataSize(bytes?: number | string | null): string {
   } else {
     value = bytes;
   }
-  log({
-    source: "formatDataSize",
-    message: "Value: ",
-    data: value,
-  });
 
   if (value <= 0 || !Number.isFinite(value)) return "-";
   const gb = value / (1024 * 1024 * 1024);

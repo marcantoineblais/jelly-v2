@@ -39,19 +39,19 @@ export default function TorrentTableItem({
 
       <div className="flex justify-between text-xs text-neutral-500">
         <span className="basis-1/2 whitespace-nowrap">
-          Seeds: {item.numSeeds}
+          Seeds: {item.numSeeds ?? "-"}
         </span>
         <span className="basis-1/2 whitespace-nowrap">
-          Down: {formatSpeed(item.dlSpeed)}
+          Down: {formatSpeed(item.dlSpeed ?? 0)}
         </span>
       </div>
 
       <div className="flex justify-between text-xs text-neutral-500">
         <span className="basis-1/2 whitespace-nowrap">
-          Leech: {item.numLeechs}
+          Leech: {item.numLeechs ?? "-"}
         </span>
         <span className="basis-1/2 whitespace-nowrap">
-          Up: {formatSpeed(item.upSpeed)}
+          Up: {formatSpeed(item.upSpeed ?? 0)}
         </span>
       </div>
     </div>

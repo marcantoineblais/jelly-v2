@@ -101,14 +101,19 @@ export default function TorrentsPage() {
     }
 
     const fetchCategories = async () => {
-      const { data } = await fetchData<CapsResponse>("/api/torrents/caps");
-      startTransition(() => {
-        setCategories(data.caps.categories);
-        setFormData((prev) => ({
-          ...prev,
-          limit: data.caps.limits?.max ?? NaN,
-        }));
-      });
+      try {
+        const url = `/api/torrents/caps?indexer=${encodeURIComponent(formData.indexer)}`;
+        const { data } = await fetchData<CapsResponse>(url);
+        startTransition(() => {
+          setCategories(data.caps.categories);
+          setFormData((prev) => ({
+            ...prev,
+            limit: data.caps.limits?.max ?? NaN,
+          }));
+        });
+      } catch {
+        startTransition(() => setCategories([]));
+      }
     };
 
     fetchCategories();
