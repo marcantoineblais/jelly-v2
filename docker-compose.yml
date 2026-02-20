@@ -74,7 +74,7 @@ services:
       - WEBUI_PORT=${QBITTORRENT_WEBUI_PORT:-8080}
     volumes:
       - /opt/qbittorrent/config:/config
-      - /mnt/torrents:/downloads
+      - /mnt/downloads:/downloads
     depends_on:
       gluetun:
         condition: service_started
@@ -89,7 +89,7 @@ services:
       # Add host paths for file-server to read/write
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
-      - /mnt/torrents:/mnt/downloads
+      - /mnt/downloads:/mnt/downloads
     depends_on:
       - files-server
     restart: unless-stopped
@@ -114,7 +114,7 @@ services:
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
-      - /mnt/torrents:/mnt/downloads
+      - /mnt/downloads:/mnt/downloads
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
     depends_on:
