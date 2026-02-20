@@ -15,6 +15,18 @@ export type TorrentSearchItem = {
 
 export type JackettIndexer = { id: string; name: string };
 
+export type TorznabCategory = {
+  id: number;
+  name: string;
+  subcats?: TorznabCategory[];
+};
+
+export type TorznabCaps = {
+  server?: { version?: string; title?: string };
+  limits?: { max?: number; default?: number };
+  categories: TorznabCategory[];
+};
+
 function formatSize(bytes: number): string {
   if (bytes <= 0 || !Number.isFinite(bytes)) return "";
   const gb = bytes / (1024 * 1024 * 1024);
@@ -65,7 +77,92 @@ export async function getJackettIndexers(): Promise<JackettIndexer[]> {
     );
 }
 
+/**
+ * Fetch Torznab capabilities (categories, limits, search modes) for an indexer.
+ * Use indexerId "all" or empty for the aggregate; otherwise a specific indexer id.
+ */
+export async function getJackettCaps(indexerId: string): Promise<TorznabCaps> {
+  if (!JACKETT_API_KEY) {
+    throw new Error("JACKETT_API_KEY is not set");
+  }
+  const baseUrl = JACKETT_URL.replace(/\/$/, "");
+  const useAll = !indexerId || indexerId === "all";
+  const path = useAll ? "all" : indexerId.trim().toLowerCase();
+  const url = `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?apikey=${encodeURIComponent(JACKETT_API_KEY)}&t=caps`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Jackett caps: ${res.status}`);
+  }
+  const xml = await res.text();
+  return parseTorznabCapsXml(xml);
+}
+
+/** XML parser output: attributes may be @_name or name depending on config */
+type XmlAttrs = Record<string, unknown>;
+
+function attr(obj: XmlAttrs | undefined, key: string): string {
+  if (!obj) return "";
+  const val = obj[`@_${key}`] ?? obj[key];
+  return String(val ?? "");
+}
+
+function attrInt(obj: XmlAttrs | undefined, key: string): number {
+  return parseInt(attr(obj, key) || "0", 10);
+}
+
+function toArray<T>(val: T | T[] | undefined): T[] {
+  if (val == null) return [];
+  return Array.isArray(val) ? val : [val];
+}
+
+function parseTorznabCategory(raw: XmlAttrs): TorznabCategory {
+  const id = attrInt(raw, "id");
+  const name = attr(raw, "name");
+  const rawSubcats = toArray(raw.subcat ?? raw.subcategory);
+  const subcats = rawSubcats.map((s) => ({
+    id: attrInt(s as XmlAttrs, "id"),
+    name: attr(s as XmlAttrs, "name"),
+  }));
+  return {
+    id,
+    name,
+    subcats: subcats.length > 0 ? subcats : undefined,
+  };
+}
+
+function parseTorznabCapsXml(xml: string): TorznabCaps {
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "@_",
+  });
+  const doc = parser.parse(xml);
+  const caps = doc?.caps ?? doc?.torznab?.caps;
+  if (!caps) return { categories: [] };
+
+  const rawCategories = toArray(caps.categories?.category);
+  const categories = rawCategories.map((c) =>
+    parseTorznabCategory(c as XmlAttrs),
+  );
+
+  const server = caps.server
+    ? {
+        version: attr(caps.server as XmlAttrs, "version"),
+        title: attr(caps.server as XmlAttrs, "title"),
+      }
+    : undefined;
+
+  const limits = caps.limits
+    ? {
+        max: attrInt(caps.limits as XmlAttrs, "max"),
+        default: attrInt(caps.limits as XmlAttrs, "default"),
+      }
+    : undefined;
+
+  return { server, limits, categories };
+}
+
 export type SearchJackettOptions = {
+  cat?: string;
   offset?: number;
   limit?: number;
 };
@@ -83,6 +180,7 @@ export type SearchJackettResult = {
 export async function searchJackett(
   query: string,
   indexerId: string,
+  options?: SearchJackettOptions,
 ): Promise<SearchJackettResult> {
   if (!JACKETT_API_KEY) {
     throw new Error("JACKETT_API_KEY is not set");
@@ -94,8 +192,19 @@ export async function searchJackett(
 
   const useAll = !indexerId || indexerId === "all";
   const path = useAll ? "all" : indexerId;
+  const params = new URLSearchParams({
+    apikey: JACKETT_API_KEY,
+    t: "search",
+    q,
+  });
+  if (options?.cat) params.set("cat", options.cat);
+  if (options?.limit != null && options.limit > 0)
+    params.set("limit", String(options.limit));
+  if (options?.offset != null && options.offset >= 0)
+    params.set("offset", String(options.offset));
+
   const response = await fetch(
-    `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?apikey=${JACKETT_API_KEY}&t=search&q=${q}`,
+    `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?${params.toString()}`,
   );
   if (!response.ok) throw new Error(`Jackett search: ${response.status}`);
   const data = await response.text();

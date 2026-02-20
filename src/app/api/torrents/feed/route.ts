@@ -16,6 +16,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const name = searchParams.get("name") ?? searchParams.get("q") ?? "";
     const indexerParam = searchParams.get("indexers") ?? "";
+    const category = searchParams.get("category") ?? "";
+    const limitParam = searchParams.get("limit") ?? "";
 
     const query = name.trim();
     if (!query) {
@@ -27,8 +29,15 @@ export async function GET(request: Request) {
     }
 
     const indexerId = indexerParam.trim().toLowerCase();
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    const validLimit =
+      limit != null && !Number.isNaN(limit) && limit > 0 ? limit : undefined;
+    const options = {
+      cat: category.trim() || undefined,
+      limit: validLimit,
+    };
 
-    const { items, total } = await searchJackett(query, indexerId);
+    const { items, total } = await searchJackett(query, indexerId, options);
     return NextResponse.json({
       ok: true,
       items: items as FeedItem[],
