@@ -79,10 +79,10 @@ export default function MediaListAccordion({
   );
 
   return (
-    <div className="h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden">
       <Accordion
         key="media-list-main"
-        className="flex-col h-full overflow-y-auto overflow-x-hidden px-1 py-3"
+        className="flex-col h-full overflow-hidden px-1 py-3"
         onSelectionChange={onSelectionChange}
         selectedKeys={selectedKeys}
         selectionMode="multiple"
