@@ -24,7 +24,6 @@ import {
 } from "@/src/libs/qbit/format";
 import useFetch from "@/src/hooks/use-fetch";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
-import LoadIndicator from "@/src/components/ui/load-indicator";
 import { POLL_INTERVAL_MS } from "@/src/config";
 
 type QbitTorrent = {
@@ -103,10 +102,12 @@ export default function DownloadsPage() {
     }
   }
 
+  if (isPageLoading) {
+    return null;
+  }
+
   return (
     <main className="min-h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8">
-      {isPageLoading && <LoadIndicator />}
-
       <Table className="w-full text-left text-sm" aria-label="Downloads">
         <TableHeader>
           <TableColumn>Name</TableColumn>
