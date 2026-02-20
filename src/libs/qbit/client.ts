@@ -59,7 +59,12 @@ async function getCookie(): Promise<string> {
 
 export async function qbitRequest<T>(
   path: string,
-  options: {
+  {
+    method = "GET",
+    searchParams = {},
+    body,
+    contentType,
+  }: {
     method?: "GET" | "POST" | "DELETE";
     searchParams?: Record<string, string>;
     body?: string;
@@ -68,8 +73,8 @@ export async function qbitRequest<T>(
 ): Promise<T> {
   const cookie = await getCookie();
   const url = new URL(`${API_PREFIX}${path}`);
-  if (options.searchParams) {
-    Object.entries(options.searchParams).forEach(([k, v]) =>
+  if (searchParams) {
+    Object.entries(searchParams).forEach(([k, v]) =>
       url.searchParams.set(k, v),
     );
   }
@@ -78,11 +83,11 @@ export async function qbitRequest<T>(
     Referer: QBIT_URL,
     Origin: QBIT_URL,
   };
-  if (options.contentType) headers["Content-Type"] = options.contentType;
+  if (contentType) headers["Content-Type"] = contentType;
   const res = await fetch(url.toString(), {
-    method: options.method ?? "GET",
+    method,
     headers,
-    body: options.body,
+    body,
   });
   if (!res.ok) {
     const text = await res.text();

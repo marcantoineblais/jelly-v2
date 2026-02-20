@@ -99,11 +99,6 @@ export async function searchJackett(
   );
   if (!response.ok) throw new Error(`Jackett search: ${response.status}`);
   const data = await response.text();
-  log({
-    source: "searchJackett",
-    message: "Torznab response: ",
-    data,
-  });
   const items = parseTorznabXml(data);
   return { items, total: items.length };
 }
@@ -118,11 +113,6 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
   if (!channel) return [];
   const rawItems = channel.item;
   const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
-  log({
-    source: "parseTorznabXml",
-    message: "Items: ",
-    data: items,
-  });
   return items.map((item, index) => {
     const title = item.title ?? "";
     const url = item.link ?? "";
@@ -136,11 +126,6 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
       attrs?.find(
         (a: any) => a["@_name"] === "leechers" || a["@_name"] === "peers",
       )?.["@_value"] ?? 0;
-    log({
-      source: "url",
-      message: "URL: ",
-      data: url,
-    });
     return {
       id: index,
       title,

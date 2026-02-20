@@ -21,7 +21,6 @@ import {
   type FeedItem,
 } from "@/src/libs/torrents/feed-format";
 import useFetch from "../../hooks/use-fetch";
-import LoadIndicator from "@/src/components/ui/load-indicator";
 import { JackettIndexerResponse } from "../api/torrents/indexers/route";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
 import { FeedResponse } from "../api/torrents/feed/route";
@@ -154,7 +153,6 @@ export default function TorrentsPage() {
 
   return (
     <>
-      {isPageLoading && <LoadIndicator />}
       <main className="h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
         <form
           onSubmit={handleSubmit}
@@ -217,7 +215,7 @@ export default function TorrentsPage() {
           </div>
 
           <div className="flex w-full justify-center">
-            <Button type="submit" color="primary" isLoading={isSearchLoading}>
+            <Button type="submit" color="primary" isLoading={isSearchLoading} disabled={isPageLoading}>
               Search
             </Button>
           </div>

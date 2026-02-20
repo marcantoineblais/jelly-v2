@@ -12,6 +12,103 @@ const fsSync = require("fs");
 const path = require("path");
 
 const PROGRESS_THROTTLE_MS = 150;
+
+const QBIT_URL = process.env.QBIT_URL ?? "http://localhost:8080";
+const QBIT_USER = process.env.QBIT_USER ?? "admin";
+const QBIT_PASS = process.env.QBIT_PASS ?? "adminadmin";
+const QBIT_API_PREFIX = `${QBIT_URL.replace(/\/$/, "")}/api/v2`;
+
+function normalizePathForCompare(p) {
+  let norm = path.normalize(p).replace(/\\/g, "/").replace(/\/+/g, "/");
+  const downloadRoots = ["/mnt/downloads", "/mnt/encodes", "/mnt/media/Downloads"];
+  for (const root of downloadRoots) {
+    if (norm === root || norm.startsWith(root + "/")) {
+      norm = "/downloads" + norm.slice(root.length);
+      break;
+    }
+  }
+  return norm;
+}
+
+function filePathMatchesTorrent(filePath, contentPath) {
+  const normFile = normalizePathForCompare(filePath);
+  const normContent = normalizePathForCompare(contentPath);
+  return normFile === normContent || normFile.startsWith(normContent + "/");
+}
+
+async function getQbitCookie() {
+  const body = new URLSearchParams({
+    username: QBIT_USER,
+    password: QBIT_PASS,
+  });
+  const res = await fetch(`${QBIT_API_PREFIX}/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Referer: QBIT_URL,
+      Origin: QBIT_URL,
+    },
+    body: body.toString(),
+  });
+  if (!res.ok) throw new Error(`qBittorrent login failed: ${res.status}`);
+  const setCookie = res.headers.get("set-cookie");
+  if (!setCookie) throw new Error("qBittorrent: no session cookie");
+  return setCookie.split(";")[0].trim();
+}
+
+async function qbitRequest(path, options = {}) {
+  const cookie = await getQbitCookie();
+  const url = new URL(`${QBIT_API_PREFIX}${path}`);
+  if (options.searchParams) {
+    Object.entries(options.searchParams).forEach(([k, v]) =>
+      url.searchParams.set(k, v),
+    );
+  }
+  const headers = {
+    Cookie: cookie,
+    Referer: QBIT_URL,
+    Origin: QBIT_URL,
+  };
+  if (options.contentType) headers["Content-Type"] = options.contentType;
+  const res = await fetch(url.toString(), {
+    method: options.method ?? "GET",
+    headers,
+    body: options.body,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`qBittorrent API ${path}: ${res.status} ${text}`);
+  }
+  const ct = res.headers.get("content-type") ?? "";
+  if (ct.includes("application/json")) return res.json();
+  return undefined;
+}
+
+async function removeTorrentsForFile(filePath) {
+  try {
+    const torrents = await qbitRequest("/torrents/info");
+    if (!Array.isArray(torrents)) return;
+    const toRemove = [];
+    for (const t of torrents) {
+      const contentPath = t.content_path ?? t.contentPath ?? "";
+      if (contentPath && filePathMatchesTorrent(filePath, contentPath)) {
+        toRemove.push(t.hash);
+      }
+    }
+    for (const hash of toRemove) {
+      await qbitRequest("/torrents/delete", {
+        method: "POST",
+        contentType: "application/x-www-form-urlencoded",
+        body: new URLSearchParams({
+          hashes: hash,
+          deleteFiles: "false",
+        }).toString(),
+      });
+    }
+  } catch (err) {
+    console.warn("qBittorrent: could not remove torrents for file:", err?.message ?? err);
+  }
+}
 let isTransferActive = false;
 
 function sendProgress(ws, payload) {
@@ -107,6 +204,7 @@ async function copyFileWithProgress(
       readStream.pipe(progressTransform).pipe(writeStream);
     });
 
+    await removeTorrentsForFile(file.path);
     await fs.unlink(file.path);
     await deleteEmptyFolders(file);
   } catch (error) {

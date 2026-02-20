@@ -9,9 +9,5 @@ export function log({
   data?: unknown;
   level?: "info" | "error" | "warn" | "debug";
 }) {
-  let dataString = "";
-  if (data) {
-    dataString = JSON.stringify(data);
-  }
-  console[level](`[${source}] ${message}`, dataString);
+  console[level](`[${source}] ${message}`, data);
 }

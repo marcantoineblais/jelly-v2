@@ -19,7 +19,6 @@ import { sortFilesByLibrary } from "@/src/libs/files/sortFilesByLibrary";
 import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-socket";
 import MediaListEmpty from "./MediaListEmpty";
 import MediaListAccordion from "./MediaListAccordion";
-import LoadIndicator from "../ui/load-indicator";
 
 export default function MediaList({
   files = [],
@@ -304,7 +303,7 @@ export default function MediaList({
   }
 
   if (isFilesLoading) {
-    return <LoadIndicator />;
+    return null;
   }
 
   if (validatedFiles.length === 0) {
