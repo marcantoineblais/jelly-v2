@@ -34,7 +34,6 @@ export default function DownloadsPage() {
     onOpenChange: onModalOpenChange,
   } = useDisclosure();
 
-  // const [torrents, setTorrents] = useState<QbitTorrent[]>([]);
   const [torrents, setTorrents] = useState<QbitTorrent[]>([]);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -44,7 +43,8 @@ export default function DownloadsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const sortedTorrents = useMemo(() => {
-    return torrents.sort((a, b) => {
+    const toSort = [...torrents];
+    return toSort.sort((a, b) => {
       const mult = sortOrder === "asc" ? 1 : -1;
       switch (sortBy) {
         case "name":
