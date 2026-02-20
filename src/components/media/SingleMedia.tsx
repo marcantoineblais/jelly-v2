@@ -1,8 +1,8 @@
 import { createFilename } from "@/src/libs/files/createFilename";
-import { formatBytes } from "@/src/libs/files/formatBytes";
 import { formatNumber } from "@/src/libs/files/formatNumber";
 import { MediaFile } from "@/src/types/MediaFile";
 import MediaInfoLine from "./MediaInfoLine";
+import { formatDataSize } from "@/src/libs/format-data-size";
 
 export default function SingleMedia({
   file = null,
@@ -17,7 +17,7 @@ export default function SingleMedia({
   const episode = info.episode ? `${formatNumber(info.episode)}` : "None";
   const year = info.year ? info.year.toString() : "None";
   const type = file.library.type ? file.library.type : "No type";
-  const fileSize = file.size != null ? formatBytes(file.size) : "Unknown";
+  const fileSize = file.size != null ? formatDataSize(file.size) : "Unknown";
   const elements = [
     { label: "File path", content: file.path },
     { label: "Original file name", content: file.name },

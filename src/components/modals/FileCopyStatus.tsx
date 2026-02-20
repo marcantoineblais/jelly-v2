@@ -7,7 +7,7 @@ import {
   ModalHeader,
   Progress,
 } from "@heroui/react";
-import { formatBytes } from "@/src/libs/files/formatBytes";
+import { formatDataSize } from "@/src/libs/format-data-size";
 
 export default function FileCopyStatus({
   isOpen = false,
@@ -53,7 +53,7 @@ export default function FileCopyStatus({
   function getProgress() {
     if (totalSize != null && totalSize > 0 && totalBytesTransferred != null) {
       const remaining = Math.max(0, totalSize - totalBytesTransferred);
-      const formattedBytes = formatBytes(remaining, { sizeRef: totalSize });
+      const formattedBytes = formatDataSize(remaining, { sizeRef: totalSize });
       return `${formattedBytes} remaining`;
     }
 

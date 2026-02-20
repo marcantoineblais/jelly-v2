@@ -51,7 +51,9 @@ export default function ShowsContent({
                 isSelected={showFiles.every((file) => file.isSelected)}
                 isIndeterminate={showFiles.some((file) => file.isSelected)}
                 onSelect={onSelect}
-              />
+              >
+                <span className="text-xs text-gray-500">{showFiles.length} episode{showFiles.length > 1 ? "s" : ""}</span>
+              </MediaCheckbox>
             }
           >
             <MediaShow files={showFiles} handleSelect={onSelect} />

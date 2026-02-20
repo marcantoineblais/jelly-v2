@@ -1,4 +1,7 @@
-export function formatDataSize(bytes?: number | string | null): string {
+export function formatDataSize(
+  bytes?: number | string | null,
+  options: { sizeRef?: number } = {},
+) {
   if (!bytes) return "-";
 
   let value = 0;
@@ -9,12 +12,19 @@ export function formatDataSize(bytes?: number | string | null): string {
     value = bytes;
   }
 
-  if (value <= 0 || !Number.isFinite(value)) return "-";
-  const gb = value / (1024 * 1024 * 1024);
-  if (gb >= 1) return `${gb.toFixed(1)}GB`;
-  const mb = value / (1024 * 1024);
-  if (mb >= 1) return `${mb.toFixed(1)}MB`;
-  const kb = value / 1024;
-  if (kb >= 1) return `${kb.toFixed(1)}KB`;
-  return `${value}B`;
+  return formatBytes(value);
+}
+
+export function formatBytes(
+  bytes: number,
+  options: { sizeRef?: number } = {},
+): string {
+  const sizeRef = options.sizeRef ?? bytes;
+  if (sizeRef < 1024) return `${bytes}B`;
+  if (sizeRef < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  if (sizeRef < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  if (sizeRef < 1024 * 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
+  return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)}TB`;
 }

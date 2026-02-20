@@ -2,15 +2,17 @@
 
 import { MediaFile } from "@/src/types/MediaFile";
 import { Checkbox } from "@heroui/react";
-import { ChangeEvent, useMemo } from "react";
+import { ChangeEvent, ReactNode, useMemo } from "react";
 
 export default function MediaCheckbox({
+  children,
   files = [],
   label = "",
   isSelected = false,
   isIndeterminate = false,
   onSelect = () => {},
 }: {
+  children?: ReactNode;
   files?: MediaFile | MediaFile[];
   label?: string;
   isSelected?: boolean;
@@ -37,19 +39,23 @@ export default function MediaCheckbox({
         onChange={handleChange}
         classNames={{ wrapper: "after:bg-primary" }}
       />
-      <div
-        className="w-full data-error:text-red-800 overflow-hidden"
-        data-error={hasError || undefined}
-      >
-        <span className="block w-full truncate">{label}</span>
+      <div className="flex flex-col">
+        <div
+          className="w-full data-error:text-red-800 overflow-hidden"
+          data-error={hasError || undefined}
+        >
+          <span className="block w-full truncate">{label}</span>
 
-        {hasError && !Array.isArray(files) && (
-          <ul className="text-xs text-red-800">
-            {files.errors?.map((error, i) => (
-              <li key={i}>*{error}</li>
-            ))}
-          </ul>
-        )}
+          {hasError && !Array.isArray(files) && (
+            <ul className="text-xs text-red-800">
+              {files.errors?.map((error, i) => (
+                <li key={i}>*{error}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {children}
       </div>
     </div>
   );

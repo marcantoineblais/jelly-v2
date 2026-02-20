@@ -63,7 +63,9 @@ export default function MediaShow({
                 isSelected={seasonFiles.every((file) => file.isSelected)}
                 isIndeterminate={seasonFiles.some((file) => file.isSelected)}
                 onSelect={handleSelect}
-              />
+              >
+                <span className="text-xs text-gray-500">{seasonFiles.length} episode{seasonFiles.length > 1 ? "s" : ""}</span>
+              </MediaCheckbox>
             }
           >
             <MediaSeason files={seasonFiles} handleSelect={handleSelect} />
