@@ -312,13 +312,15 @@ export default function MediaList({
 
   return (
     <div className="px-1 py-5 h-full flex flex-col gap-3 overflow-hidden">
-      <MediaListAccordion
-        sortedFiles={sortedFiles}
-        binnedFiles={binnedFiles}
-        selectedKeys={selectedKeys}
-        onSelectionChange={handleSelectionChange}
-        onSelect={handleSelect}
-      />
+      <div className="h-full overflow-hidden">
+        <MediaListAccordion
+          sortedFiles={sortedFiles}
+          binnedFiles={binnedFiles}
+          selectedKeys={selectedKeys}
+          onSelectionChange={handleSelectionChange}
+          onSelect={handleSelect}
+        />
+      </div>
 
       <FileSelectionBox
         onEdit={handleEdit}
