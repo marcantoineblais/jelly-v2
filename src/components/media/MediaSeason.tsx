@@ -5,7 +5,7 @@ import { Accordion, AccordionItem } from "@heroui/react";
 import { useMemo, useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
-import { createEpisodeLabel, createFilename } from "@/src/libs/files/createFilename";
+import { createEpisodeLabel } from "@/src/libs/files/createFilename";
 
 export default function MediaSeason({
   files = [],
@@ -49,7 +49,9 @@ export default function MediaSeason({
                 isSelected={file.isSelected}
                 onSelect={handleSelect}
               >
-                <span className="text-xs text-gray-500">{createEpisodeLabel(file.mediaInfo)}</span>
+                <span className="text-xs text-gray-500">
+                  {createEpisodeLabel(file.mediaInfo)}
+                </span>
               </MediaCheckbox>
             }
           >

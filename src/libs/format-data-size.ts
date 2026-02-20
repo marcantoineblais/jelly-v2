@@ -12,7 +12,7 @@ export function formatDataSize(
     value = bytes;
   }
 
-  return formatBytes(value);
+  return formatBytes(value, options);
 }
 
 export function formatBytes(

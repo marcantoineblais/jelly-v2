@@ -31,6 +31,7 @@ import {
 } from "@/src/components/accordion";
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
+import MediaListEmpty from "@/src/components/media/MediaListEmpty";
 
 type FormData = {
   title: string;
@@ -322,6 +323,7 @@ export default function TorrentsPage() {
           {/* Search button */}
           <div className="flex w-full justify-center gap-2">
             <Button
+              className="disabled:opacity-50"
               type="submit"
               color="primary"
               isLoading={isSearchLoading}
@@ -335,7 +337,16 @@ export default function TorrentsPage() {
           </div>
         </form>
 
-        {hasSearched && (
+        {hasSearched && items.length === 0 && (
+          <div className="flex w-full grow justify-center items-center">
+            <MediaListEmpty
+              title="No torrents found"
+              message="Change your search criteria and try again."
+            />
+          </div>
+        )}
+
+        {hasSearched && items.length > 0 && (
           <Table items={items}>
             {(item) => (
               <TableItem

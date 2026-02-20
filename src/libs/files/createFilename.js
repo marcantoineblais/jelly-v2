@@ -11,6 +11,6 @@ export function createFilename(info = {}) {
 export function createEpisodeLabel(info = {}) {
   const season = info.season ?? 0;
   const episode = info.episode ?? 0;
-  
+
   return `S${formatNumber(season)}E${formatNumber(episode)}`;
 }

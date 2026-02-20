@@ -8,9 +8,11 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Select,
+  SelectItem,
   useDisclosure,
 } from "@heroui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useFetch from "@/src/hooks/use-fetch";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
 import { POLL_INTERVAL_MS } from "@/src/config";
@@ -19,6 +21,9 @@ import { formatDataSize } from "@/src/libs/format-data-size";
 import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
 import Table from "@/src/components/table/table";
 import TorrentTableItem from "@/src/components/table/torrent-table-item";
+import MediaListEmpty from "@/src/components/media/MediaListEmpty";
+
+export type SortBy = "name" | "size" | "progress" | "status" | "eta";
 
 export default function DownloadsPage() {
   const { fetchData } = useFetch();
@@ -29,11 +34,34 @@ export default function DownloadsPage() {
     onOpenChange: onModalOpenChange,
   } = useDisclosure();
 
+  // const [torrents, setTorrents] = useState<QbitTorrent[]>([]);
   const [torrents, setTorrents] = useState<QbitTorrent[]>([]);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<QbitTorrent | null>(null);
   const [deleteFiles, setDeleteFiles] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const sortedTorrents = useMemo(() => {
+    return torrents.sort((a, b) => {
+      const mult = sortOrder === "asc" ? 1 : -1;
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name) * mult;
+        case "eta":
+          return (a.eta - b.eta) * mult;
+        case "progress":
+          return (a.progress - b.progress) * mult;
+        case "size":
+          return (a.size - b.size) * mult;
+        case "status":
+          return a.state.localeCompare(b.state) * mult;
+        default:
+          return 0;
+      }
+    });
+  }, [torrents, sortBy, sortOrder]);
 
   function handleSelectItem(item: QbitTorrent) {
     setSelectedItem(item);
@@ -74,6 +102,10 @@ export default function DownloadsPage() {
   }, [fetchData]);
 
   async function deleteTorrent(hash: string, deleteFiles: boolean) {
+    if (hash.startsWith("mock-")) {
+      setTorrents((prev) => prev.filter((t) => t.hash !== hash));
+      return;
+    }
     try {
       const url = `/api/qbit/torrents/${encodeURIComponent(hash)}${deleteFiles ? "?deleteFiles=true" : ""}`;
       const { data } = await fetchData<QbittorrentResponse>(url, {
@@ -100,16 +132,58 @@ export default function DownloadsPage() {
   }
 
   return (
-    <main className="w-full h-full flex flex-col gap-4 bg-stone-100 p-4 pb-8">
-      <Table items={torrents}>
-        {(item) => (
-          <TorrentTableItem
-            key={item.hash}
-            item={item}
-            onClick={() => handleSelectItem(item)}
+    <main className="w-full flex-1 min-h-0 flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
+      {/* Sorting controls */}
+      <div className="flex gap-2 bg-white/80 rounded-lg border border-stone-200 p-3">
+        <Select
+          className="basis-2/3"
+          selectedKeys={[sortBy]}
+          onSelectionChange={(selection) =>
+            setSortBy((prev) => (Array.from(selection)[0] as SortBy) || prev)
+          }
+        >
+          <SelectItem key="name">Name</SelectItem>
+          <SelectItem key="eta">ETA</SelectItem>
+          <SelectItem key="progress">Progress</SelectItem>
+          <SelectItem key="size">Size</SelectItem>
+          <SelectItem key="status">Status</SelectItem>
+        </Select>
+
+        <Select
+          className="basis-1/3"
+          selectedKeys={[sortOrder]}
+          onSelectionChange={(selection) =>
+            setSortOrder(
+              (prev) => (Array.from(selection)[0] as "asc" | "desc") || prev,
+            )
+          }
+        >
+          <SelectItem key="asc">Ascending</SelectItem>
+          <SelectItem key="desc">Descending</SelectItem>
+        </Select>
+      </div>
+
+      {/* Torrents table */}
+      {sortedTorrents.length === 0 ? (
+        <div className="flex w-full grow justify-center items-center">
+          <MediaListEmpty
+            title="No torrents found"
+            message="Add some and come back later."
           />
-        )}
-      </Table>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 flex-1 min-h-0 max-h-fit overflow-hidden">
+          <Table items={sortedTorrents}>
+            {(item) => (
+              <TorrentTableItem
+                key={item.hash}
+                item={item}
+                onClick={() => handleSelectItem(item)}
+              />
+            )}
+          </Table>
+        </div>
+      )}
 
       <Modal
         isOpen={isModalOpen}
