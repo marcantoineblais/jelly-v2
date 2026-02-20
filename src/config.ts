@@ -7,5 +7,6 @@ export const FILE_SERVER_URL =
 export const JACKETT_URL = process.env.JACKETT_URL ?? "http://localhost:9117";
 export const JACKETT_API_KEY = process.env.JACKETT_API_KEY ?? "";
 
-export const INCOMPLETE_DOWNLOADS_PATH = process.env.INCOMPLETE_DOWNLOADS_PATH ?? "downloads/temp";
+export const INCOMPLETE_DOWNLOADS_PATH =
+  process.env.INCOMPLETE_DOWNLOADS_PATH ?? "downloads/temp";
 export const POLL_INTERVAL_MS = 3000;

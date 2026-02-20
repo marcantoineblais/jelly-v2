@@ -14,7 +14,7 @@ export function formatDataSize(bytes?: number | string | null): string {
     source: "formatDataSize",
     message: "Value: ",
     data: value,
-  })
+  });
 
   if (value <= 0 || !Number.isFinite(value)) return "-";
   const gb = value / (1024 * 1024 * 1024);

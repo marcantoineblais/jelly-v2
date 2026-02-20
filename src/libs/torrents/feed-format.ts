@@ -37,11 +37,9 @@ export function parseSizeToNum(sizeStr: string | null): number {
   return n;
 }
 
-export function sortFeedItems<T extends { pubDateMs: number; seeds: number | null; size: string | null }>(
-  items: T[],
-  sortBy: SortBy,
-  sortOrder: "asc" | "desc",
-): T[] {
+export function sortFeedItems<
+  T extends { pubDateMs: number; seeds: number | null; size: string | null },
+>(items: T[], sortBy: SortBy, sortOrder: "asc" | "desc"): T[] {
   const dir = sortOrder === "asc" ? 1 : -1;
   return [...items].sort((a, b) => {
     let cmp = 0;

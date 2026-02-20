@@ -20,7 +20,11 @@ const QBIT_API_PREFIX = `${QBIT_URL.replace(/\/$/, "")}/api/v2`;
 
 function normalizePathForCompare(p) {
   let norm = path.normalize(p).replace(/\\/g, "/").replace(/\/+/g, "/");
-  const downloadRoots = ["/mnt/downloads", "/mnt/encodes", "/mnt/media/Downloads"];
+  const downloadRoots = [
+    "/mnt/downloads",
+    "/mnt/encodes",
+    "/mnt/media/Downloads",
+  ];
   for (const root of downloadRoots) {
     if (norm === root || norm.startsWith(root + "/")) {
       norm = "/downloads" + norm.slice(root.length);
@@ -106,7 +110,10 @@ async function removeTorrentsForFile(filePath) {
       });
     }
   } catch (err) {
-    console.warn("qBittorrent: could not remove torrents for file:", err?.message ?? err);
+    console.warn(
+      "qBittorrent: could not remove torrents for file:",
+      err?.message ?? err,
+    );
   }
 }
 let isTransferActive = false;

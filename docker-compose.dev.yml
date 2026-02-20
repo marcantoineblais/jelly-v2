@@ -28,7 +28,7 @@ services:
       - flaresolverr
     restart: unless-stopped
     ports:
-      - ${JACKETT_PORT:-9117}:9117   # Jackett has no env for internal port
+      - ${JACKETT_PORT:-9117}:9117 # Jackett has no env for internal port
     networks:
       - private
 

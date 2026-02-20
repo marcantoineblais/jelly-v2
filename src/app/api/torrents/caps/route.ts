@@ -1,7 +1,4 @@
-import {
-  getJackettCaps,
-  TorznabCaps,
-} from "@/src/libs/torrents/jackett";
+import { getJackettCaps, TorznabCaps } from "@/src/libs/torrents/jackett";
 import { NextResponse } from "next/server";
 
 export type CapsResponse = {
@@ -13,7 +10,8 @@ export type CapsResponse = {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const indexer = searchParams.get("indexer") ?? searchParams.get("indexerId") ?? "all";
+    const indexer =
+      searchParams.get("indexer") ?? searchParams.get("indexerId") ?? "all";
 
     const caps = await getJackettCaps(indexer);
     return NextResponse.json({ ok: true, caps });

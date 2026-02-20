@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import {
   Button,
   Input,
@@ -31,7 +31,6 @@ import {
 } from "@/src/components/accordion";
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
-import { formatDataSize } from "@/src/libs/format-data-size";
 
 type FormData = {
   title: string;
@@ -94,15 +93,22 @@ export default function TorrentsPage() {
 
   useEffect(() => {
     if (!formData.indexer) {
-      setCategories([]);
-      setFormData({ ...formData, category: "", limit: NaN });
+      startTransition(() => {
+        setCategories([]);
+        setFormData((prev) => ({ ...prev, category: "", limit: NaN }));
+      });
       return;
     }
 
     const fetchCategories = async () => {
       const { data } = await fetchData<CapsResponse>("/api/torrents/caps");
-      setCategories(data.caps.categories);
-      setFormData({ ...formData, limit: data.caps.limits?.max ?? NaN });
+      startTransition(() => {
+        setCategories(data.caps.categories);
+        setFormData((prev) => ({
+          ...prev,
+          limit: data.caps.limits?.max ?? NaN,
+        }));
+      });
     };
 
     fetchCategories();

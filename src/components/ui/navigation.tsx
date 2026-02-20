@@ -11,7 +11,13 @@ export default function Navigation() {
       <div className="py-4 px-2 max-w-2xl mx-auto flex gap-4 justify-between items-center">
         <div className="flex items-center justify-center">
           <Link href="/" className="flex items-center">
-            <Image src={Logo} alt="Jelly" width={48} height={48} loading="eager" />
+            <Image
+              src={Logo}
+              alt="Jelly"
+              width={48}
+              height={48}
+              loading="eager"
+            />
             <H1 className="mt-0 text-2xl!">Jelly</H1>
           </Link>
         </div>
