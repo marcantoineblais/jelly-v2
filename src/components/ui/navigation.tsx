@@ -7,8 +7,8 @@ import Image from "next/image";
 
 export default function Navigation() {
   return (
-    <div className="w-full">
-      <div className="py-4 px-2 max-w-2xl mx-auto flex gap-4 justify-between items-center">
+    <div className="w-full bg-primary/10">
+      <div className="py-4 px-2 flex gap-4 justify-between items-center">
         <div className="flex items-center justify-center">
           <Link href="/" className="flex items-center">
             <Image
