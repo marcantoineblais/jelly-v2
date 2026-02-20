@@ -114,7 +114,7 @@ services:
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
-      - /mnt/downloads:/mnt/downloads
+      - /mnt/torrents:/mnt/downloads
       - /mnt/encodes:/mnt/encodes
       - /mnt/media:/mnt/media
     depends_on:
