@@ -36,3 +36,22 @@ export function parseSizeToNum(sizeStr: string | null): number {
   else if (u === "KB") n *= 1024;
   return n;
 }
+
+export function sortFeedItems<T extends { pubDateMs: number; seeds: number | null; size: string | null }>(
+  items: T[],
+  sortBy: SortBy,
+  sortOrder: "asc" | "desc",
+): T[] {
+  const dir = sortOrder === "asc" ? 1 : -1;
+  return [...items].sort((a, b) => {
+    let cmp = 0;
+    if (sortBy === "date") {
+      cmp = (a.pubDateMs ?? 0) - (b.pubDateMs ?? 0);
+    } else if (sortBy === "seeds") {
+      cmp = (a.seeds ?? 0) - (b.seeds ?? 0);
+    } else if (sortBy === "size") {
+      cmp = parseSizeToNum(a.size) - parseSizeToNum(b.size);
+    }
+    return cmp * dir;
+  });
+}

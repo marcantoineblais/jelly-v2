@@ -1,7 +1,7 @@
-import { Press_Start_2P, Roboto } from "next/font/google";
+import { JetBrains_Mono, Press_Start_2P } from "next/font/google";
 
-export const roboto = Roboto({
-  weight: "400",
+export const jetbrainsMono = JetBrains_Mono({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 

@@ -6,52 +6,52 @@ import {
   Modal,
   ModalBody,
   ModalContent,
+  ModalFooter,
   ModalHeader,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
   useDisclosure,
 } from "@heroui/react";
 import { useEffect, useState } from "react";
-import {
-  formatEta,
-  formatSize,
-  formatSpeed,
-  formatState,
-} from "@/src/libs/qbit/format";
 import useFetch from "@/src/hooks/use-fetch";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
 import { POLL_INTERVAL_MS } from "@/src/config";
-
-type QbitTorrent = {
-  hash: string;
-  name: string;
-  state: string;
-  progress: number;
-  size: number;
-  dlspeed: number;
-  eta: number;
-};
+import type { QbitTorrent } from "@/src/libs/qbit/client";
+import { formatDataSize } from "@/src/libs/format-data-size";
+import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
+import Table from "@/src/components/table/table";
+import TorrentTableItem from "@/src/components/table/torrent-table-item";
 
 export default function DownloadsPage() {
   const { fetchData } = useFetch();
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+    onOpenChange: onModalOpenChange,
+  } = useDisclosure();
 
-  function handleOpenChange(open: boolean) {
-    if (!open) {
-      setHashToDelete(null);
-      onClose();
-    }
-    onOpenChange();
-  }
   const [torrents, setTorrents] = useState<QbitTorrent[]>([]);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [hashToDelete, setHashToDelete] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<QbitTorrent | null>(null);
   const [deleteFiles, setDeleteFiles] = useState(false);
+
+  function handleSelectItem(item: QbitTorrent) {
+    setSelectedItem(item);
+    setDeleteFiles(false);
+    onModalOpen();
+  }
+
+  function handleCloseModal() {
+    onModalClose();
+    setTimeout(() => {
+      setSelectedItem(null);
+    }, 200);
+  }
+
+  function handleOpenChange(open: boolean) {
+    if (!open) handleCloseModal();
+    onModalOpenChange();
+  }
 
   useEffect(() => {
     const fetchTorrent = async () => {
@@ -84,19 +84,12 @@ export default function DownloadsPage() {
     } catch {}
   }
 
-  function handleDeleteClick(hash: string) {
-    setHashToDelete(hash);
-    setDeleteFiles(false);
-    onOpen();
-  }
-
   async function handleConfirmDelete() {
-    if (!hashToDelete) return;
+    if (!selectedItem) return;
     setIsDeleting(true);
     try {
-      await deleteTorrent(hashToDelete, deleteFiles);
-      onClose();
-      setHashToDelete(null);
+      await deleteTorrent(selectedItem.hash, deleteFiles);
+      handleCloseModal();
     } finally {
       setIsDeleting(false);
     }
@@ -107,95 +100,69 @@ export default function DownloadsPage() {
   }
 
   return (
-    <main className="min-h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8">
-      <Table className="w-full text-left text-sm" aria-label="Downloads">
-        <TableHeader>
-          <TableColumn>Name</TableColumn>
-          <TableColumn>Status</TableColumn>
-          <TableColumn>Progress</TableColumn>
-          <TableColumn>Size</TableColumn>
-          <TableColumn>Down</TableColumn>
-          <TableColumn>ETA</TableColumn>
-          <TableColumn>
-            <></>
-          </TableColumn>
-        </TableHeader>
-        <TableBody items={torrents} emptyContent="No torrents in qBittorrent.">
-          {(t) => (
-            <TableRow key={t.hash}>
-              <TableCell className="min-w-[200px]">{t.name || "—"}</TableCell>
-              <TableCell>{formatState(t.state)}</TableCell>
-              <TableCell>{(t.progress * 100).toFixed(1)}%</TableCell>
-              <TableCell className="whitespace-nowrap">
-                {formatSize(t.size)}
-              </TableCell>
-              <TableCell className="whitespace-nowrap">
-                {formatSpeed(t.dlspeed)}
-              </TableCell>
-              <TableCell className="whitespace-nowrap">
-                {formatEta(t.eta)}
-              </TableCell>
-              <TableCell>
-                <Button
-                  size="sm"
-                  color="danger"
-                  variant="flat"
-                  onPress={() => handleDeleteClick(t.hash)}
-                >
-                  Delete
-                </Button>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
+    <main className="w-full h-full flex flex-col gap-4 bg-stone-100 p-4 pb-8">
+      <Table items={torrents}>
+        {(item) => (
+          <TorrentTableItem
+            key={item.hash}
+            item={item}
+            onClick={() => handleSelectItem(item)}
+          />
+        )}
       </Table>
 
-      <Modal isOpen={isOpen} onOpenChange={handleOpenChange} placement="center">
-        <ModalContent>
-          <ModalHeader>Delete Torrent</ModalHeader>
-          <ModalBody>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleConfirmDelete();
-              }}
-            >
-              <div className="flex flex-col gap-2">
-                <p>Are you sure you want to delete this torrent?</p>
-                <Checkbox
-                  isSelected={deleteFiles}
-                  onValueChange={setDeleteFiles}
-                >
-                  Delete files
-                </Checkbox>
+      <Modal
+        isOpen={isModalOpen}
+        onOpenChange={handleOpenChange}
+        placement="center"
+        scrollBehavior="inside"
+        onClose={handleCloseModal}
+      >
+        {selectedItem && (
+          <ModalContent>
+            <ModalHeader>Details</ModalHeader>
+            <ModalBody>
+              <div className="w-full">
+                <p className="break-all">{selectedItem.name}</p>
+                <div className="mt-4 flex flex-col gap-1">
+                  <p>Status: {formatState(selectedItem.state)}</p>
+                  <p>Progress: {(selectedItem.progress * 100).toFixed(1)}%</p>
+                  <p>Size: {formatDataSize(selectedItem.size)}</p>
+                  <p>Down: {formatSpeed(selectedItem.dlSpeed ?? 0)}</p>
+                  <p>Up: {formatSpeed(selectedItem.upSpeed ?? 0)}</p>
+                  <p>Seeds: {selectedItem.numSeeds ?? "-"}</p>
+                  <p>Leech: {selectedItem.numLeechs ?? "-"}</p>
+                  <p>ETA: {formatEta(selectedItem.eta ?? -1)}</p>
+                </div>
+                <div className="mt-4">
+                  <Checkbox
+                    isSelected={deleteFiles}
+                    onValueChange={setDeleteFiles}
+                  >
+                    Delete files
+                  </Checkbox>
+                </div>
               </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  color="default"
-                  variant="ghost"
-                  size="sm"
-                  onPress={() => {
-                    setHashToDelete(null);
-                    onClose();
-                  }}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  type="submit"
-                  color="danger"
-                  isLoading={isDeleting}
-                  size="sm"
-                >
-                  Delete
-                </Button>
-              </div>
-            </form>
-          </ModalBody>
-        </ModalContent>
+            </ModalBody>
+            <ModalFooter className="flex justify-center gap-2">
+              <Button
+                color="default"
+                variant="ghost"
+                onPress={handleCloseModal}
+              >
+                Close
+              </Button>
+              <Button
+                color="danger"
+                variant="ghost"
+                onPress={handleConfirmDelete}
+                isLoading={isDeleting}
+              >
+                Delete
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        )}
       </Modal>
     </main>
   );

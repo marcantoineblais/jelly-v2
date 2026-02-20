@@ -1,23 +1,13 @@
+import { formatDataSize } from "../format-data-size";
+
 /**
  * Display formatting for qBittorrent torrent data.
  */
-
-export function formatSize(bytes: number): string {
-  if (bytes <= 0 || !Number.isFinite(bytes)) return "-";
-  const gb = bytes / (1024 * 1024 * 1024);
-  if (gb >= 1) return `${gb.toFixed(1)} GB`;
-  const mb = bytes / (1024 * 1024);
-  if (mb >= 1) return `${mb.toFixed(1)} MB`;
-  const kb = bytes / 1024;
-  return `${kb.toFixed(0)} KB`;
-}
-
 export function formatSpeed(bytesPerSec: number): string {
-  if (bytesPerSec <= 0 || !Number.isFinite(bytesPerSec)) return "-";
-  const mb = bytesPerSec / (1024 * 1024);
-  if (mb >= 1) return `${mb.toFixed(1)} MB/s`;
-  const kb = bytesPerSec / 1024;
-  return `${kb.toFixed(0)} KB/s`;
+  if (bytesPerSec == null || !Number.isFinite(bytesPerSec)) return "-";
+  const size = formatDataSize(bytesPerSec);
+  if (size === "-") return "0B/s";
+  return `${size}/s`;
 }
 
 /** Map qBittorrent raw state to a short display label. */

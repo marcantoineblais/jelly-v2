@@ -1,6 +1,7 @@
 import { JACKETT_API_KEY, JACKETT_URL } from "@/src/config";
 import { XMLParser } from "fast-xml-parser";
-import { log } from "../logger";
+import { formatDataSize } from "../format-data-size";
+import { formatDate, sortFeedItems, type SortBy } from "./feed-format";
 
 export type TorrentSearchItem = {
   id: number;
@@ -26,14 +27,6 @@ export type TorznabCaps = {
   limits?: { max?: number; default?: number };
   categories: TorznabCategory[];
 };
-
-function formatSize(bytes: number): string {
-  if (bytes <= 0 || !Number.isFinite(bytes)) return "";
-  const gb = bytes / (1024 * 1024 * 1024);
-  if (gb >= 1) return `${gb.toFixed(1)} GB`;
-  const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(1)} MB`;
-}
 
 export type TorznabParseResult = {
   items: TorrentSearchItem[];
@@ -165,6 +158,8 @@ export type SearchJackettOptions = {
   cat?: string;
   offset?: number;
   limit?: number;
+  sortBy?: SortBy;
+  sortOrder?: "asc" | "desc";
 };
 
 export type SearchJackettResult = {
@@ -208,7 +203,10 @@ export async function searchJackett(
   );
   if (!response.ok) throw new Error(`Jackett search: ${response.status}`);
   const data = await response.text();
-  const items = parseTorznabXml(data);
+  let items = parseTorznabXml(data);
+  if (options?.sortBy && options?.sortOrder) {
+    items = sortFeedItems(items, options.sortBy, options.sortOrder);
+  }
   return { items, total: items.length };
 }
 
@@ -225,9 +223,10 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
   return items.map((item, index) => {
     const title = item.title ?? "";
     const url = item.link ?? "";
-    const pubDate = item.pubDate ?? "";
-    const pubDateMs = pubDate ? new Date(pubDate).getTime() : 0;
-    const size = formatSize(Number(item.size ?? "0"));
+    const rawPubDate = item.pubDate ?? "";
+    const pubDateMs = rawPubDate ? new Date(rawPubDate).getTime() : 0;
+    const pubDate = formatDate(rawPubDate);
+    const size = formatDataSize(item.size);
     const attrs = item["torznab:attr"];
     const seeds =
       attrs?.find((a: any) => a["@_name"] === "seeders")?.["@_value"] ?? 0;

@@ -9,7 +9,8 @@ const QBIT_PASS = process.env.QBIT_PASS ?? "adminadmin";
 
 const API_PREFIX = `${QBIT_URL.replace(/\/$/, "")}/api/v2`;
 
-export type QbitTorrent = {
+/** Raw response from qBittorrent API (snake_case). */
+type QbitTorrentRaw = {
   hash: string;
   name: string;
   state: string;
@@ -28,6 +29,48 @@ export type QbitTorrent = {
   amount_left: number;
   magnet_uri: string;
 };
+
+export type QbitTorrent = {
+  hash: string;
+  name: string;
+  state: string;
+  progress: number;
+  size: number;
+  completed: number;
+  savePath: string;
+  contentPath: string;
+  addedOn: number;
+  completionOn: number;
+  numSeeds: number;
+  numLeechs: number;
+  dlSpeed: number;
+  upSpeed: number;
+  eta: number;
+  amountLeft: number;
+  magnetUri: string;
+};
+
+function mapQbitTorrent(raw: QbitTorrentRaw): QbitTorrent {
+  return {
+    hash: raw.hash,
+    name: raw.name,
+    state: raw.state,
+    progress: raw.progress,
+    size: raw.size,
+    completed: raw.completed,
+    savePath: raw.save_path,
+    contentPath: raw.content_path,
+    addedOn: raw.added_on,
+    completionOn: raw.completion_on,
+    numSeeds: raw.num_seeds,
+    numLeechs: raw.num_leechs,
+    dlSpeed: raw.dlspeed,
+    upSpeed: raw.upspeed,
+    eta: raw.eta,
+    amountLeft: raw.amount_left,
+    magnetUri: raw.magnet_uri,
+  };
+}
 
 async function getCookie(): Promise<string> {
   const url = `${API_PREFIX}/auth/login`;
@@ -108,10 +151,11 @@ export async function listTorrents(params?: {
   if (params?.sort) searchParams.sort = params.sort;
   if (params?.reverse !== undefined)
     searchParams.reverse = String(params.reverse);
-  return qbitRequest<QbitTorrent[]>(
+  const raw = await qbitRequest<QbitTorrentRaw[]>(
     "/torrents/info",
     Object.keys(searchParams).length ? { searchParams } : {},
   );
+  return raw.map(mapQbitTorrent);
 }
 
 export async function addTorrent(url: string): Promise<void> {

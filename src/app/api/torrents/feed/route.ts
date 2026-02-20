@@ -1,4 +1,4 @@
-import { FeedItem } from "@/src/libs/torrents/feed-format";
+import { FeedItem, SortBy } from "@/src/libs/torrents/feed-format";
 import { searchJackett } from "@/src/libs/torrents/jackett";
 import { NextResponse } from "next/server";
 
@@ -18,6 +18,8 @@ export async function GET(request: Request) {
     const indexerParam = searchParams.get("indexers") ?? "";
     const category = searchParams.get("category") ?? "";
     const limitParam = searchParams.get("limit") ?? "";
+    const sortBy = searchParams.get("sortBy") ?? undefined;
+    const sortOrder = searchParams.get("sortOrder") ?? undefined;
 
     const query = name.trim();
     if (!query) {
@@ -32,9 +34,17 @@ export async function GET(request: Request) {
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
     const validLimit =
       limit != null && !Number.isNaN(limit) && limit > 0 ? limit : undefined;
+    const validSortBy =
+      sortBy === "date" || sortBy === "seeds" || sortBy === "size"
+        ? sortBy
+        : undefined;
+    const validSortOrder =
+      sortOrder === "asc" || sortOrder === "desc" ? sortOrder : undefined;
     const options = {
       cat: category.trim() || undefined,
       limit: validLimit,
+      sortBy: validSortBy as SortBy | undefined,
+      sortOrder: validSortOrder as "asc" | "desc" | undefined,
     };
 
     const { items, total } = await searchJackett(query, indexerId, options);

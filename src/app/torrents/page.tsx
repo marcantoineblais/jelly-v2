@@ -4,36 +4,34 @@ import { useEffect, useState } from "react";
 import {
   Button,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Select,
   SelectItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
   addToast,
+  useDisclosure,
 } from "@heroui/react";
 import type {
   JackettIndexer,
   TorznabCategory,
 } from "@/src/libs/torrents/jackett";
-import {
-  formatDate,
-  SortBy,
-  type FeedItem,
-} from "@/src/libs/torrents/feed-format";
+import { SortBy, type FeedItem } from "@/src/libs/torrents/feed-format";
 import useFetch from "../../hooks/use-fetch";
 import { JackettIndexerResponse } from "../api/torrents/indexers/route";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
 import { FeedResponse } from "../api/torrents/feed/route";
 import { CapsResponse } from "../api/torrents/caps/route";
-import { log } from "@/src/libs/logger";
 import {
   Accordion,
   AccordionButton,
   useAccordion,
 } from "@/src/components/accordion";
+import Table from "@/src/components/table/table";
+import TableItem from "@/src/components/table/feed-table-item";
+import { formatDataSize } from "@/src/libs/format-data-size";
 
 type FormData = {
   title: string;
@@ -47,6 +45,12 @@ type FormData = {
 export default function TorrentsPage() {
   const { fetchData } = useFetch();
   const { isOpen, toggle } = useAccordion();
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+    onOpenChange: onModalOpenChange,
+  } = useDisclosure();
 
   // Form states
   const [formData, setFormData] = useState<FormData>({
@@ -59,17 +63,16 @@ export default function TorrentsPage() {
   });
 
   // Data states
-  const [items, setItems] = useState<
-    (FeedItem & { isAddingToQbittorrent: boolean })[]
-  >([]);
+  const [items, setItems] = useState<FeedItem[]>([]);
   const [indexers, setIndexers] = useState<JackettIndexer[]>([]);
+  const [selectedItem, setSelectedItem] = useState<FeedItem | null>(null);
 
   // Loading states
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [isAddingToQbittorrent, setIsAddingToQbittorrent] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [categories, setCategories] = useState<TorznabCategory[]>([]);
-  const [limits, setLimits] = useState<number>(NaN);
 
   useEffect(() => {
     const fetchIndexers = async () => {
@@ -92,7 +95,6 @@ export default function TorrentsPage() {
   useEffect(() => {
     if (!formData.indexer) {
       setCategories([]);
-      setLimits(NaN);
       setFormData({ ...formData, category: "", limit: NaN });
       return;
     }
@@ -106,16 +108,21 @@ export default function TorrentsPage() {
     fetchCategories();
   }, [fetchData, formData.indexer]);
 
-  function toggleSelectedItem(item: FeedItem, state: boolean) {
-    setItems((prevItems) =>
-      prevItems.map((prevItem) => {
-        if (prevItem.id === item.id) {
-          return { ...prevItem, isAddingToQbittorrent: state };
-        }
+  function handleSelectItem(item: FeedItem) {
+    setSelectedItem(item);
+    onModalOpen();
+  }
 
-        return prevItem;
-      }),
-    );
+  function handleCloseModal() {
+    onModalClose();
+
+    setTimeout(() => {
+      setSelectedItem(null);
+    }, 200);
+  }
+
+  function handleInputFocus() {
+    if (!isOpen) toggle();
   }
 
   async function addToQbittorrent(item: FeedItem) {
@@ -129,11 +136,11 @@ export default function TorrentsPage() {
     }
     const body = { url: item.url };
     try {
-      toggleSelectedItem(item, true);
       await fetchData<QbittorrentResponse>("/api/qbit/torrents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        setIsLoading: setIsAddingToQbittorrent,
       });
 
       addToast({
@@ -147,9 +154,9 @@ export default function TorrentsPage() {
         description: e instanceof Error ? e.message : "Network error",
         severity: "danger",
       });
-    } finally {
-      toggleSelectedItem(item, false);
     }
+
+    handleCloseModal();
   }
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
@@ -208,7 +215,7 @@ export default function TorrentsPage() {
                 setFormData({ ...formData, title: e.target.value })
               }
               autoComplete="off"
-              onFocus={toggle}
+              onFocus={handleInputFocus}
             />
           </div>
 
@@ -318,58 +325,58 @@ export default function TorrentsPage() {
         </form>
 
         {hasSearched && (
-          <Table
-            aria-label="Torrents results"
-            className="h-full w-full text-left text-sm overflow-y-auto"
-          >
-            <TableHeader className="bg-stone-100 sticky top-0">
-              <TableColumn>Title</TableColumn>
-              <TableColumn>Date</TableColumn>
-              <TableColumn>Size</TableColumn>
-              <TableColumn>Seeds</TableColumn>
-              <TableColumn>Leech</TableColumn>
-              <TableColumn>Action</TableColumn>
-            </TableHeader>
-
-            <TableBody items={items} emptyContent={"No torrents found."}>
-              {(item) => {
-                return (
-                  <TableRow key={item.id.toString()}>
-                    <TableCell
-                      title={item.title}
-                      className="max-w-[50%] truncate"
-                    >
-                      {item.title || "—"}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {formatDate(item.pubDate)}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {item.size ?? "—"}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {item.seeds ?? "—"}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {item.leech ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        color="default"
-                        variant="ghost"
-                        isLoading={item.isAddingToQbittorrent}
-                        onPress={() => addToQbittorrent(item)}
-                      >
-                        Add to qBittorrent
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              }}
-            </TableBody>
+          <Table items={items}>
+            {(item) => (
+              <TableItem
+                key={item.id}
+                item={item}
+                onClick={() => handleSelectItem(item)}
+              />
+            )}
           </Table>
         )}
+
+        <Modal
+          isOpen={isModalOpen}
+          onOpenChange={onModalOpenChange}
+          placement="center"
+          scrollBehavior="inside"
+          onClose={handleCloseModal}
+        >
+          {selectedItem && (
+            <ModalContent>
+              <ModalHeader>Details</ModalHeader>
+              <ModalBody>
+                <div className="w-full">
+                  <p className="break-all">{selectedItem.title}</p>
+                  <div className="mt-4">
+                    <p>Size: {selectedItem.size}</p>
+                    <p>Seeds: {selectedItem.seeds}</p>
+                    <p>Leech: {selectedItem.leech}</p>
+                    <p>Published: {selectedItem.pubDate}</p>
+                  </div>
+                </div>
+              </ModalBody>
+              <ModalFooter className="flex justify-center gap-2">
+                <Button
+                  color="default"
+                  variant="ghost"
+                  onPress={handleCloseModal}
+                >
+                  Close
+                </Button>
+                <Button
+                  color="primary"
+                  variant="ghost"
+                  onPress={() => addToQbittorrent(selectedItem)}
+                  isLoading={isAddingToQbittorrent}
+                >
+                  Add to qBittorrent
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          )}
+        </Modal>
       </main>
     </>
   );
