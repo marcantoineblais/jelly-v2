@@ -46,6 +46,7 @@ export async function getJackettIndexers(): Promise<JackettIndexer[]> {
   const searchParams = new URLSearchParams({
     apikey: JACKETT_API_KEY,
     t: "indexers",
+    configured: "true",
   });
   const url = `${baseUrl}/api/v2.0/indexers/all/results/torznab/api?${searchParams}`;
   const res = await fetch(url);
