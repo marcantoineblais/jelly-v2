@@ -43,6 +43,7 @@ export async function getJackettIndexers(): Promise<JackettIndexer[]> {
   }
   const baseUrl = JACKETT_URL.replace(/\/$/, "");
   const url = `${baseUrl}/api/v2.0/indexers/all/Results?apikey=${encodeURIComponent(JACKETT_API_KEY)}&query=a`;
+  const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Jackett indexers: ${res.status}`);
   }
