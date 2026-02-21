@@ -42,7 +42,7 @@ export async function getJackettIndexers(): Promise<JackettIndexer[]> {
     throw new Error("JACKETT_API_KEY is not set");
   }
   const baseUrl = JACKETT_URL.replace(/\/$/, "");
-  const searchParams = new SerachParams({
+  const searchParams = new SearchParams({
     apikey: JACKETT_API_KEY,
     t: "indexers"
   });
