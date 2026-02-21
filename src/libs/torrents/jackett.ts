@@ -34,8 +34,9 @@ export type TorznabParseResult = {
 };
 
 /**
- * Fetch configured indexers from Jackett via a dummy search to the JSON Results
- * endpoint (the v2.0/indexers list endpoint requires admin login, not API key).
+ * Fetch configured indexers from Jackett via the Torznab API (t=indexers).
+ * The API returns XML; we parse it and return id/name for each indexer.
+ * (The v2.0/indexers list endpoint requires admin login, not API key.)
  */
 export async function getJackettIndexers(): Promise<JackettIndexer[]> {
   if (!JACKETT_API_KEY) {
@@ -44,29 +45,47 @@ export async function getJackettIndexers(): Promise<JackettIndexer[]> {
   const baseUrl = JACKETT_URL.replace(/\/$/, "");
   const searchParams = new URLSearchParams({
     apikey: JACKETT_API_KEY,
-    t: "indexers"
+    t: "indexers",
   });
   const url = `${baseUrl}/api/v2.0/indexers/all/results/torznab/api?${searchParams}`;
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Jackett indexers: ${res.status}`);
   }
-  const data = (await res.json()) as {
-    Indexers?: Array<{ ID?: string; Id?: string; Name?: string }>;
-    indexers?: Array<{ id?: string; name?: string }>;
-  };
-  console.log("api", data);
-  const raw = data?.Indexers ?? data?.indexers ?? [];
-  const list = Array.isArray(raw) ? raw : [];
+  const text = await res.text();
+  return parseTorznabIndexersXml(text);
+}
+
+/** Parse Torznab t=indexers XML response into JackettIndexer[]. */
+function parseTorznabIndexersXml(xml: string): JackettIndexer[] {
+  const trimmed = xml.trim();
+  if (!trimmed) return [];
+
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "@_",
+  });
+  const doc = parser.parse(xml);
+
+  const raw =
+    doc?.Indexers?.Indexer ??
+    doc?.Indexers?.indexer ??
+    doc?.indexers?.indexer ??
+    doc?.indexers?.Indexer ??
+    doc?.indexers;
+  const list = toArray(raw);
+
   return list
-    .map((i) => {
+    .map((i: XmlAttrs) => {
       const id =
-        (i as { ID?: string }).ID ??
-        (i as { Id?: string }).Id ??
-        (i as { id?: string }).id ??
-        "";
+        attr(i, "id") ||
+        attr(i, "Id") ||
+        attr(i, "ID") ||
+        String((i as { id?: string }).id ?? (i as { Id?: string }).Id ?? (i as { ID?: string }).ID ?? "");
       const name =
-        (i as { Name?: string }).Name ?? (i as { name?: string }).name ?? id;
+        attr(i, "name") ||
+        attr(i, "Name") ||
+        String((i as { name?: string }).name ?? (i as { Name?: string }).Name ?? id);
       return { id, name };
     })
     .filter((x) => x.id.length > 0)
