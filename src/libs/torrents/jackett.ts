@@ -91,7 +91,7 @@ function parseTorznabIndexersXml(xml: string): JackettIndexersResult {
     const id = indexer.id;
     const name = indexer.title;
     const caps = indexer.caps;
-    const limit = caps?.limits?.max ?? caps?.limits?.default ?? NaN;
+    const limit = Number(caps?.limits?.max ?? caps?.limits?.default ?? "");
     const categories = caps?.categories?.category ?? [];
     const formattedCategories = categories
       .map((category) => {
@@ -110,8 +110,11 @@ function parseTorznabIndexersXml(xml: string): JackettIndexersResult {
         return [{ id, name }, ...formattedSubCategories];
       })
       .flat()
+      .filter(
+        (category, i, array) =>
+          i === array.findIndex((c) => c.id === category.id),
+      )
       .sort((a, b) => a.id.localeCompare(b.id));
-
     return { id, name, limit, categories: formattedCategories };
   });
 
@@ -144,10 +147,8 @@ export async function searchJackett(
   if (!JACKETT_API_KEY) {
     throw new Error("JACKETT_API_KEY is not set");
   }
-
   const baseUrl = JACKETT_URL.replace(/\/$/, "");
   const q = query.trim();
-  if (!q) return { items: [], total: null };
 
   const useAll = !indexerId || indexerId === "all";
   const path = useAll ? "all" : indexerId;
@@ -159,12 +160,15 @@ export async function searchJackett(
   if (options?.cat) params.set("cat", options.cat);
   if (options?.limit != null && options.limit > 0)
     params.set("limit", String(options.limit));
-  if (options?.offset != null && options.offset >= 0)
-    params.set("offset", String(options.offset));
 
   const response = await fetch(
     `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?${params.toString()}`,
   );
+  log({
+    source: "searchJackett",
+    message: "Searching Jackett",
+    data: response,
+  });
   if (!response.ok) throw new Error(`Jackett search: ${response.status}`);
   const data = await response.text();
   let items = parseTorznabXml(data);
@@ -178,6 +182,7 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
+    transformAttributeName: (attributeName) => attributeName.replace("@_", "").replace(":", "_"),
   });
   const doc = parser.parse(xml);
   const channel = doc?.rss?.channel ?? doc?.feed;
@@ -191,13 +196,11 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
     const pubDateMs = rawPubDate ? new Date(rawPubDate).getTime() : 0;
     const pubDate = formatDate(rawPubDate);
     const size = formatDataSize(item.size);
-    const attrs = item["torznab:attr"];
-    const seeds =
-      attrs?.find((a: any) => a["@_name"] === "seeders")?.["@_value"] ?? 0;
+    const attrs = item.torznab_attr ?? [];
+    const seeds = attrs?.find((a: any) => a.name === "seeders")?.value ?? 0;
     const leech =
-      attrs?.find(
-        (a: any) => a["@_name"] === "leechers" || a["@_name"] === "peers",
-      )?.["@_value"] ?? 0;
+      attrs?.find((a: any) => a.name === "leechers" || a.name === "peers")
+        ?.value ?? 0;
     return {
       id: index,
       title,

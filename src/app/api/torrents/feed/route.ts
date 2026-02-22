@@ -1,3 +1,5 @@
+import { TORRENT_SORT_BY, TORRENT_SORT_ORDER } from "@/src/config";
+import { log } from "@/src/libs/logger";
 import { FeedItem, SortBy } from "@/src/libs/torrents/feed-format";
 import { searchJackett } from "@/src/libs/torrents/jackett";
 import { NextResponse } from "next/server";
@@ -18,35 +20,27 @@ export async function GET(request: Request) {
     const indexerParam = searchParams.get("indexers") ?? "";
     const category = searchParams.get("category") ?? "";
     const limitParam = searchParams.get("limit") ?? "";
-    const sortBy = searchParams.get("sortBy") ?? undefined;
-    const sortOrder = searchParams.get("sortOrder") ?? undefined;
+    const sortBy = searchParams.get("sortBy") ?? "";
+    const sortOrder = searchParams.get("sortOrder") ?? "";
 
     const query = name.trim();
-    if (!query) {
-      return NextResponse.json({
-        ok: true,
-        items: [],
-        total: null,
-      });
+    if (!query && !category) {
+      throw new Error("Title or category is required");
     }
 
     const indexerId = indexerParam.trim().toLowerCase();
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
     const validLimit =
       limit != null && !Number.isNaN(limit) && limit > 0 ? limit : undefined;
-    const validSortBy =
-      sortBy === "date" || sortBy === "seeds" || sortBy === "size"
-        ? sortBy
-        : undefined;
-    const validSortOrder =
-      sortOrder === "asc" || sortOrder === "desc" ? sortOrder : undefined;
+    const validSortBy = TORRENT_SORT_BY.includes(sortBy) ? sortBy : undefined;
+    const validSortOrder = TORRENT_SORT_ORDER.includes(sortOrder) ? sortOrder : undefined;
     const options = {
       cat: category.trim() || undefined,
       limit: validLimit,
       sortBy: validSortBy as SortBy | undefined,
       sortOrder: validSortOrder as "asc" | "desc" | undefined,
     };
-
+    
     const { items, total } = await searchJackett(query, indexerId, options);
     return NextResponse.json({
       ok: true,
@@ -54,7 +48,13 @@ export async function GET(request: Request) {
       total,
     });
   } catch (err) {
-    console.error("[torrents/feed] error:", err);
+    log({
+      source: "torrents/feed",
+      message: "Error: ",
+      data: err,
+      level: "error",
+    });
+
     const message =
       err instanceof Error ? err.message : "Failed to search torrents";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });

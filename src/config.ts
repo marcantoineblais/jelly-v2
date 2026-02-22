@@ -10,3 +10,6 @@ export const JACKETT_API_KEY = process.env.JACKETT_API_KEY ?? "";
 export const INCOMPLETE_DOWNLOADS_PATH =
   process.env.INCOMPLETE_DOWNLOADS_PATH ?? "downloads/temp";
 export const POLL_INTERVAL_MS = 3000;
+
+export const TORRENT_SORT_BY = ["date", "name", "seeds", "size"];
+export const TORRENT_SORT_ORDER = ["asc", "desc"];

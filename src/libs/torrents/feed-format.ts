@@ -14,7 +14,7 @@ export type FeedItem = {
   source: string;
 };
 
-export type SortBy = "date" | "seeds" | "size";
+export type SortBy = "date" | "seeds" | "size" | "name";
 
 export function formatDate(isoOrRfc: string): string {
   if (!isoOrRfc) return "—";
@@ -38,18 +38,26 @@ export function parseSizeToNum(sizeStr: string | null): number {
 }
 
 export function sortFeedItems<
-  T extends { pubDateMs: number; seeds: number | null; size: string | null },
+  T extends {
+    pubDateMs: number;
+    seeds: number | null;
+    size: string | null;
+    title: string;
+  },
 >(items: T[], sortBy: SortBy, sortOrder: "asc" | "desc"): T[] {
   const dir = sortOrder === "asc" ? 1 : -1;
-  return [...items].sort((a, b) => {
-    let cmp = 0;
-    if (sortBy === "date") {
-      cmp = (a.pubDateMs ?? 0) - (b.pubDateMs ?? 0);
-    } else if (sortBy === "seeds") {
-      cmp = (a.seeds ?? 0) - (b.seeds ?? 0);
-    } else if (sortBy === "size") {
-      cmp = parseSizeToNum(a.size) - parseSizeToNum(b.size);
-    }
-    return cmp * dir;
-  });
+  switch (sortBy) {
+    case "date":
+      return [...items].sort(
+        (a, b) => ((a.pubDateMs ?? 0) - (b.pubDateMs ?? 0)) * dir,
+      );
+    case "name":
+      return [...items].sort((a, b) => a.title.localeCompare(b.title) * dir);
+    case "seeds":
+      return [...items].sort((a, b) => ((a.seeds ?? 0) - (b.seeds ?? 0)) * dir);
+    case "size":
+      return [...items].sort(
+        (a, b) => (parseSizeToNum(a.size) - parseSizeToNum(b.size)) * dir,
+      );
+  }
 }

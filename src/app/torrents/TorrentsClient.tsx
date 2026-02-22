@@ -30,6 +30,7 @@ import {
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
+import { TORRENT_SORT_BY, TORRENT_SORT_ORDER } from "@/src/config";
 
 type FormData = {
   title: string;
@@ -44,9 +45,7 @@ type TorrentsClientProps = {
   indexers: JackettIndexer[];
 };
 
-export default function TorrentsClient({
-  indexers,
-}: TorrentsClientProps) {
+export default function TorrentsClient({ indexers }: TorrentsClientProps) {
   const { fetchData } = useFetch();
   const { isOpen, toggle } = useAccordion();
   const {
@@ -77,9 +76,15 @@ export default function TorrentsClient({
 
   const categories: TorznabCategory[] = useMemo(() => {
     const indexer = indexers.find((i) => i.id === formData.indexer);
-    return indexer?.categories ?? [];
-  }, [formData.indexer]);
+    if (indexer) return indexer.categories;
 
+    const allCategories = indexers.map((i) => i.categories);
+    const commonCategories = allCategories.flat().filter((category) =>
+      allCategories.every((categories) => categories.some((c) => c.id === category.id)),
+    ).filter((category, i, array) => i === array.findIndex((c) => c.id === category.id));
+
+    return commonCategories.sort((a, b) => a.id.localeCompare(b.id));
+  }, [formData.indexer]);
 
   function handleSelectItem(item: FeedItem) {
     setSelectedItem(item);
@@ -134,11 +139,12 @@ export default function TorrentsClient({
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    const { title, indexer, sortBy, sortOrder, category, limit } = formData;
+    const { indexer, sortBy, sortOrder, category, limit } = formData;
+    const title = formData.title.trim();
 
-    if (!title.trim()) {
+    if (!title && !category) {
       addToast({
-        title: "Title is required",
+        title: "Title or category is required",
         description: "Please enter a title to search for torrents.",
         severity: "warning",
       });
@@ -147,7 +153,7 @@ export default function TorrentsClient({
 
     try {
       const searchParams = new URLSearchParams({
-        name: title.trim(),
+        name: title || "*", // Default to wildcard search if no title is provided
         indexers: indexer,
         sortBy: sortBy,
         sortOrder: sortOrder,
@@ -236,9 +242,11 @@ export default function TorrentsClient({
                     })
                   }
                 >
-                  <SelectItem key="date">Date</SelectItem>
-                  <SelectItem key="seeds">Seeds</SelectItem>
-                  <SelectItem key="size">Size</SelectItem>
+                  {
+                    TORRENT_SORT_BY.map((sortBy) => (
+                      <SelectItem key={sortBy}>{sortBy}</SelectItem>
+                    ))
+                  }
                 </Select>
                 <Select
                   className="basis-2/5"
@@ -256,8 +264,11 @@ export default function TorrentsClient({
                     })
                   }
                 >
-                  <SelectItem key="asc">Ascending</SelectItem>
-                  <SelectItem key="desc">Descending</SelectItem>
+                  {
+                    TORRENT_SORT_ORDER.map((sortOrder) => (
+                      <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
+                    ))
+                  }
                 </Select>
               </div>
 
