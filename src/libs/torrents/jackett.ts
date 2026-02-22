@@ -2,6 +2,7 @@ import { JACKETT_API_KEY, JACKETT_URL } from "@/src/config";
 import { XMLParser } from "fast-xml-parser";
 import { formatDataSize } from "../format-data-size";
 import { formatDate, sortFeedItems, type SortBy } from "./feed-format";
+import { log } from "../logger";
 
 export type TorrentSearchItem = {
   id: number;
@@ -14,18 +15,16 @@ export type TorrentSearchItem = {
   leech: number | null;
 };
 
-export type JackettIndexer = { id: string; name: string };
-
-export type TorznabCategory = {
-  id: number;
+export type JackettIndexer = {
+  id: string;
   name: string;
-  subcats?: TorznabCategory[];
+  limit: number;
+  categories: TorznabCategory[];
 };
 
-export type TorznabCaps = {
-  server?: { version?: string; title?: string };
-  limits?: { max?: number; default?: number };
-  categories: TorznabCategory[];
+export type TorznabCategory = {
+  id: string;
+  name: string;
 };
 
 export type TorznabParseResult = {
@@ -33,12 +32,31 @@ export type TorznabParseResult = {
   total: number | null;
 };
 
+export type JackettIndexersResult = {
+  indexers: JackettIndexer[];
+};
+
+export type JackettRawIndexer = {
+  id: string;
+  title: string;
+  caps?: {
+    limits?: { max?: number; default?: number };
+    categories?: {
+      category?: JackettRawCategory[];
+    };
+  };
+};
+
+export type JackettRawCategory = {
+  id: string;
+  name: string;
+  subcat?: JackettRawCategory[] | JackettRawCategory;
+};
 /**
- * Fetch configured indexers from Jackett via the Torznab API (t=indexers).
- * The API returns XML; we parse it and return id/name for each indexer.
- * (The v2.0/indexers list endpoint requires admin login, not API key.)
+ * Fetch configured indexers and their caps from Jackett via the Torznab API (t=indexers).
+ * The response includes indexers and caps/categories in a single request.
  */
-export async function getJackettIndexers(): Promise<JackettIndexer[]> {
+export async function getJackettIndexers(): Promise<JackettIndexersResult> {
   if (!JACKETT_API_KEY) {
     throw new Error("JACKETT_API_KEY is not set");
   }
@@ -57,126 +75,47 @@ export async function getJackettIndexers(): Promise<JackettIndexer[]> {
   return parseTorznabIndexersXml(text);
 }
 
-/** Parse Torznab t=indexers XML response into JackettIndexer[]. */
-function parseTorznabIndexersXml(xml: string): JackettIndexer[] {
+/** Parse Torznab t=indexers XML response into indexers with their caps. */
+function parseTorznabIndexersXml(xml: string): JackettIndexersResult {
   const trimmed = xml.trim();
-  if (!trimmed) return [];
+  if (!trimmed) return { indexers: [] };
 
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
+    transformAttributeName: (attributeName) => attributeName.replace("@_", ""),
   });
   const doc = parser.parse(xml);
+  const rawIndexers: JackettRawIndexer[] = doc?.indexers?.indexer ?? [];
+  const formattedIndexers = rawIndexers.map((indexer) => {
+    const id = indexer.id;
+    const name = indexer.title;
+    const caps = indexer.caps;
+    const limit = caps?.limits?.max ?? caps?.limits?.default ?? NaN;
+    const categories = caps?.categories?.category ?? [];
+    const formattedCategories = categories
+      .map((category) => {
+        const id = category.id;
+        const name = category.name;
+        let subCategories: JackettRawCategory | JackettRawCategory[] = [];
+        if (Array.isArray(category.subcat)) subCategories = category.subcat;
+        else if (category.subcat) subCategories = [category.subcat];
 
-  const raw =
-    doc?.Indexers?.Indexer ??
-    doc?.Indexers?.indexer ??
-    doc?.indexers?.indexer ??
-    doc?.indexers?.Indexer ??
-    doc?.indexers;
-  const list = toArray(raw);
+        const formattedSubCategories = subCategories.map((subCategory) => {
+          const id = subCategory.id;
+          const name = subCategory.name;
+          return { id, name };
+        });
 
-  return list
-    .map((i: XmlAttrs) => {
-      const id =
-        attr(i, "id") ||
-        attr(i, "Id") ||
-        attr(i, "ID") ||
-        String((i as { id?: string }).id ?? (i as { Id?: string }).Id ?? (i as { ID?: string }).ID ?? "");
-      const name =
-        attr(i, "name") ||
-        attr(i, "Name") ||
-        String((i as { name?: string }).name ?? (i as { Name?: string }).Name ?? id);
-      return { id, name };
-    })
-    .filter((x) => x.id.length > 0)
-    .sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
-    );
-}
+        return [{ id, name }, ...formattedSubCategories];
+      })
+      .flat()
+      .sort((a, b) => a.id.localeCompare(b.id));
 
-/**
- * Fetch Torznab capabilities (categories, limits, search modes) for an indexer.
- * Use indexerId "all" or empty for the aggregate; otherwise a specific indexer id.
- */
-export async function getJackettCaps(indexerId: string): Promise<TorznabCaps> {
-  if (!JACKETT_API_KEY) {
-    throw new Error("JACKETT_API_KEY is not set");
-  }
-  const baseUrl = JACKETT_URL.replace(/\/$/, "");
-  const useAll = !indexerId || indexerId === "all";
-  const path = useAll ? "all" : indexerId.trim().toLowerCase();
-  const url = `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?apikey=${encodeURIComponent(JACKETT_API_KEY)}&t=caps`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Jackett caps: ${res.status}`);
-  }
-  const xml = await res.text();
-  return parseTorznabCapsXml(xml);
-}
-
-/** XML parser output: attributes may be @_name or name depending on config */
-type XmlAttrs = Record<string, unknown>;
-
-function attr(obj: XmlAttrs | undefined, key: string): string {
-  if (!obj) return "";
-  const val = obj[`@_${key}`] ?? obj[key];
-  return String(val ?? "");
-}
-
-function attrInt(obj: XmlAttrs | undefined, key: string): number {
-  return parseInt(attr(obj, key) || "0", 10);
-}
-
-function toArray<T>(val: T | T[] | undefined): T[] {
-  if (val == null) return [];
-  return Array.isArray(val) ? val : [val];
-}
-
-function parseTorznabCategory(raw: XmlAttrs): TorznabCategory {
-  const id = attrInt(raw, "id");
-  const name = attr(raw, "name");
-  const rawSubcats = toArray(raw.subcat ?? raw.subcategory);
-  const subcats = rawSubcats.map((s) => ({
-    id: attrInt(s as XmlAttrs, "id"),
-    name: attr(s as XmlAttrs, "name"),
-  }));
-  return {
-    id,
-    name,
-    subcats: subcats.length > 0 ? subcats : undefined,
-  };
-}
-
-function parseTorznabCapsXml(xml: string): TorznabCaps {
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: "@_",
+    return { id, name, limit, categories: formattedCategories };
   });
-  const doc = parser.parse(xml);
-  const caps = doc?.caps ?? doc?.torznab?.caps;
-  if (!caps) return { categories: [] };
 
-  const rawCategories = toArray(caps.categories?.category);
-  const categories = rawCategories.map((c) =>
-    parseTorznabCategory(c as XmlAttrs),
-  );
-
-  const server = caps.server
-    ? {
-        version: attr(caps.server as XmlAttrs, "version"),
-        title: attr(caps.server as XmlAttrs, "title"),
-      }
-    : undefined;
-
-  const limits = caps.limits
-    ? {
-        max: attrInt(caps.limits as XmlAttrs, "max"),
-        default: attrInt(caps.limits as XmlAttrs, "default"),
-      }
-    : undefined;
-
-  return { server, limits, categories };
+  return { indexers: formattedIndexers };
 }
 
 export type SearchJackettOptions = {
