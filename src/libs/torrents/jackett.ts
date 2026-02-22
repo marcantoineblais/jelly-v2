@@ -2,7 +2,6 @@ import { JACKETT_API_KEY, JACKETT_URL } from "@/src/config";
 import { XMLParser } from "fast-xml-parser";
 import { formatDataSize } from "../format-data-size";
 import { formatDate, sortFeedItems, type SortBy } from "./feed-format";
-import { log } from "../logger";
 
 export type TorrentSearchItem = {
   id: number;
@@ -164,11 +163,6 @@ export async function searchJackett(
   const response = await fetch(
     `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?${params.toString()}`,
   );
-  log({
-    source: "searchJackett",
-    message: "Searching Jackett",
-    data: response,
-  });
   if (!response.ok) throw new Error(`Jackett search: ${response.status}`);
   const data = await response.text();
   let items = parseTorznabXml(data);

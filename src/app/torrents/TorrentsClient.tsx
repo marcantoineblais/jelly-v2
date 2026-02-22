@@ -84,7 +84,7 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
     ).filter((category, i, array) => i === array.findIndex((c) => c.id === category.id));
 
     return commonCategories.sort((a, b) => a.id.localeCompare(b.id));
-  }, [formData.indexer]);
+  }, [formData.indexer, indexers]);
 
   function handleSelectItem(item: FeedItem) {
     setSelectedItem(item);
