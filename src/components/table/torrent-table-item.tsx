@@ -21,7 +21,7 @@ export default function TorrentTableItem({
         {item.name}
       </p>
       <div className="w-full">
-        <Progress value={item.progress * 100} color="primary" />
+        <Progress value={item.progress * 100} color="primary" aria-label="Progress"/>
         <div className="flex justify-between content-between text-xs">
           <span className="truncate">{formatDataSize(item.completed)}</span>
           <span className="truncate">{formatDataSize(item.size)}</span>

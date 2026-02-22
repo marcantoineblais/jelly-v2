@@ -12,4 +12,6 @@ export const INCOMPLETE_DOWNLOADS_PATH =
 export const POLL_INTERVAL_MS = 3000;
 
 export const TORRENT_SORT_BY = ["date", "name", "seeds", "size"];
+export const DOWNLOAD_SORT_BY = ["name", "eta", "progress", "size", "status"];
 export const TORRENT_SORT_ORDER = ["asc", "desc"];
+export const DOWNLOAD_SORT_ORDER = ["asc", "desc"];

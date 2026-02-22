@@ -356,6 +356,7 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
               </ModalBody>
               <ModalFooter className="flex justify-center gap-2">
                 <Button
+                  className="w-32"
                   color="default"
                   variant="ghost"
                   onPress={handleCloseModal}
@@ -363,12 +364,13 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
                   Close
                 </Button>
                 <Button
+                  className="w-32"
                   color="primary"
-                  variant="ghost"
+                  variant="solid"
                   onPress={() => addToQbittorrent(selectedItem)}
                   isLoading={isAddingToQbittorrent}
                 >
-                  Add to qBittorrent
+                  Download
                 </Button>
               </ModalFooter>
             </ModalContent>
