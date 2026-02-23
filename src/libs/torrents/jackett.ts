@@ -74,6 +74,13 @@ export async function getJackettIndexers(): Promise<JackettIndexersResult> {
   return parseTorznabIndexersXml(text);
 }
 
+/** Normalize XML-parsed value to array (single item becomes [item], null/undefined becomes []). */
+function ensureArray<T>(x: T | T[] | null | undefined): T[] {
+  if (Array.isArray(x)) return x;
+  if (x != null) return [x];
+  return [];
+}
+
 /** Parse Torznab t=indexers XML response into indexers with their caps. */
 function parseTorznabIndexersXml(xml: string): JackettIndexersResult {
   const trimmed = xml.trim();
@@ -85,21 +92,18 @@ function parseTorznabIndexersXml(xml: string): JackettIndexersResult {
     transformAttributeName: (attributeName) => attributeName.replace("@_", ""),
   });
   const doc = parser.parse(xml);
-  const rawIndexers: JackettRawIndexer[] = doc?.indexers?.indexer ?? [];
+  const rawIndexers = ensureArray<JackettRawIndexer>(doc?.indexers?.indexer);
   const formattedIndexers = rawIndexers.map((indexer) => {
     const id = indexer.id;
     const name = indexer.title;
     const caps = indexer.caps;
     const limit = Number(caps?.limits?.max ?? caps?.limits?.default ?? "");
-    const categories = caps?.categories?.category ?? [];
+    const categories = ensureArray<JackettRawCategory>(caps?.categories?.category);
     const formattedCategories = categories
       .map((category) => {
         const id = category.id;
         const name = category.name;
-        let subCategories: JackettRawCategory | JackettRawCategory[] = [];
-        if (Array.isArray(category.subcat)) subCategories = category.subcat;
-        else if (category.subcat) subCategories = [category.subcat];
-
+        const subCategories = ensureArray<JackettRawCategory>(category.subcat);
         const formattedSubCategories = subCategories.map((subCategory) => {
           const id = subCategory.id;
           const name = subCategory.name;
@@ -183,7 +187,7 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
   const channel = doc?.rss?.channel ?? doc?.feed;
   if (!channel) return [];
   const rawItems = channel.item;
-  const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+  const items = ensureArray<typeof rawItems>(rawItems);
   return items.map((item, index) => {
     const title = item.title ?? "";
     const url = item.link ?? "";
