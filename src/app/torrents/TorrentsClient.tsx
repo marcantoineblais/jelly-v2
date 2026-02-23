@@ -30,7 +30,7 @@ import {
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
-import { TORRENT_SORT_BY, TORRENT_SORT_ORDER } from "@/src/config";
+import { TORRENT_DEFAULT_CATEGORIES, TORRENT_SORT_BY, TORRENT_SORT_ORDER } from "@/src/config";
 
 type FormData = {
   title: string;
@@ -76,22 +76,9 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
 
   const categories: TorznabCategory[] = useMemo(() => {
     const indexer = indexers.find((i) => i.id === formData.indexer);
-    if (indexer) return indexer.categories;
-
-    const allCategories = indexers.map((i) => i.categories);
-    const commonCategories = allCategories
-      .flat()
-      .filter((category) =>
-        allCategories.every((categories) =>
-          categories.some((c) => c.id === category.id),
-        ),
-      )
-      .filter(
-        (category, i, array) =>
-          i === array.findIndex((c) => c.id === category.id),
-      );
-
-    return commonCategories.sort((a, b) => a.id.localeCompare(b.id));
+    if (!indexer) return TORRENT_DEFAULT_CATEGORIES;
+      
+    return indexer.categories;
   }, [formData.indexer, indexers]);
 
   function handleSelectItem(item: FeedItem) {
