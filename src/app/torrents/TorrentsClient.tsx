@@ -188,7 +188,7 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
             <Input
               type="text"
               label="Title"
-              aria-labelledby="Search by title"
+              aria-label="Search by title"
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
@@ -205,7 +205,7 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
               <div>
                 <Select
                   items={indexers}
-                  aria-labelledby="Indexers selection"
+                  aria-label="Indexers selection"
                   label="Indexers"
                   placeholder="All indexers"
                   selectionMode="single"

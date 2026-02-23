@@ -15,7 +15,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import useFetch from "@/src/hooks/use-fetch";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
-import { DOWNLOAD_SORT_BY, DOWNLOAD_SORT_ORDER, POLL_INTERVAL_MS, TORRENT_SORT_ORDER } from "@/src/config";
+import { DOWNLOAD_SORT_BY, DOWNLOAD_SORT_ORDER, POLL_INTERVAL_MS } from "@/src/config";
 import type { QbitTorrent } from "@/src/libs/qbit/client";
 import { formatDataSize } from "@/src/libs/format-data-size";
 import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";

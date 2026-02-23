@@ -28,8 +28,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { url } = await request.json();
-    await addTorrent(url.trim());
+    const body = await request.json();
+    const url = body.url?.trim();
+    if (!url || typeof url !== "string") {
+      throw new Error("Invalid URL");
+    }
+    
+    await addTorrent(url);
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Add torrent failed";

@@ -72,32 +72,56 @@ function mapQbitTorrent(raw: QbitTorrentRaw): QbitTorrent {
   };
 }
 
+const COOKIE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+// Module-level cache. In Next.js: persists for process lifetime (serverful) or
+// per cold start (serverless). Reduces login calls when multiple qbit requests
+// occur within the TTL window.
+let cookieCache: { cookie: string; expiresAt: number } | null = null;
+let cookiePromise: Promise<string> | null = null;
+
 async function getCookie(): Promise<string> {
-  const url = `${API_PREFIX}/auth/login`;
-  const body = new URLSearchParams({
-    username: QBIT_USER,
-    password: QBIT_PASS,
-  });
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Referer: QBIT_URL,
-      Origin: QBIT_URL,
-    },
-    body: body.toString(),
-  });
-  if (res.status === 403) {
-    throw new Error("qBittorrent: IP banned (too many failed logins)");
+  const now = Date.now();
+  if (cookieCache && cookieCache.expiresAt > now) {
+    return cookieCache.cookie;
   }
-  if (!res.ok) {
-    throw new Error(`qBittorrent login failed: ${res.status}`);
+  if (cookiePromise) {
+    return cookiePromise;
   }
-  const setCookie = res.headers.get("set-cookie");
-  if (!setCookie) {
-    throw new Error("qBittorrent: no session cookie in login response");
-  }
-  return setCookie.split(";")[0].trim();
+  cookiePromise = (async () => {
+    try {
+      const url = `${API_PREFIX}/auth/login`;
+      const body = new URLSearchParams({
+        username: QBIT_USER,
+        password: QBIT_PASS,
+      });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Referer: QBIT_URL,
+          Origin: QBIT_URL,
+        },
+        body: body.toString(),
+      });
+      if (res.status === 403) {
+        throw new Error("qBittorrent: IP banned (too many failed logins)");
+      }
+      if (!res.ok) {
+        throw new Error(`qBittorrent login failed: ${res.status}`);
+      }
+      const setCookie = res.headers.get("set-cookie");
+      if (!setCookie) {
+        throw new Error("qBittorrent: no session cookie in login response");
+      }
+      const cookie = setCookie.split(";")[0].trim();
+      cookieCache = { cookie, expiresAt: now + COOKIE_TTL_MS };
+      return cookie;
+    } finally {
+      cookiePromise = null;
+    }
+  })();
+  return cookiePromise;
 }
 
 export async function qbitRequest<T>(
