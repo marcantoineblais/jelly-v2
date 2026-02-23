@@ -1,21 +1,34 @@
+// App
+export const IS_PROD = process.env.NODE_ENV === "production";
 export const APP_URL = process.env.APP_URL || "http://localhost:3000";
 export const SOCKET_SERVER_URL =
   process.env.SOCKET_SERVER_URL || "ws://localhost:3001";
 export const FILE_SERVER_URL =
   process.env.FILE_SERVER_URL || "http://localhost:3002";
 
+// Login
+export const JWT_SIGN_TOKEN = process.env.JWT_SIGN_TOKEN!;
+export const JWT_COOKIE_NAME = IS_PROD ? "__Secure-session-token" : "session-token";
+export const SESSION_DATA_PATH =
+  process.env.SESSION_DATA_PATH ?? "/data/sessions";
+export const AUTH_DATA_PATH =
+  process.env.AUTH_DATA_PATH ?? "/data/auth/credentials.json";
+export const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Jackett
 export const JACKETT_URL = process.env.JACKETT_URL ?? "http://localhost:9117";
 export const JACKETT_API_KEY = process.env.JACKETT_API_KEY ?? "";
 
+// Downloads
 export const INCOMPLETE_DOWNLOADS_PATH =
   process.env.INCOMPLETE_DOWNLOADS_PATH ?? "downloads/temp";
 export const POLL_INTERVAL_MS = 3000;
-
-export const TORRENT_SORT_BY = ["date", "name", "seeds", "size"];
 export const DOWNLOAD_SORT_BY = ["name", "eta", "progress", "size", "status"];
-export const TORRENT_SORT_ORDER = ["asc", "desc"];
 export const DOWNLOAD_SORT_ORDER = ["asc", "desc"];
 
+// Torrents
+export const TORRENT_SORT_BY = ["date", "name", "seeds", "size"];
+export const TORRENT_SORT_ORDER = ["asc", "desc"];
 export const TORRENT_DEFAULT_CATEGORIES = [
   { id: "1000", name: "Console" },
   { id: "1010", name: "Console/NDS" },

@@ -2,7 +2,7 @@
 
 import { addToast } from "@heroui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useConfig } from "./use-config";
+import { useConfig } from "../providers/config-provider-client";
 
 export interface TransferStatus {
   currentFile: string;

@@ -13,18 +13,37 @@ import H1 from "../elements/H1";
 import Logo from "@/src/assets/img/logo.png";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars } from "@fortawesome/free-solid-svg-icons";
-import { usePathname } from "next/navigation";
+import { faBars, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { usePathname, useRouter } from "next/navigation";
+
+const HIDDEN_PATHS = ["/login", "/setup"];
 
 export default function Navigation() {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    onClose();
+    router.push("/login");
+    router.refresh();
+  }
+
+  function handleNavigation(path: string) {
+    router.push(path);
+    onClose();
+  }
+
+  if (HIDDEN_PATHS.includes(pathname)) {
+    return null;
+  }
 
   return (
     <div className="w-full bg-primary/10">
       <div className="py-0.5 px-2 flex gap-4 justify-between items-center">
-        <div className="flex items-center justify-center">
-          <Link href="/" className="flex items-center">
+        <div className="basis-1/3 flex items-center">
+          <Link href="/" className="flex items-center" tabIndex={-1}>
             <Image
               src={Logo}
               alt="Jelly"
@@ -35,20 +54,20 @@ export default function Navigation() {
           </Link>
         </div>
 
-        <div className="flex items-center justify-center">
-          <Link href="/" className="flex items-center">
+        <div className="basis-1/3 flex items-center justify-center">
+          <Link href="/" className="flex items-center" tabIndex={-1}>
             <H1 className="mt-0 text-2xl!">Jelly</H1>
           </Link>
         </div>
 
-        <div className="flex items-center justify-center">
+        <div className="basis-1/3 flex items-center justify-end">
           <Button
             isIconOnly
             variant="flat"
             className="bg-transparent"
             onPress={onOpen}
           >
-            <FontAwesomeIcon icon={faBars} size="2x" />
+            <FontAwesomeIcon icon={faBars} className="text-4xl" />
           </Button>
 
           <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement="right">
@@ -56,43 +75,61 @@ export default function Navigation() {
               <DrawerHeader className="w-full flex justify-center text-xl">
                 Navigation
               </DrawerHeader>
-              <DrawerBody>
-                <div className="mt-10 flex flex-col items-center gap-4">
-                  <Link
+              <DrawerBody className="py-10 flex flex-col justify-between">
+                <div className="grow flex flex-col justify-center items-center gap-4">
+                  <Button
                     href="/"
-                    className="text-primary hover:text-primary-hover underline text-lg"
+                    onPress={() => handleNavigation("/")}
+                    variant="solid"
+                    color="primary"
+                    className="w-32 text-lg"
                     isDisabled={pathname === "/"}
                   >
                     Transfers
-                  </Link>
+                  </Button>
 
-                  <Link
+                  <Button
                     href="/torrents"
-                    className="text-primary hover:text-primary-hover underline text-lg"
+                    onPress={() => handleNavigation("/torrents")}
+                    variant="solid"
+                    color="primary"
+                    className="w-32 text-lg"
                     isDisabled={pathname === "/torrents"}
                   >
                     Torrents
-                  </Link>
+                  </Button>
 
-                  <Link
+                  <Button
                     href="/downloads"
-                    className="text-primary hover:text-primary-hover underline text-lg"
+                    onPress={() => handleNavigation("/downloads")}
+                    variant="solid"
+                    color="primary"
+                    className="w-32 text-lg"
                     isDisabled={pathname === "/downloads"}
                   >
                     Downloads
-                  </Link>
-
-                  <div className="mt-10">
-                    <Button
-                      onPress={onClose}
-                      color="default"
-                      variant="bordered"
-                      className="border-default-foreground"
-                      size="sm"
-                    >
-                      Close
-                    </Button>
-                  </div>
+                  </Button>
+                </div>
+                <div className="grow flex justify-center">
+                  <Button
+                    onPress={onClose}
+                    color="default"
+                    variant="bordered"
+                    className="w-32 border-default-foreground"
+                  >
+                    Close
+                  </Button>
+                </div>
+                <div className="flex justify-center">
+                  <Button
+                    onPress={handleLogout}
+                    color="warning"
+                    variant="solid"
+                    className="w-32 text-white"
+                    startContent={<FontAwesomeIcon icon={faRightFromBracket} />}
+                  >
+                    Logout
+                  </Button>
                 </div>
               </DrawerBody>
             </DrawerContent>

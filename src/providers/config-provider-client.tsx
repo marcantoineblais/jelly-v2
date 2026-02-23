@@ -12,7 +12,7 @@ const ConfigContext = createContext<Config>({
   appUrl: "",
 });
 
-export function ConfigProvider({
+export function ConfigProviderClient({
   children,
   config,
 }: {

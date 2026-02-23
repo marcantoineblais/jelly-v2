@@ -26,6 +26,7 @@ import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
 import Table from "@/src/components/table/table";
 import TorrentTableItem from "@/src/components/table/torrent-table-item";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
+import { useSession } from "@/src/providers/session-provider-client";
 
 export type SortBy = "name" | "size" | "progress" | "status" | "eta";
 
@@ -33,9 +34,13 @@ type DownloadsClientProps = {
   initialTorrents: QbitTorrent[];
 };
 
+const DEFAULT_SORT_BY: SortBy = "name";
+const DEFAULT_SORT_ORDER = "asc" as const;
+
 export default function DownloadsClient({
   initialTorrents,
 }: DownloadsClientProps) {
+  const { session, updateSession } = useSession();
   const { fetchData } = useFetch();
   const {
     isOpen: isModalOpen,
@@ -48,8 +53,18 @@ export default function DownloadsClient({
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<QbitTorrent | null>(null);
   const [deleteFiles, setDeleteFiles] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const sortBy = (session.downloads?.sortBy as SortBy) ?? DEFAULT_SORT_BY;
+  const sortOrder =
+    (session.downloads?.sortOrder as "asc" | "desc") ?? DEFAULT_SORT_ORDER;
+
+  function setSortBy(value: SortBy) {
+    updateSession({ downloads: { sortBy: value, sortOrder } });
+  }
+
+  function setSortOrder(value: "asc" | "desc") {
+    updateSession({ downloads: { sortBy, sortOrder: value } });
+  }
 
   const sortedTorrents = useMemo(() => {
     const toSort = [...torrents];
@@ -139,9 +154,10 @@ export default function DownloadsClient({
           className="basis-2/3"
           label="Sort by"
           selectedKeys={[sortBy]}
-          onSelectionChange={(selection) =>
-            setSortBy((prev) => (Array.from(selection)[0] as SortBy) || prev)
-          }
+          onSelectionChange={(selection) => {
+            const key = Array.from(selection)[0] as SortBy;
+            if (key) setSortBy(key);
+          }}
         >
           {DOWNLOAD_SORT_BY.map((sortBy) => (
             <SelectItem key={sortBy}>{sortBy}</SelectItem>
@@ -152,11 +168,10 @@ export default function DownloadsClient({
           className="basis-1/3"
           label="Order"
           selectedKeys={[sortOrder]}
-          onSelectionChange={(selection) =>
-            setSortOrder(
-              (prev) => (Array.from(selection)[0] as "asc" | "desc") || prev,
-            )
-          }
+          onSelectionChange={(selection) => {
+            const key = Array.from(selection)[0] as "asc" | "desc";
+            if (key) setSortOrder(key);
+          }}
         >
           {DOWNLOAD_SORT_ORDER.map((sortOrder) => (
             <SelectItem key={sortOrder}>{sortOrder}</SelectItem>

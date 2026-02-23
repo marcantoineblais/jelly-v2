@@ -290,7 +290,7 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
           {/* Search button */}
           <div className="flex w-full justify-center gap-2">
             <Button
-              className="disabled:opacity-50"
+              className="w-32 disabled:opacity-50"
               type="submit"
               color="primary"
               isLoading={isSearchLoading}
