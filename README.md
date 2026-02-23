@@ -5,8 +5,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 Run the full dev stack (Next.js, Jackett, qBittorrent, socket-server, files-server):
 
 ```bash
-cp .env.dev .env
-# Edit .env and set JACKETT_API_KEY (from Jackett UI after first start)
+cp .env.example .env
+# Edit .env: set JWT_SIGN_TOKEN, JACKETT_API_KEY (from Jackett UI after first start)
 docker compose -f docker-compose.dev.yml up --build
 ```
 
@@ -15,6 +15,12 @@ docker compose -f docker-compose.dev.yml up --build
 - **qBittorrent:** http://localhost:8080 — set Default save path to `/downloads` in Options
 
 The app uses `config.dev.json` for download/library paths (dev volumes: `downloads-dev`, `encodes-dev`, `media-dev`).
+
+### Authentication
+
+On first visit, the app redirects to `/setup` to create your account (username + password). Credentials are stored in `AUTH_DATA_PATH` (default: `/data/auth/credentials.json`) with a bcrypt-hashed password.
+
+`JWT_SIGN_TOKEN` (or `COOKIE_SIGN_TOKEN`) is required for session cookies. Download filters and other session data are stored in `SESSION_DATA_PATH` (default: `/data/sessions`).
 
 ### qBittorrent (Docker)
 

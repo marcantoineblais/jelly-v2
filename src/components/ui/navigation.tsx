@@ -15,19 +15,24 @@ import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { usePathname, useRouter } from "next/navigation";
+import useFetch from "@/src/hooks/use-fetch";
 
 const HIDDEN_PATHS = ["/login", "/setup"];
 
 export default function Navigation() {
+  const { fetchData } = useFetch();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const pathname = usePathname();
   const router = useRouter();
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    onClose();
-    router.push("/login");
-    router.refresh();
+    try {
+      await fetchData("/api/auth/logout", { method: "POST" });
+    } finally {
+      onClose();
+      router.push("/login");
+      router.refresh();
+    }
   }
 
   function handleNavigation(path: string) {
