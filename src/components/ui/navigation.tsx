@@ -87,7 +87,8 @@ export default function Navigation() {
                     onPress={() => handleNavigation("/")}
                     variant="solid"
                     color="primary"
-                    className="w-32 text-lg"
+                    className="w-full text-lg"
+                    size="lg"
                     isDisabled={pathname === "/"}
                   >
                     Transfers
@@ -98,7 +99,8 @@ export default function Navigation() {
                     onPress={() => handleNavigation("/torrents")}
                     variant="solid"
                     color="primary"
-                    className="w-32 text-lg"
+                    className="w-full text-lg"
+                    size="lg"
                     isDisabled={pathname === "/torrents"}
                   >
                     Torrents
@@ -109,7 +111,8 @@ export default function Navigation() {
                     onPress={() => handleNavigation("/downloads")}
                     variant="solid"
                     color="primary"
-                    className="w-32 text-lg"
+                    className="w-full text-lg"
+                    size="lg"
                     isDisabled={pathname === "/downloads"}
                   >
                     Downloads
@@ -120,7 +123,8 @@ export default function Navigation() {
                     onPress={onClose}
                     color="default"
                     variant="bordered"
-                    className="w-32 border-default-foreground"
+                    className="w-full border-default-foreground"
+                    size="lg"
                   >
                     Close
                   </Button>
@@ -130,8 +134,9 @@ export default function Navigation() {
                     onPress={handleLogout}
                     color="warning"
                     variant="solid"
-                    className="w-32 text-white"
+                    className="w-full text-white"
                     startContent={<FontAwesomeIcon icon={faRightFromBracket} />}
+                    size="lg"
                   >
                     Logout
                   </Button>
