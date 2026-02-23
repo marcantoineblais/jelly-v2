@@ -54,11 +54,22 @@ function extractFilesFromFolder(
     console.error(`[Read Folders Lib] Folder does not exist: ${folderPath}`);
     return filesList;
   }
-  const entries = fs.readdirSync(folderPath);
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(folderPath);
+  } catch {
+    return filesList;
+  }
 
   entries.forEach((entry) => {
     const entryPath = path.join(folderPath, entry);
-    const stats = fs.statSync(entryPath);
+    let stats: fs.Stats;
+    try {
+      stats = fs.statSync(entryPath);
+    } catch {
+      // File may have been deleted, moved, or is inaccessible during scan
+      return;
+    }
 
     if (stats.isDirectory()) {
       if (entry !== "temp") {
@@ -87,9 +98,12 @@ function extractFilesFromFolder(
   return filesList;
 }
 
-function readLibraryFiles(path: string) {
-  if (!fs.existsSync(path)) return [];
+function readLibraryFiles(libraryPath: string) {
+  if (!fs.existsSync(libraryPath)) return [];
 
-  const files = fs.readdirSync(path);
-  return files;
+  try {
+    return fs.readdirSync(libraryPath);
+  } catch {
+    return [];
+  }
 }
