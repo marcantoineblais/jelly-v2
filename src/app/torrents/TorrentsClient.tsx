@@ -79,9 +79,17 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
     if (indexer) return indexer.categories;
 
     const allCategories = indexers.map((i) => i.categories);
-    const commonCategories = allCategories.flat().filter((category) =>
-      allCategories.every((categories) => categories.some((c) => c.id === category.id)),
-    ).filter((category, i, array) => i === array.findIndex((c) => c.id === category.id));
+    const commonCategories = allCategories
+      .flat()
+      .filter((category) =>
+        allCategories.every((categories) =>
+          categories.some((c) => c.id === category.id),
+        ),
+      )
+      .filter(
+        (category, i, array) =>
+          i === array.findIndex((c) => c.id === category.id),
+      );
 
     return commonCategories.sort((a, b) => a.id.localeCompare(b.id));
   }, [formData.indexer, indexers]);
@@ -242,11 +250,9 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
                     })
                   }
                 >
-                  {
-                    TORRENT_SORT_BY.map((sortBy) => (
-                      <SelectItem key={sortBy}>{sortBy}</SelectItem>
-                    ))
-                  }
+                  {TORRENT_SORT_BY.map((sortBy) => (
+                    <SelectItem key={sortBy}>{sortBy}</SelectItem>
+                  ))}
                 </Select>
                 <Select
                   className="basis-2/5"
@@ -264,11 +270,9 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
                     })
                   }
                 >
-                  {
-                    TORRENT_SORT_ORDER.map((sortOrder) => (
-                      <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
-                    ))
-                  }
+                  {TORRENT_SORT_ORDER.map((sortOrder) => (
+                    <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
+                  ))}
                 </Select>
               </div>
 

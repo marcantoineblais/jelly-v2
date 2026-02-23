@@ -7,7 +7,7 @@ async function getIndexers() {
   try {
     const result = await getJackettIndexers();
     const indexers = result.indexers;
-    return indexers; 
+    return indexers;
   } catch (err) {
     console.error("[torrents] Failed to fetch indexers:", err);
     return [];

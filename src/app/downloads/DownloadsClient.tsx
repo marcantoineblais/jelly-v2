@@ -15,7 +15,11 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import useFetch from "@/src/hooks/use-fetch";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
-import { DOWNLOAD_SORT_BY, DOWNLOAD_SORT_ORDER, POLL_INTERVAL_MS } from "@/src/config";
+import {
+  DOWNLOAD_SORT_BY,
+  DOWNLOAD_SORT_ORDER,
+  POLL_INTERVAL_MS,
+} from "@/src/config";
 import type { QbitTorrent } from "@/src/libs/qbit/client";
 import { formatDataSize } from "@/src/libs/format-data-size";
 import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
@@ -139,11 +143,9 @@ export default function DownloadsClient({
             setSortBy((prev) => (Array.from(selection)[0] as SortBy) || prev)
           }
         >
-          {
-            DOWNLOAD_SORT_BY.map((sortBy) => (
-              <SelectItem key={sortBy}>{sortBy}</SelectItem>
-            ))
-          }
+          {DOWNLOAD_SORT_BY.map((sortBy) => (
+            <SelectItem key={sortBy}>{sortBy}</SelectItem>
+          ))}
         </Select>
 
         <Select
@@ -156,11 +158,9 @@ export default function DownloadsClient({
             )
           }
         >
-          {
-            DOWNLOAD_SORT_ORDER.map((sortOrder) => (
-              <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
-            ))
-          }
+          {DOWNLOAD_SORT_ORDER.map((sortOrder) => (
+            <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
+          ))}
         </Select>
       </div>
 

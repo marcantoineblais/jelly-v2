@@ -33,14 +33,16 @@ export async function GET(request: Request) {
     const validLimit =
       limit != null && !Number.isNaN(limit) && limit > 0 ? limit : undefined;
     const validSortBy = TORRENT_SORT_BY.includes(sortBy) ? sortBy : undefined;
-    const validSortOrder = TORRENT_SORT_ORDER.includes(sortOrder) ? sortOrder : undefined;
+    const validSortOrder = TORRENT_SORT_ORDER.includes(sortOrder)
+      ? sortOrder
+      : undefined;
     const options = {
       cat: category.trim() || undefined,
       limit: validLimit,
       sortBy: validSortBy as SortBy | undefined,
       sortOrder: validSortOrder as "asc" | "desc" | undefined,
     };
-    
+
     const { items, total } = await searchJackett(query, indexerId, options);
     return NextResponse.json({
       ok: true,

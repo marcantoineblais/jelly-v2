@@ -176,7 +176,8 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
-    transformAttributeName: (attributeName) => attributeName.replace("@_", "").replace(":", "_"),
+    transformAttributeName: (attributeName) =>
+      attributeName.replace("@_", "").replace(":", "_"),
   });
   const doc = parser.parse(xml);
   const channel = doc?.rss?.channel ?? doc?.feed;

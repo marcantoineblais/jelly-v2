@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     if (!url || typeof url !== "string") {
       throw new Error("Invalid URL");
     }
-    
+
     await addTorrent(url);
     return NextResponse.json({ ok: true });
   } catch (err) {
