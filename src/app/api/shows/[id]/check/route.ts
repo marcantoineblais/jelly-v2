@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
 import { readShows } from "@/src/libs/shows/storage";
-import { findLibraryByName, getLastEpisode, LastEpisode,  } from "@/src/libs/shows/library";
+import {
+  findLibraryByName,
+  getLastEpisode,
+  LastEpisode,
+} from "@/src/libs/shows/library";
 export type CheckShowResponse = {
   ok: boolean;
   lastEpisode?: LastEpisode;

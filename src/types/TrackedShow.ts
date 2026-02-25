@@ -3,7 +3,7 @@ export type TrackedShow = {
   title: string;
   season: number;
   minEpisode: number;
-  searchQuery?: string;
+  additionalQuery?: string;
   library: string;
   indexer?: string;
   category?: string;

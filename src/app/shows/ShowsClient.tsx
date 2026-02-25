@@ -39,9 +39,11 @@ import {
   useAccordion,
 } from "@/src/components/accordion";
 import { LibraryFoldersResponse } from "../api/shows/libraries/[name]/folders/route";
-import { validateFormData } from "@/src/libs/validations";
 import { formatSearchQuery, pad2 } from "@/src/libs/shows/library-utils";
 import { FetchError } from "@/src/libs/fetch-error";
+import useValidation from "@/src/hooks/use-validation";
+import { log } from "@/src/libs/logger";
+import { validateFormData } from "@/src/libs/validation/show-validations";
 
 type ShowFormData = {
   title: string;
@@ -75,6 +77,8 @@ export default function ShowsClient({
   indexers,
 }: ShowsClientProps) {
   const { fetchData } = useFetch();
+  const { validate, isInvalid, errorMessage, setErrors, revalidateOnError } =
+    useValidation(validateFormData);
   const { isOpen: isAccordionOpen, toggle: toggleAccordion } = useAccordion();
 
   const [shows, setShows] = useState<TrackedShow[]>(initialShows);
@@ -93,7 +97,6 @@ export default function ShowsClient({
   const [formData, setFormData] = useState<ShowFormData>(EMPTY_FORM);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [libraryFolders, setLibraryFolders] = useState<string[]>([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const {
     isOpen: isDeleteOpen,
@@ -196,18 +199,21 @@ export default function ShowsClient({
   }, [formData.library, fetchFolders]);
 
   async function handleSearch() {
-    if (!selectedShow || !lastEpisode) return;
+    if (!selectedShow) return;
+
+    const additionalValidation = {
+      show: selectedShow?.title.trim(),
+      nextEpisode,
+    };
+
     const title = selectedShow.title.trim();
     const season = selectedShow.season;
     const episode = nextEpisode;
     const additionalQuery = formData.additionalQuery.trim();
 
     const payload = { title, season, episode, additionalQuery };
-    const errors = validateFormData(payload, { src: "show" });
-    if (Object.keys(errors).length > 0) {
-      setErrors(errors);
-      return;
-    }
+    const hasErrors = validate({ ...payload, ...additionalValidation });
+    if (hasErrors) return;
 
     const query = formatSearchQuery(payload);
     const params = new URLSearchParams({
@@ -249,11 +255,13 @@ export default function ShowsClient({
       category,
     };
 
-    const errors = validateFormData(payload, { src: "show" });
-    if (Object.keys(errors).length > 0) {
-      setErrors(errors);
-      return;
-    }
+    const hasErrors = validate(payload);
+    log({
+      source: "shows",
+      message: "hasErrors",
+      data: hasErrors,
+    });
+    if (hasErrors) return;
 
     try {
       const { data } = await fetchData<{ ok: boolean; show: TrackedShow }>(
@@ -299,11 +307,8 @@ export default function ShowsClient({
       category,
     };
 
-    const errors = validateFormData(payload, { src: "show" });
-    if (Object.keys(errors).length > 0) {
-      setErrors(errors);
-      return;
-    }
+    const hasErrors = validate(payload);
+    if (hasErrors) return;
 
     try {
       const { data } = await fetchData<{ ok: boolean; show: TrackedShow }>(
@@ -404,14 +409,16 @@ export default function ShowsClient({
             <div className="flex-1">
               <Select
                 label="Show"
-                isInvalid={!!errors.show_show}
-                errorMessage={errors.show_show}
+                isInvalid={isInvalid("show")}
+                errorMessage={errorMessage("show")}
                 placeholder="Select a show"
                 selectedKeys={selectedShowId ? [selectedShowId] : []}
                 selectionMode="single"
-                onSelectionChange={(selection) =>
-                  setSelectedShowId([...selection][0]?.toString() ?? "")
-                }
+                onSelectionChange={(selection) => {
+                  const value = [...selection][0]?.toString();
+                  setSelectedShowId(value ?? "");
+                  revalidateOnError("show", value);
+                }}
               >
                 {shows.map((show) => (
                   <SelectItem key={show.id}>{show.title}</SelectItem>
@@ -437,7 +444,12 @@ export default function ShowsClient({
                 min={0}
                 label="Next"
                 value={nextEpisode}
-                onValueChange={(value) => setNextEpisode(Math.max(value, 0))}
+                onValueChange={(value) => {
+                  setNextEpisode(Math.max(value, 0));
+                  revalidateOnError("nextEpisode", value);
+                }}
+                isInvalid={isInvalid("nextEpisode")}
+                errorMessage={errorMessage("nextEpisode")}
               />
             )}
           </div>
@@ -448,16 +460,16 @@ export default function ShowsClient({
                 label="Library"
                 selectedKeys={formData.library ? [formData.library] : []}
                 selectionMode="single"
-                isInvalid={!!errors.show_library}
-                errorMessage={errors.show_library}
+                isInvalid={isInvalid("library")}
+                errorMessage={errorMessage("library")}
                 onSelectionChange={(selection) => {
                   const name = [...selection][0]?.toString() ?? "";
-                  setErrors((prev) => ({ ...prev, show_library: "" }));
                   setFormData((prev) => ({
                     ...prev,
                     library: name,
                     title: "",
                   }));
+                  revalidateOnError("library", name);
                 }}
               >
                 {libraries.map((lib) => (
@@ -469,17 +481,17 @@ export default function ShowsClient({
                 label="Title"
                 allowsCustomValue
                 inputValue={formData.title}
-                isInvalid={!!errors.show_title}
-                errorMessage={errors.show_title}
+                isInvalid={isInvalid("title")}
+                errorMessage={errorMessage("title")}
                 onClear={() => setFormData((prev) => ({ ...prev, title: "" }))}
                 onValueChange={(value) => {
-                  setErrors((prev) => ({ ...prev, show_title: "" }));
                   setFormData((prev) => ({ ...prev, title: value }));
+                  revalidateOnError("title", value);
                 }}
                 onSelectionChange={(key) => {
                   const title = key ? key.toString() : "";
-                  setErrors((prev) => ({ ...prev, show_title: "" }));
                   setFormData((prev) => ({ ...prev, title }));
+                  revalidateOnError("title", title);
                 }}
               >
                 {libraryFolders.map((folder) => (
@@ -495,19 +507,19 @@ export default function ShowsClient({
                 }
               />
 
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2">
                 <NumberInput
                   label="Season"
                   min={0}
                   value={formData.season}
-                  isInvalid={!!errors.show_season}
-                  errorMessage={errors.show_season}
+                  isInvalid={isInvalid("season")}
+                  errorMessage={errorMessage("season")}
                   onValueChange={(value) => {
-                    setErrors((prev) => ({ ...prev, show_season: "" }));
                     setFormData((prev) => ({
                       ...prev,
                       season: Math.max(value, 0),
                     }));
+                    revalidateOnError("season", value);
                   }}
                 />
 
@@ -515,14 +527,14 @@ export default function ShowsClient({
                   label="Min episode"
                   min={0}
                   value={formData.minEpisode}
-                  isInvalid={!!errors.show_minEpisode}
-                  errorMessage={errors.show_minEpisode}
+                  isInvalid={isInvalid("minEpisode")}
+                  errorMessage={errorMessage("minEpisode")}
                   onValueChange={(value) => {
-                    setErrors((prev) => ({ ...prev, show_minEpisode: "" }));
                     setFormData((prev) => ({
                       ...prev,
                       minEpisode: Math.max(value, 0),
                     }));
+                    revalidateOnError("minEpisode", value);
                   }}
                 />
               </div>
@@ -532,9 +544,12 @@ export default function ShowsClient({
                 selectedKeys={formData.indexer ? [formData.indexer] : []}
                 selectionMode="single"
                 placeholder="All indexers"
+                isInvalid={isInvalid("indexer")}
+                errorMessage={errorMessage("indexer")}
                 onSelectionChange={(selection) => {
                   const id = [...selection][0]?.toString() ?? "";
                   setFormData((prev) => ({ ...prev, indexer: id }));
+                  revalidateOnError("indexer", id);
                 }}
               >
                 {indexers.map((indexer) => (
@@ -548,9 +563,12 @@ export default function ShowsClient({
                   selectedKeys={formData.category ? [formData.category] : []}
                   selectionMode="single"
                   placeholder="Category"
+                  isInvalid={isInvalid("category")}
+                  errorMessage={errorMessage("category")}
                   onSelectionChange={(selection) => {
                     const id = [...selection][0]?.toString() ?? "";
                     setFormData((prev) => ({ ...prev, category: id }));
+                    revalidateOnError("category", id);
                   }}
                 >
                   {categories.map((cat) => (

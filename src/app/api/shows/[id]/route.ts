@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
 import { updateShow, removeShow } from "@/src/libs/shows/storage";
 import type { TrackedShow } from "@/src/types/TrackedShow";
-import { validateFormData } from "@/src/libs/validations";
+import { validateFormData } from "@/src/libs/validation/show-validations";
 
 export type UpdateShowResponse = {
   ok: boolean;
@@ -26,7 +26,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const season = body.season;
     const minEpisode = body.minEpisode;
     const library = body.library?.trim();
-    const searchQuery = body.searchQuery?.trim();
+    const additionalQuery = body.additionalQuery?.trim();
     const indexer = body.indexer?.trim();
     const category = body.category?.trim();
 
@@ -35,12 +35,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
       season,
       minEpisode,
       library,
-      searchQuery,
+      additionalQuery,
       indexer,
       category,
     };
-    
-    const errors = validateFormData(payload, { src: "show" });
+
+    const errors = validateFormData(payload);
     if (Object.keys(errors).length > 0) {
       return NextResponse.json({ ok: false, errors }, { status: 400 });
     }
