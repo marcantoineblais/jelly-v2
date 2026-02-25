@@ -166,14 +166,12 @@ export default function ShowsClient({
           indexer: selectedShow.indexer ?? "",
           category: selectedShow.category ?? "",
         });
-
-        fetchFolders(selectedShow.library);
       } else {
         setFormData(EMPTY_FORM);
         setLibraryFolders([]);
       }
     });
-  }, [selectedShow, isAccordionOpen, fetchFolders]);
+  }, [selectedShow, isAccordionOpen]);
 
   // Fetch next episode when show is selected
   useEffect(() => {
@@ -462,6 +460,7 @@ export default function ShowsClient({
                 label="Title"
                 allowsCustomValue
                 inputValue={formData.title}
+                onClear={() => setFormData((prev) => ({ ...prev, title: "" }))}
                 onValueChange={(value) =>
                   setFormData((prev) => ({ ...prev, title: value }))
                 }
@@ -508,6 +507,7 @@ export default function ShowsClient({
                   }
                 />
               </div>
+              
               <Select
                 label="Indexer"
                 selectedKeys={formData.indexer ? [formData.indexer] : []}
@@ -578,8 +578,8 @@ export default function ShowsClient({
               </p>
 
               <p className="text-sm text-neutral-500">
-                {lastEpisode
-                  ? `Last downloaded episode was: ${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
+                {lastEpisode?.episode
+                  ? `Last downloaded episode was: S${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
                   : "No episodes downloaded yet."}
               </p>
             </ModalBody>
