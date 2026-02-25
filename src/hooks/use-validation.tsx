@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { validateFormData } from "../libs/validation/show-validations";
 
 export default function useValidation(
   validationFunction: (data: Record<string, unknown>) => Record<string, string>,
@@ -35,7 +34,7 @@ export default function useValidation(
     (fieldName: string, value: unknown) => {
       if (!errors[fieldName]) return;
 
-      const newErrors = validateFormData({ [fieldName]: value });
+      const newErrors = validationFunction({ [fieldName]: value });
       if (Object.keys(newErrors).length > 0) {
         setErrors((prev) => ({ ...prev, ...errors }));
       } else {
@@ -46,7 +45,7 @@ export default function useValidation(
         });
       }
     },
-    [errors],
+    [errors, validationFunction],
   );
 
   return {

@@ -21,7 +21,7 @@ const validateTitle = (title: unknown) => {
 const validateSeason = (season: unknown) => {
   if (season === undefined) return "Season is required";
   if (typeof season !== "number") return "Season must be a number";
-  if (isNaN(season) || season < 1) return "Season must be a positive number";
+  if (isNaN(season) || season < 0) return "Season must be a positive number";
   if (!Number.isInteger(season)) return "Season must be an integer";
   return null;
 };

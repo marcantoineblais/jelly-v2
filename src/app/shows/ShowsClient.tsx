@@ -256,11 +256,6 @@ export default function ShowsClient({
     };
 
     const hasErrors = validate(payload);
-    log({
-      source: "shows",
-      message: "hasErrors",
-      data: hasErrors,
-    });
     if (hasErrors) return;
 
     try {
