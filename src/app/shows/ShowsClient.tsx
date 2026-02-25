@@ -42,7 +42,6 @@ import { LibraryFoldersResponse } from "../api/shows/libraries/[name]/folders/ro
 import { formatSearchQuery, pad2 } from "@/src/libs/shows/library-utils";
 import { FetchError } from "@/src/libs/fetch-error";
 import useValidation from "@/src/hooks/use-validation";
-import { log } from "@/src/libs/logger";
 import { validateFormData } from "@/src/libs/validation/show-validations";
 
 type ShowFormData = {
