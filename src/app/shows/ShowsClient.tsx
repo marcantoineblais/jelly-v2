@@ -164,7 +164,7 @@ export default function ShowsClient({
           season: selectedShow.season,
           minEpisode: selectedShow.minEpisode,
           library: selectedShow.library,
-          additionalQuery: "",
+          additionalQuery: selectedShow.additionalQuery ?? "",
           indexer: selectedShow.indexer ?? "",
           category: selectedShow.category ?? "",
         });
@@ -400,25 +400,24 @@ export default function ShowsClient({
       <main className="h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
         <div className="flex flex-col gap-2 p-3 bg-white/80 rounded-lg border border-stone-200">
           <div className="flex gap-2">
-            <div className="flex-1">
-              <Select
-                label="Show"
-                isInvalid={isInvalid("show")}
-                errorMessage={errorMessage("show")}
-                placeholder="Select a show"
-                selectedKeys={selectedShowId ? [selectedShowId] : []}
-                selectionMode="single"
-                onSelectionChange={(selection) => {
-                  const value = [...selection][0]?.toString();
-                  setSelectedShowId(value ?? "");
-                  revalidateOnError("show", value);
-                }}
-              >
-                {shows.map((show) => (
-                  <SelectItem key={show.id}>{show.title}</SelectItem>
-                ))}
-              </Select>
-            </div>
+            <Select
+              label="Show"
+              isInvalid={isInvalid("show")}
+              errorMessage={errorMessage("show")}
+              placeholder="Select a show"
+              selectedKeys={selectedShowId ? [selectedShowId] : []}
+              selectionMode="single"
+              onSelectionChange={(selection) => {
+                const value = [...selection][0]?.toString();
+                setSelectedShowId(value ?? "");
+                revalidateOnError("show", value);
+              }}
+            >
+              {shows.map((show) => (
+                <SelectItem key={show.id}>{show.title}</SelectItem>
+              ))}
+            </Select>
+
             {selectedShow && isAccordionOpen && (
               <Button
                 isIconOnly
@@ -434,9 +433,9 @@ export default function ShowsClient({
 
             {selectedShow && !isAccordionOpen && (
               <NumberInput
-                className="w-20"
+                className="w-24"
                 min={0}
-                label="Next"
+                label="Ep."
                 value={nextEpisode}
                 onValueChange={(value) => {
                   setNextEpisode(Math.max(value, 0));
