@@ -1,8 +1,6 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  verifyAndCreateSession,
-} from "@/src/libs/auth/login";
+import { verifyAndCreateSession } from "@/src/libs/auth/login";
 import { IS_PROD, JWT_COOKIE_NAME } from "@/src/config";
 
 export async function POST(request: NextRequest) {
@@ -12,17 +10,18 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid request body" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const username = typeof body.username === "string" ? body.username.trim() : "";
+  const username =
+    typeof body.username === "string" ? body.username.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
 
   if (!username || !password) {
     return NextResponse.json(
       { ok: false, error: "Username and password are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -31,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (!result.ok) {
     return NextResponse.json(
       { ok: false, error: result.error },
-      { status: 401 }
+      { status: 401 },
     );
   }
 

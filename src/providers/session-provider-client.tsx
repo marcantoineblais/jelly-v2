@@ -28,7 +28,7 @@ export default function SessionProviderClient({
 }) {
   const { fetchData } = useFetch();
   const [session, setSession] = useState<SessionData>(initSession);
-  
+
   const isFirstRender = useRef(true);
   const updateSession = useCallback((data: Partial<SessionData>) => {
     setSession((prev) => ({ ...prev, ...data }));

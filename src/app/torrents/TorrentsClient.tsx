@@ -1,13 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Button,
-  Input,
-  Select,
-  SelectItem,
-  addToast,
-} from "@heroui/react";
+import { Button, Input, Select, SelectItem, addToast } from "@heroui/react";
 import type {
   JackettIndexer,
   TorznabCategory,
@@ -21,7 +15,11 @@ import {
   useAccordion,
 } from "@/src/components/accordion";
 import TorrentResults from "@/src/components/torrents/TorrentResults";
-import { TORRENT_DEFAULT_CATEGORIES, TORRENT_SORT_BY, TORRENT_SORT_ORDER } from "@/src/config";
+import {
+  TORRENT_DEFAULT_CATEGORIES,
+  TORRENT_SORT_BY,
+  TORRENT_SORT_ORDER,
+} from "@/src/config";
 
 type FormData = {
   title: string;
@@ -56,7 +54,7 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
   const categories: TorznabCategory[] = useMemo(() => {
     const indexer = indexers.find((i) => i.id === formData.indexer);
     if (!indexer) return TORRENT_DEFAULT_CATEGORIES;
-      
+
     return indexer.categories;
   }, [formData.indexer, indexers]);
 

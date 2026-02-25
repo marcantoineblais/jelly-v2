@@ -32,10 +32,19 @@ export async function GET(_request: Request, { params }: RouteParams) {
       );
     }
 
-    const nextEpisode = await getNextEpisode(show.title, library.path);
+    const nextEpisode = await getNextEpisode(
+      show.title,
+      library.path,
+      show.season ?? 1,
+    );
     return NextResponse.json({ ok: true, nextEpisode });
   } catch (err) {
-    log({ source: "shows/check", message: "Error checking show:", data: err, level: "error" });
+    log({
+      source: "shows/check",
+      message: "Error checking show:",
+      data: err,
+      level: "error",
+    });
     const message = err instanceof Error ? err.message : "Failed to check show";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }

@@ -18,7 +18,7 @@ export async function GET() {
   if (!username) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   if (!username) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -44,14 +44,15 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid request body" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   try {
     await writeSession(username, body);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to save session";
+    const message =
+      err instanceof Error ? err.message : "Failed to save session";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 

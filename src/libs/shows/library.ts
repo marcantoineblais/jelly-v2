@@ -9,7 +9,6 @@ export type NextEpisode = {
   query: string;
 };
 
-const SEASON_FOLDER_RE = /^Season\s+(\d+)$/i;
 const EPISODE_RE = /S(\d{2})E(\d{2})/i;
 
 export function getShowLibraries(): MediaLibrary[] {
@@ -21,9 +20,7 @@ export function findLibraryByName(name: string): MediaLibrary | undefined {
   return getShowLibraries().find((lib) => lib.name === name);
 }
 
-export async function listShowFolders(
-  libraryPath: string,
-): Promise<string[]> {
+export async function listShowFolders(libraryPath: string): Promise<string[]> {
   try {
     const entries = await readdir(libraryPath, { withFileTypes: true });
     return entries
@@ -38,37 +35,16 @@ export async function listShowFolders(
 export async function getNextEpisode(
   title: string,
   libraryPath: string,
+  season: number,
 ): Promise<NextEpisode> {
   const showDir = join(libraryPath, title);
-
-  let seasonDirs: { name: string; num: number }[];
-  try {
-    const entries = await readdir(showDir, { withFileTypes: true });
-    seasonDirs = entries
-      .filter((e) => e.isDirectory())
-      .map((e) => {
-        const match = e.name.match(SEASON_FOLDER_RE);
-        return match ? { name: e.name, num: parseInt(match[1], 10) } : null;
-      })
-      .filter((s): s is { name: string; num: number } => s !== null && s.num > 0)
-      .sort((a, b) => a.num - b.num);
-  } catch {
-    return { season: 1, episode: 1, query: formatSearchQuery(title, 1, 1) };
-  }
-
-  if (seasonDirs.length === 0) {
-    return { season: 1, episode: 1, query: formatSearchQuery(title, 1, 1) };
-  }
-
-  const latestSeason = seasonDirs[seasonDirs.length - 1];
-  const seasonPath = join(showDir, latestSeason.name);
+  const seasonPath = join(showDir, `Season ${pad2(season)}`);
   const highestEp = await findHighestEpisode(seasonPath);
-
   const nextEp = highestEp + 1;
   return {
-    season: latestSeason.num,
+    season,
     episode: nextEp,
-    query: formatSearchQuery(title, latestSeason.num, nextEp),
+    query: formatSearchQuery(title, season, nextEp),
   };
 }
 

@@ -98,7 +98,9 @@ function parseTorznabIndexersXml(xml: string): JackettIndexersResult {
     const name = indexer.title;
     const caps = indexer.caps;
     const limit = Number(caps?.limits?.max ?? caps?.limits?.default ?? "");
-    const categories = ensureArray<JackettRawCategory>(caps?.categories?.category);
+    const categories = ensureArray<JackettRawCategory>(
+      caps?.categories?.category,
+    );
     const formattedCategories = categories
       .map((category) => {
         const id = category.id;

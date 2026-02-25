@@ -107,15 +107,15 @@ export default function Navigation() {
                   </Button>
 
                   <Button
-                    href="/shows"
-                    onPress={() => handleNavigation("/shows")}
+                    href="/trackers"
+                    onPress={() => handleNavigation("/trackers")}
                     variant="solid"
                     color="primary"
                     className="w-full text-lg"
                     size="lg"
-                    isDisabled={pathname === "/shows"}
+                    isDisabled={pathname === "/trackers"}
                   >
-                    Shows
+                    Trackers
                   </Button>
 
                   <Button

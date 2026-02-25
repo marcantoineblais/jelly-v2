@@ -26,7 +26,12 @@ export async function GET() {
     }));
     return NextResponse.json({ ok: true, shows, libraries });
   } catch (err) {
-    log({ source: "shows", message: "Error listing shows:", data: err, level: "error" });
+    log({
+      source: "shows",
+      message: "Error listing shows:",
+      data: err,
+      level: "error",
+    });
     const message = err instanceof Error ? err.message : "Failed to list shows";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
@@ -35,7 +40,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, library, searchQuery, indexer, category } = body;
+    const { title, library, season, searchQuery, indexer, category } = body;
 
     if (!title || typeof title !== "string") {
       return NextResponse.json(
@@ -49,9 +54,17 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    const parsedSeason = Number(season);
+    if (!Number.isInteger(parsedSeason) || parsedSeason < 1) {
+      return NextResponse.json(
+        { ok: false, error: "Season must be a positive integer" },
+        { status: 400 },
+      );
+    }
 
     const show = await addShow({
       title: title.trim(),
+      season: parsedSeason,
       library: library.trim(),
       searchQuery: searchQuery?.trim() || undefined,
       indexer: indexer?.trim() || undefined,
@@ -60,7 +73,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, show }, { status: 201 });
   } catch (err) {
-    log({ source: "shows", message: "Error adding show:", data: err, level: "error" });
+    log({
+      source: "shows",
+      message: "Error adding show:",
+      data: err,
+      level: "error",
+    });
     const message = err instanceof Error ? err.message : "Failed to add show";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }

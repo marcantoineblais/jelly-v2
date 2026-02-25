@@ -19,7 +19,9 @@ function sessionFilePath(username: string): string {
   return `${SESSION_DATA_PATH}/${safe}.json`;
 }
 
-export async function readSession(username: string): Promise<SessionData | null> {
+export async function readSession(
+  username: string,
+): Promise<SessionData | null> {
   try {
     const raw = await readFile(sessionFilePath(username), "utf-8");
     const data = JSON.parse(raw) as unknown;
@@ -34,12 +36,12 @@ export async function readSession(username: string): Promise<SessionData | null>
 
 export async function writeSession(
   username: string,
-  data: SessionData
+  data: SessionData,
 ): Promise<void> {
   await mkdir(dirname(sessionFilePath(username)), { recursive: true });
   await writeFile(
     sessionFilePath(username),
     JSON.stringify(data, null, 2),
-    "utf-8"
+    "utf-8",
   );
 }

@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Autocomplete,
   AutocompleteItem,
@@ -31,9 +37,11 @@ import {
   AccordionButton,
   useAccordion,
 } from "@/src/components/accordion";
+import { LibraryFoldersResponse } from "../api/shows/libraries/[name]/folders/route";
 
 type ShowFormData = {
   title: string;
+  season: string;
   library: string;
   searchQuery: string;
   indexer: string;
@@ -42,6 +50,7 @@ type ShowFormData = {
 
 const EMPTY_FORM: ShowFormData = {
   title: "",
+  season: "1",
   library: "",
   searchQuery: "",
   indexer: "",
@@ -57,6 +66,7 @@ type ShowsClientProps = {
 function showToFormData(show: TrackedShow): ShowFormData {
   return {
     title: show.title,
+    season: String(show.season),
     library: show.library,
     searchQuery: show.searchQuery ?? "",
     indexer: show.indexer ?? "",
@@ -75,6 +85,7 @@ export default function ShowsClient({
   const [shows, setShows] = useState<TrackedShow[]>(initialShows);
   const [selectedShowId, setSelectedShowId] = useState("");
 
+  const [isSearchDisabled, setIsSearchDisabled] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [nextEpisode, setNextEpisode] = useState<{
@@ -104,27 +115,51 @@ export default function ShowsClient({
     return indexer ? indexer.categories : TORRENT_DEFAULT_CATEGORIES;
   }, [formData.indexer, indexers]);
 
+  const fetchFolders = useCallback(
+    async (libraryName: string) => {
+      if (!libraryName) {
+        setLibraryFolders([]);
+        return;
+      }
+      try {
+        const { data } = await fetchData<LibraryFoldersResponse>(
+          `/api/shows/libraries/${encodeURIComponent(libraryName)}/folders`,
+        );
+        setLibraryFolders(data.folders);
+      } catch {
+        setLibraryFolders([]);
+      }
+    },
+    [fetchData],
+  );
+
+  const fetchEpisode = useCallback(
+    async (showId: string) => {
+      try {
+        const { data } = await fetchData<CheckShowResponse>(
+          `/api/shows/${showId}/check`,
+          { setIsLoading: setIsSearchDisabled },
+        );
+        setNextEpisode(data.nextEpisode ?? null);
+      } catch {
+        setNextEpisode(null);
+      }
+    },
+    [fetchData],
+  );
+
   useEffect(() => {
     if (!isAccordionOpen) return;
-    if (selectedShow) {
-      setFormData(showToFormData(selectedShow));
-      fetchFolders(selectedShow.library);
-    } else {
-      setFormData(EMPTY_FORM);
-      setLibraryFolders([]);
-    }
-  }, [selectedShowId, isAccordionOpen]);
-
-  async function fetchEpisode(showId: string) {
-    try {
-      const { data } = await fetchData<CheckShowResponse>(
-        `/api/shows/${showId}/check`,
-      );
-      setNextEpisode(data.nextEpisode ?? null);
-    } catch {
-      setNextEpisode(null);
-    }
-  }
+    startTransition(() => {
+      if (selectedShow) {
+        setFormData(showToFormData(selectedShow));
+        fetchFolders(selectedShow.library);
+      } else {
+        setFormData(EMPTY_FORM);
+        setLibraryFolders([]);
+      }
+    });
+  }, [selectedShow, isAccordionOpen, fetchFolders]);
 
   useEffect(() => {
     if (!selectedShowId) {
@@ -132,23 +167,7 @@ export default function ShowsClient({
       return;
     }
     fetchEpisode(selectedShowId);
-  }, [selectedShowId]);
-
-  async function fetchFolders(libraryName: string) {
-    if (!libraryName) {
-      setLibraryFolders([]);
-      return;
-    }
-    try {
-      const res = await fetch(
-        `/api/shows/libraries/${encodeURIComponent(libraryName)}/folders`,
-      );
-      const data = await res.json();
-      if (data.ok) setLibraryFolders(data.folders);
-    } catch {
-      setLibraryFolders([]);
-    }
-  }
+  }, [selectedShowId, fetchEpisode]);
 
   async function handleSearch() {
     if (!selectedShow || !nextEpisode) return;
@@ -177,6 +196,7 @@ export default function ShowsClient({
   async function handleAdd() {
     const title = formData.title.trim();
     const library = formData.library.trim();
+    const season = parseInt(formData.season, 10);
     if (!title) {
       addToast({ title: "Title is required", severity: "warning" });
       return;
@@ -185,9 +205,17 @@ export default function ShowsClient({
       addToast({ title: "Library is required", severity: "warning" });
       return;
     }
+    if (!Number.isInteger(season) || season < 1) {
+      addToast({
+        title: "Season must be a positive number",
+        severity: "warning",
+      });
+      return;
+    }
 
     const payload = {
       title,
+      season,
       library,
       searchQuery: formData.searchQuery.trim() || undefined,
       indexer: formData.indexer || undefined,
@@ -218,6 +246,7 @@ export default function ShowsClient({
     if (!selectedShow) return;
     const title = formData.title.trim();
     const library = formData.library.trim();
+    const season = parseInt(formData.season, 10);
     if (!title) {
       addToast({ title: "Title is required", severity: "warning" });
       return;
@@ -226,9 +255,17 @@ export default function ShowsClient({
       addToast({ title: "Library is required", severity: "warning" });
       return;
     }
+    if (!Number.isInteger(season) || season < 1) {
+      addToast({
+        title: "Season must be a positive number",
+        severity: "warning",
+      });
+      return;
+    }
 
     const payload = {
       title,
+      season,
       library,
       searchQuery: formData.searchQuery.trim() || undefined,
       indexer: formData.indexer || undefined,
@@ -314,7 +351,7 @@ export default function ShowsClient({
         className="w-32"
         color="primary"
         isLoading={isSearchLoading}
-        isDisabled={!selectedShow}
+        isDisabled={!selectedShow || isSearchDisabled}
         onPress={handleSearch}
       >
         Search
@@ -335,6 +372,14 @@ export default function ShowsClient({
                 selectionMode="single"
                 onSelectionChange={(selection) =>
                   setSelectedShowId([...selection][0]?.toString() ?? "")
+                }
+                endContent={
+                  nextEpisode ? (
+                    <span>
+                      S{String(nextEpisode.season).padStart(2, "0")}E
+                      {String(nextEpisode.episode).padStart(2, "0")}
+                    </span>
+                  ) : null
                 }
               >
                 {shows.map((show) => (
@@ -387,9 +432,10 @@ export default function ShowsClient({
                   setFormData((prev) => ({
                     ...prev,
                     title: value,
-                    searchQuery: !prev.searchQuery || prev.searchQuery === prev.title
-                      ? value
-                      : prev.searchQuery,
+                    searchQuery:
+                      !prev.searchQuery || prev.searchQuery === prev.title
+                        ? value
+                        : prev.searchQuery,
                   }))
                 }
                 onSelectionChange={(key) => {
@@ -417,6 +463,17 @@ export default function ShowsClient({
                     ...prev,
                     searchQuery: e.target.value,
                   }))
+                }
+              />
+
+              <Input
+                label="Season"
+                type="number"
+                min={1}
+                isRequired
+                value={formData.season}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, season: e.target.value }))
                 }
               />
 
@@ -462,13 +519,6 @@ export default function ShowsClient({
             />
           </div>
         </div>
-
-        {hasSearched && nextEpisode && (
-          <div className="px-3 py-2 bg-white/80 rounded-lg border border-stone-200 text-sm text-neutral-600">
-            Looking for: S{String(nextEpisode.season).padStart(2, "0")}E
-            {String(nextEpisode.episode).padStart(2, "0")}
-          </div>
-        )}
 
         <TorrentResults
           items={items}
@@ -527,7 +577,6 @@ export default function ShowsClient({
           </ModalContent>
         )}
       </Modal>
-
     </>
   );
 }

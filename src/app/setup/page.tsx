@@ -74,7 +74,11 @@ export default function SetupPage() {
           Set up your username and password to get started.
         </p>
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="flex flex-col gap-4"
+        >
           <Input
             label="Username"
             name="username"

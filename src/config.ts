@@ -8,7 +8,9 @@ export const FILE_SERVER_URL =
 
 // Login
 export const JWT_SIGN_TOKEN = process.env.JWT_SIGN_TOKEN!;
-export const JWT_COOKIE_NAME = IS_PROD ? "__Secure-session-token" : "session-token";
+export const JWT_COOKIE_NAME = IS_PROD
+  ? "__Secure-session-token"
+  : "session-token";
 export const SESSION_DATA_PATH =
   process.env.SESSION_DATA_PATH ?? "/data/sessions";
 export const AUTH_DATA_PATH =

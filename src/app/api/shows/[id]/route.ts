@@ -20,11 +20,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, library, searchQuery, indexer, category } = body;
+    const { title, library, season, searchQuery, indexer, category } = body;
 
     const updates: Partial<Omit<TrackedShow, "id">> = {};
     if (typeof title === "string") updates.title = title.trim();
     if (typeof library === "string") updates.library = library.trim();
+    const parsedSeason = Number(season);
+    if (Number.isInteger(parsedSeason) && parsedSeason >= 1)
+      updates.season = parsedSeason;
     if (typeof searchQuery === "string")
       updates.searchQuery = searchQuery.trim() || undefined;
     if (typeof indexer === "string")
@@ -42,8 +45,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ ok: true, show });
   } catch (err) {
-    log({ source: "shows", message: "Error updating show:", data: err, level: "error" });
-    const message = err instanceof Error ? err.message : "Failed to update show";
+    log({
+      source: "shows",
+      message: "Error updating show:",
+      data: err,
+      level: "error",
+    });
+    const message =
+      err instanceof Error ? err.message : "Failed to update show";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
@@ -61,8 +70,14 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    log({ source: "shows", message: "Error deleting show:", data: err, level: "error" });
-    const message = err instanceof Error ? err.message : "Failed to delete show";
+    log({
+      source: "shows",
+      message: "Error deleting show:",
+      data: err,
+      level: "error",
+    });
+    const message =
+      err instanceof Error ? err.message : "Failed to delete show";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

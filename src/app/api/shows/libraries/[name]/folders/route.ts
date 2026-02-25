@@ -31,7 +31,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
       data: err,
       level: "error",
     });
-    const message = err instanceof Error ? err.message : "Failed to list folders";
+    const message =
+      err instanceof Error ? err.message : "Failed to list folders";
     return NextResponse.json(
       { ok: false, error: message, folders: [] },
       { status: 500 },

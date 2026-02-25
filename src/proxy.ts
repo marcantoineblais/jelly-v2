@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { JWT_COOKIE_NAME } from "@/src/config";
-import {
-  verifySessionToken,
-  credentialsExist,
-} from "@/src/libs/auth/login";
+import { verifySessionToken, credentialsExist } from "@/src/libs/auth/login";
 
 const PUBLIC_PATHS = ["/login", "/setup"];
 const PUBLIC_API_PATHS = [
@@ -53,7 +50,7 @@ export async function proxy(request: NextRequest) {
     if (isApiRoute(pathname)) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const redirectUrl = new URL(targetPath, request.url);
@@ -68,7 +65,7 @@ export async function proxy(request: NextRequest) {
     if (isApiRoute(pathname)) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const redirectUrl = new URL(targetPath, request.url);

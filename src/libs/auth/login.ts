@@ -45,7 +45,7 @@ async function readCredentials(): Promise<CredentialsFile | null> {
 
 export async function verifyAndCreateSession(
   username: string,
-  password: string
+  password: string,
 ): Promise<LoginResult> {
   const creds = await readCredentials();
   if (!creds) {
@@ -79,7 +79,7 @@ export async function verifyAndCreateSession(
 
 export async function createCredentials(
   username: string,
-  password: string
+  password: string,
 ): Promise<CreateCredentialsResult> {
   const existing = await readCredentials();
   if (existing) {
@@ -115,13 +115,13 @@ export function getCookieName(): string {
 }
 
 export async function verifySessionToken(
-  token: string
+  token: string,
 ): Promise<{ sub: string } | null> {
   if (!JWT_SIGN_TOKEN) return null;
   try {
     const { payload } = await jose.jwtVerify(
       token,
-      new TextEncoder().encode(JWT_SIGN_TOKEN)
+      new TextEncoder().encode(JWT_SIGN_TOKEN),
     );
     const sub = payload.sub;
     return typeof sub === "string" ? { sub } : null;
@@ -131,7 +131,7 @@ export async function verifySessionToken(
 }
 
 export async function getCurrentUser(
-  token: string | undefined
+  token: string | undefined,
 ): Promise<string | null> {
   if (!token) return null;
   const payload = await verifySessionToken(token);
