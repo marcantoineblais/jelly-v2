@@ -36,7 +36,7 @@ export default function useValidation(
 
       const newErrors = validationFunction({ [fieldName]: value });
       if (Object.keys(newErrors).length > 0) {
-        setErrors((prev) => ({ ...prev, ...errors }));
+        setErrors((prev) => ({ ...prev, ...newErrors }));
       } else {
         setErrors((prev) => {
           const next = { ...prev };
