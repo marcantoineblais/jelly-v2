@@ -17,6 +17,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  NumberInput,
   Select,
   SelectItem,
   addToast,
@@ -38,21 +39,26 @@ import {
   useAccordion,
 } from "@/src/components/accordion";
 import { LibraryFoldersResponse } from "../api/shows/libraries/[name]/folders/route";
+import { validateFormData } from "@/src/libs/validations";
+import { formatSearchQuery, pad2 } from "@/src/libs/shows/library-utils";
+import { log } from "@/src/libs/logger";
 
 type ShowFormData = {
   title: string;
-  season: string;
+  season: number;
+  minEpisode: number;
   library: string;
-  searchQuery: string;
+  additionalQuery: string;
   indexer: string;
   category: string;
 };
 
 const EMPTY_FORM: ShowFormData = {
   title: "",
-  season: "1",
+  season: 1,
+  minEpisode: 1,
   library: "",
-  searchQuery: "",
+  additionalQuery: "",
   indexer: "",
   category: "",
 };
@@ -62,17 +68,6 @@ type ShowsClientProps = {
   libraries: { name: string; path: string }[];
   indexers: JackettIndexer[];
 };
-
-function showToFormData(show: TrackedShow): ShowFormData {
-  return {
-    title: show.title,
-    season: String(show.season),
-    library: show.library,
-    searchQuery: show.searchQuery ?? "",
-    indexer: show.indexer ?? "",
-    category: show.category ?? "",
-  };
-}
 
 export default function ShowsClient({
   initialShows,
@@ -88,16 +83,17 @@ export default function ShowsClient({
   const [isSearchDisabled, setIsSearchDisabled] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [nextEpisode, setNextEpisode] = useState<{
+  const [lastEpisode, setLastEpisode] = useState<{
     season: number;
     episode: number;
-    query: string;
   } | null>(null);
+  const [nextEpisode, setNextEpisode] = useState<number>(1);
   const [items, setItems] = useState<FeedItem[]>([]);
 
   const [formData, setFormData] = useState<ShowFormData>(EMPTY_FORM);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [libraryFolders, setLibraryFolders] = useState<string[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const {
     isOpen: isDeleteOpen,
@@ -140,19 +136,37 @@ export default function ShowsClient({
           `/api/shows/${showId}/check`,
           { setIsLoading: setIsSearchDisabled },
         );
-        setNextEpisode(data.nextEpisode ?? null);
+        const lastEpisode = data.lastEpisode ?? null;
+        setLastEpisode(lastEpisode);
+        setNextEpisode(
+          Math.max(
+            selectedShow?.minEpisode ?? 1,
+            (lastEpisode?.episode ?? 0) + 1,
+          ),
+        );
       } catch {
-        setNextEpisode(null);
+        setLastEpisode(null);
+        setNextEpisode(1);
       }
     },
-    [fetchData],
+    [fetchData, selectedShow],
   );
 
+  // Update form data when accordion is opened
   useEffect(() => {
     if (!isAccordionOpen) return;
     startTransition(() => {
       if (selectedShow) {
-        setFormData(showToFormData(selectedShow));
+        setFormData({
+          title: selectedShow.title,
+          season: selectedShow.season,
+          minEpisode: selectedShow.minEpisode,
+          library: selectedShow.library,
+          additionalQuery: "",
+          indexer: selectedShow.indexer ?? "",
+          category: selectedShow.category ?? "",
+        });
+
         fetchFolders(selectedShow.library);
       } else {
         setFormData(EMPTY_FORM);
@@ -161,20 +175,43 @@ export default function ShowsClient({
     });
   }, [selectedShow, isAccordionOpen, fetchFolders]);
 
+  // Fetch next episode when show is selected
   useEffect(() => {
     startTransition(() => {
       if (!selectedShowId) {
-        setNextEpisode(null);
+        setLastEpisode(null);
+        setNextEpisode(1);
         return;
       }
       fetchEpisode(selectedShowId);
     });
   }, [selectedShowId, fetchEpisode]);
 
-  async function handleSearch() {
-    if (!selectedShow || !nextEpisode) return;
+  useEffect(() => {
+    startTransition(() => {
+      if (!formData.library) {
+        setLibraryFolders([]);
+        return;
+      }
+      fetchFolders(formData.library);
+    });
+  }, [formData.library, fetchFolders]);
 
-    const query = selectedShow.searchQuery || nextEpisode.query;
+  async function handleSearch() {
+    if (!selectedShow || !lastEpisode) return;
+    const title = selectedShow.title.trim();
+    const season = selectedShow.season;
+    const episode = nextEpisode;
+    const additionalQuery = formData.additionalQuery.trim();
+
+    const payload = { title, season, episode, additionalQuery };
+    const errors = validateFormData(payload, { src: "show" });
+    if (Object.keys(errors).length > 0) {
+      setErrors(errors);
+      return;
+    }
+
+    const query = formatSearchQuery(payload);
     const params = new URLSearchParams({
       name: query,
       indexers: selectedShow.indexer || "",
@@ -198,31 +235,25 @@ export default function ShowsClient({
   async function handleAdd() {
     const title = formData.title.trim();
     const library = formData.library.trim();
-    const season = parseInt(formData.season, 10);
-    if (!title) {
-      addToast({ title: "Title is required", severity: "warning" });
-      return;
-    }
-    if (!library) {
-      addToast({ title: "Library is required", severity: "warning" });
-      return;
-    }
-    if (!Number.isInteger(season) || season < 1) {
-      addToast({
-        title: "Season must be a positive number",
-        severity: "warning",
-      });
-      return;
-    }
+    const season = formData.season;
+    const minEpisode = formData.minEpisode;
+    const additionalQuery = formData.additionalQuery.trim();
+    const indexer = formData.indexer.trim();
+    const category = formData.category.trim();
 
     const payload = {
       title,
-      season,
       library,
-      searchQuery: formData.searchQuery.trim() || undefined,
-      indexer: formData.indexer || undefined,
-      category: formData.category || undefined,
+      season,
+      minEpisode,
+      additionalQuery,
+      indexer,
+      category,
     };
+    const errors = validateFormData(payload, { src: "show" });
+    if (Object.keys(errors).length > 0) {
+      setErrors(errors);
+    }
 
     try {
       const { data } = await fetchData<{ ok: boolean; show: TrackedShow }>(
@@ -248,31 +279,33 @@ export default function ShowsClient({
     if (!selectedShow) return;
     const title = formData.title.trim();
     const library = formData.library.trim();
-    const season = parseInt(formData.season, 10);
-    if (!title) {
-      addToast({ title: "Title is required", severity: "warning" });
-      return;
-    }
-    if (!library) {
-      addToast({ title: "Library is required", severity: "warning" });
-      return;
-    }
-    if (!Number.isInteger(season) || season < 1) {
-      addToast({
-        title: "Season must be a positive number",
-        severity: "warning",
-      });
-      return;
-    }
+    const season = formData.season;
+    const minEpisode = formData.minEpisode;
+    const additionalQuery = formData.additionalQuery.trim();
+    const indexer = formData.indexer.trim();
+    const category = formData.category.trim();
 
     const payload = {
       title,
-      season,
       library,
-      searchQuery: formData.searchQuery.trim() || undefined,
-      indexer: formData.indexer || undefined,
-      category: formData.category || undefined,
+      season,
+      minEpisode,
+      additionalQuery,
+      indexer,
+      category,
     };
+
+    const errors = validateFormData(payload, { src: "show" });
+    if (Object.keys(errors).length > 0) {
+      setErrors(errors);
+      log({
+        source: "shows",
+        message: "Errors:",
+        data: errors,
+        level: "warn",
+      });
+      return;
+    }
 
     try {
       const { data } = await fetchData<{ ok: boolean; show: TrackedShow }>(
@@ -313,7 +346,7 @@ export default function ShowsClient({
         setSelectedShowId("");
         setHasSearched(false);
         setItems([]);
-        setNextEpisode(null);
+        setLastEpisode(null);
       }
       addToast({ title: "Show removed", severity: "success" });
     } catch {
@@ -375,14 +408,6 @@ export default function ShowsClient({
                 onSelectionChange={(selection) =>
                   setSelectedShowId([...selection][0]?.toString() ?? "")
                 }
-                endContent={
-                  nextEpisode ? (
-                    <span>
-                      S{String(nextEpisode.season).padStart(2, "0")}E
-                      {String(nextEpisode.episode).padStart(2, "0")}
-                    </span>
-                  ) : null
-                }
               >
                 {shows.map((show) => (
                   <SelectItem key={show.id}>{show.title}</SelectItem>
@@ -401,6 +426,16 @@ export default function ShowsClient({
                 <FontAwesomeIcon icon={faTrash} />
               </Button>
             )}
+
+            {selectedShow && !isAccordionOpen && (
+              <NumberInput
+                className="w-20"
+                min={0}
+                label="Next"
+                value={nextEpisode}
+                onValueChange={(value) => setNextEpisode(Math.max(value, 0))}
+              />
+            )}
           </div>
 
           <Accordion isOpen={isAccordionOpen}>
@@ -409,7 +444,6 @@ export default function ShowsClient({
                 label="Library"
                 selectedKeys={formData.library ? [formData.library] : []}
                 selectionMode="single"
-                isRequired
                 onSelectionChange={(selection) => {
                   const name = [...selection][0]?.toString() ?? "";
                   setFormData((prev) => ({
@@ -417,7 +451,6 @@ export default function ShowsClient({
                     library: name,
                     title: "",
                   }));
-                  fetchFolders(name);
                 }}
               >
                 {libraries.map((lib) => (
@@ -427,28 +460,14 @@ export default function ShowsClient({
 
               <Autocomplete
                 label="Title"
-                isRequired
                 allowsCustomValue
                 inputValue={formData.title}
-                onInputChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    title: value,
-                    searchQuery:
-                      !prev.searchQuery || prev.searchQuery === prev.title
-                        ? value
-                        : prev.searchQuery,
-                  }))
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, title: value }))
                 }
                 onSelectionChange={(key) => {
-                  if (key !== null) {
-                    const title = key.toString();
-                    setFormData((prev) => ({
-                      ...prev,
-                      title,
-                      searchQuery: prev.searchQuery || title,
-                    }));
-                  }
+                  const title = key ? key.toString() : "";
+                  setFormData((prev) => ({ ...prev, title }));
                 }}
               >
                 {libraryFolders.map((folder) => (
@@ -457,28 +476,38 @@ export default function ShowsClient({
               </Autocomplete>
 
               <Input
-                label="Search"
-                placeholder={formData.title || "Search"}
-                value={formData.searchQuery}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    searchQuery: e.target.value,
-                  }))
+                label="Additional query"
+                value={formData.additionalQuery}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, additionalQuery: value }))
                 }
               />
 
-              <Input
-                label="Season"
-                type="number"
-                min={1}
-                isRequired
-                value={formData.season}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, season: e.target.value }))
-                }
-              />
+              <div className="flex gap-2 items-center">
+                <NumberInput
+                  label="Season"
+                  min={0}
+                  value={formData.season}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      season: Math.max(value, 0),
+                    }))
+                  }
+                />
 
+                <NumberInput
+                  label="Min episode"
+                  min={0}
+                  value={formData.minEpisode}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      minEpisode: Math.max(value, 0),
+                    }))
+                  }
+                />
+              </div>
               <Select
                 label="Indexer"
                 selectedKeys={formData.indexer ? [formData.indexer] : []}
@@ -547,13 +576,12 @@ export default function ShowsClient({
                 Do you really want to stop tracking{" "}
                 <strong>{deletingShow.title}</strong>.
               </p>
-              {nextEpisode && (
-                <p className="text-sm text-neutral-500">
-                  {nextEpisode.episode > 1
-                    ? `Last downloaded episode was: S${String(nextEpisode.season).padStart(2, "0")}E${String(nextEpisode.episode - 1).padStart(2, "0")}`
-                    : "No episodes downloaded yet."}
-                </p>
-              )}
+
+              <p className="text-sm text-neutral-500">
+                {lastEpisode
+                  ? `Last downloaded episode was: ${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
+                  : "No episodes downloaded yet."}
+              </p>
             </ModalBody>
             <ModalFooter className="flex justify-center gap-2">
               <Button

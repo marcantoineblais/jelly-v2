@@ -3,6 +3,7 @@ import { log } from "@/src/libs/logger";
 import { readShows, addShow } from "@/src/libs/shows/storage";
 import { getShowLibraries } from "@/src/libs/shows/library";
 import type { TrackedShow } from "@/src/types/TrackedShow";
+import { validateFormData } from "@/src/libs/validations";
 
 export type ShowsResponse = {
   ok: boolean;
@@ -40,37 +41,30 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, library, season, searchQuery, indexer, category } = body;
+    const title = body.title?.trim();
+    const season = body.season;
+    const minEpisode = body.minEpisode;
+    const library = body.library?.trim();
+    const searchQuery = body.searchQuery?.trim();
+    const indexer = body.indexer?.trim();
+    const category = body.category?.trim();
 
-    if (!title || typeof title !== "string") {
-      return NextResponse.json(
-        { ok: false, error: "Title is required" },
-        { status: 400 },
-      );
-    }
-    if (!library || typeof library !== "string") {
-      return NextResponse.json(
-        { ok: false, error: "Library is required" },
-        { status: 400 },
-      );
-    }
-    const parsedSeason = Number(season);
-    if (!Number.isInteger(parsedSeason) || parsedSeason < 1) {
-      return NextResponse.json(
-        { ok: false, error: "Season must be a positive integer" },
-        { status: 400 },
-      );
+    const payload = {
+      title,
+      season,
+      minEpisode,
+      library,
+      searchQuery,
+      indexer,
+      category,
+    };
+
+    const errors = validateFormData(payload, { src: "show" });
+    if (Object.keys(errors).length > 0) {
+      return NextResponse.json({ ok: false, errors }, { status: 400 });
     }
 
-    const show = await addShow({
-      title: title.trim(),
-      season: parsedSeason,
-      library: library.trim(),
-      searchQuery: searchQuery?.trim() || undefined,
-      indexer: indexer?.trim() || undefined,
-      category: category?.trim() || undefined,
-    });
-
+    const show = await addShow(payload);
     return NextResponse.json({ ok: true, show }, { status: 201 });
   } catch (err) {
     log({

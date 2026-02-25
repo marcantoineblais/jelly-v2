@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
 import { updateShow, removeShow } from "@/src/libs/shows/storage";
 import type { TrackedShow } from "@/src/types/TrackedShow";
+import { validateFormData } from "@/src/libs/validations";
 
 export type UpdateShowResponse = {
   ok: boolean;
@@ -20,22 +21,30 @@ export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, library, season, searchQuery, indexer, category } = body;
+    const title = body.title?.trim();
+    const season = body.season;
+    const minEpisode = body.minEpisode;
+    const library = body.library?.trim();
+    const searchQuery = body.searchQuery?.trim();
+    const indexer = body.indexer?.trim();
+    const category = body.category?.trim();
 
-    const updates: Partial<Omit<TrackedShow, "id">> = {};
-    if (typeof title === "string") updates.title = title.trim();
-    if (typeof library === "string") updates.library = library.trim();
-    const parsedSeason = Number(season);
-    if (Number.isInteger(parsedSeason) && parsedSeason >= 1)
-      updates.season = parsedSeason;
-    if (typeof searchQuery === "string")
-      updates.searchQuery = searchQuery.trim() || undefined;
-    if (typeof indexer === "string")
-      updates.indexer = indexer.trim() || undefined;
-    if (typeof category === "string")
-      updates.category = category.trim() || undefined;
+    const payload = {
+      title,
+      season,
+      minEpisode,
+      library,
+      searchQuery,
+      indexer,
+      category,
+    };
+    
+    const errors = validateFormData(payload, { src: "show" });
+    if (Object.keys(errors).length > 0) {
+      return NextResponse.json({ ok: false, errors }, { status: 400 });
+    }
 
-    const show = await updateShow(id, updates);
+    const show = await updateShow(id, payload);
     if (!show) {
       return NextResponse.json(
         { ok: false, error: "Show not found" },

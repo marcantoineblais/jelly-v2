@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
 import { readShows } from "@/src/libs/shows/storage";
-import { findLibraryByName, getNextEpisode } from "@/src/libs/shows/library";
-import type { NextEpisode } from "@/src/libs/shows/library";
-
+import { findLibraryByName, getLastEpisode, LastEpisode,  } from "@/src/libs/shows/library";
 export type CheckShowResponse = {
   ok: boolean;
-  nextEpisode?: NextEpisode;
+  lastEpisode?: LastEpisode;
   error?: string;
 };
 
@@ -32,12 +30,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
       );
     }
 
-    const nextEpisode = await getNextEpisode(
+    const lastEpisode = await getLastEpisode(
       show.title,
       library.path,
       show.season ?? 1,
     );
-    return NextResponse.json({ ok: true, nextEpisode });
+    return NextResponse.json({ ok: true, lastEpisode });
   } catch (err) {
     log({
       source: "shows/check",
