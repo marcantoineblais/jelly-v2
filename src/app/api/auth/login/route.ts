@@ -2,9 +2,10 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAndCreateSession } from "@/src/libs/auth/login";
 import { IS_PROD, JWT_COOKIE_NAME } from "@/src/config";
+import { validateLoginFormData } from "@/src/libs/validation/auth-validations";
 
 export async function POST(request: NextRequest) {
-  let body: { username?: string; password?: string };
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
@@ -14,13 +15,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const payload =
+    body && typeof body === "object"
+      ? (body as { username?: unknown; password?: unknown })
+      : {};
   const username =
-    typeof body.username === "string" ? body.username.trim() : "";
-  const password = typeof body.password === "string" ? body.password : "";
+    typeof payload.username === "string" ? payload.username.trim() : "";
+  const password = typeof payload.password === "string" ? payload.password : "";
+  const errors = validateLoginFormData({ username, password });
 
-  if (!username || !password) {
+  if (Object.keys(errors).length > 0) {
     return NextResponse.json(
-      { ok: false, error: "Username and password are required" },
+      { ok: false, error: "Username and password are required", errors },
       { status: 400 },
     );
   }

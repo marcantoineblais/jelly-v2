@@ -362,7 +362,7 @@ export default function ShowsClient({
       if (selectedShow) {
         return (
           <Button
-            className="w-32"
+            className="w-32 shadow-btn"
             color="primary"
             isLoading={isFormSubmitting}
             onPress={handleUpdate}
@@ -373,7 +373,7 @@ export default function ShowsClient({
       }
       return (
         <Button
-          className="w-32"
+          className="w-32 shadow-btn"
           color="primary"
           isLoading={isFormSubmitting}
           onPress={handleAdd}
@@ -384,7 +384,7 @@ export default function ShowsClient({
     }
     return (
       <Button
-        className="w-32"
+        className="w-32 shadow-btn"
         color="primary"
         isLoading={isSearchLoading}
         isDisabled={!selectedShow || isSearchDisabled}

@@ -5,7 +5,9 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import H1 from "@/src/components/elements/H1";
 import useFetch from "@/src/hooks/use-fetch";
+import useValidation from "@/src/hooks/use-validation";
 import { FetchError } from "@/src/libs/fetch-error";
+import { validateLoginFormData } from "@/src/libs/validation/auth-validations";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,34 +18,21 @@ export default function LoginPage() {
     username: "",
     password: "",
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-
-  function clearError(field: string) {
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-  }
+  const {
+    validate,
+    isInvalid,
+    errorMessage,
+    setError,
+    setErrors,
+    revalidateOnError,
+  } =
+    useValidation(validateLoginFormData);
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    setErrors({});
-
-    const nextErrors: Record<string, string> = {};
-
-    if (!formData.username.trim()) {
-      nextErrors.username = "Username is required";
-    }
-    if (!formData.password) {
-      nextErrors.password = "Password is required";
-    }
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
+    const hasErrors = validate(formData);
+    if (hasErrors) return;
 
     try {
       await fetchData("/api/auth/login", {
@@ -57,15 +46,20 @@ export default function LoginPage() {
       router.push(from && from.startsWith("/") ? from : "/");
       router.refresh();
     } catch (err) {
-      const message =
-        err instanceof FetchError &&
-        err.data &&
-        typeof err.data === "object" &&
-        "error" in err.data &&
-        typeof (err.data as { error: string }).error === "string"
-          ? (err.data as { error: string }).error
-          : "Invalid username or password";
-      setErrors({ submit: message });
+      if (err instanceof FetchError && err.data && typeof err.data === "object") {
+        const data = err.data as { error?: unknown; errors?: unknown };
+        if (data.errors && typeof data.errors === "object") {
+          setErrors(data.errors as Record<string, string>);
+        }
+        setError(
+          "submit",
+          typeof data.error === "string"
+            ? data.error
+            : "Invalid username or password",
+        );
+        return;
+      }
+      setError("submit", "Invalid username or password");
     }
   }
 
@@ -85,13 +79,13 @@ export default function LoginPage() {
             value={formData.username}
             onValueChange={(value) => {
               setFormData({ ...formData, username: value });
-              clearError("username");
+              revalidateOnError("username", value);
             }}
             autoComplete="username"
             isRequired
             isDisabled={loading}
-            isInvalid={!!errors.username}
-            errorMessage={errors.username}
+            isInvalid={isInvalid("username")}
+            errorMessage={errorMessage("username")}
             autoFocus
           />
 
@@ -102,18 +96,18 @@ export default function LoginPage() {
             value={formData.password}
             onValueChange={(value) => {
               setFormData({ ...formData, password: value });
-              clearError("password");
+              revalidateOnError("password", value);
             }}
             autoComplete="current-password"
             isRequired
             isDisabled={loading}
-            isInvalid={!!errors.password}
-            errorMessage={errors.password}
+            isInvalid={isInvalid("password")}
+            errorMessage={errorMessage("password")}
           />
 
-          {errors.submit && (
+          {errorMessage("submit") && (
             <p className="text-sm text-danger" role="alert">
-              {errors.submit}
+              {errorMessage("submit")}
             </p>
           )}
 
@@ -122,7 +116,7 @@ export default function LoginPage() {
             color="primary"
             isLoading={loading}
             isDisabled={loading}
-            className="mt-2"
+            className="mt-2 shadow-btn"
           >
             Sign in
           </Button>

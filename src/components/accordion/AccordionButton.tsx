@@ -33,7 +33,7 @@ export default function AccordionButton({
       data-open={isOpen || undefined}
       disabled={isDisabled}
       onTransitionEnd={handleTransitionEnd}
-      className="h-full"
+      className="h-full shadow-btn"
     >
       <span
         className="h-full w-full flex items-center justify-center transition-transform duration-500 data-open:rotate-180"

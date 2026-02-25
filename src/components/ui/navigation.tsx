@@ -76,7 +76,7 @@ export default function Navigation() {
           </Button>
 
           <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement="right">
-            <DrawerContent className="bg-white/75 backdrop-blur-3xl">
+            <DrawerContent className="bg-white backdrop-blur-3xl">
               <DrawerHeader className="w-full flex justify-center text-xl">
                 Navigation
               </DrawerHeader>
@@ -87,8 +87,8 @@ export default function Navigation() {
                     onPress={() => handleNavigation("/")}
                     variant="solid"
                     color="primary"
-                    className="w-full text-lg"
-                    size="lg"
+                    className="w-full text-lg shadow-btn"
+                    size="md"
                     isDisabled={pathname === "/"}
                   >
                     Transfers
@@ -99,8 +99,8 @@ export default function Navigation() {
                     onPress={() => handleNavigation("/torrents")}
                     variant="solid"
                     color="primary"
-                    className="w-full text-lg"
-                    size="lg"
+                    className="w-full text-lg shadow-btn"
+                    size="md"
                     isDisabled={pathname === "/torrents"}
                   >
                     Torrents
@@ -111,8 +111,8 @@ export default function Navigation() {
                     onPress={() => handleNavigation("/shows")}
                     variant="solid"
                     color="primary"
-                    className="w-full text-lg"
-                    size="lg"
+                    className="w-full text-lg shadow-btn"
+                    size="md"
                     isDisabled={pathname === "/shows"}
                   >
                     Shows
@@ -123,8 +123,8 @@ export default function Navigation() {
                     onPress={() => handleNavigation("/downloads")}
                     variant="solid"
                     color="primary"
-                    className="w-full text-lg"
-                    size="lg"
+                    className="w-full text-lg shadow-btn"
+                    size="md"
                     isDisabled={pathname === "/downloads"}
                   >
                     Downloads
@@ -135,8 +135,8 @@ export default function Navigation() {
                     onPress={onClose}
                     color="default"
                     variant="bordered"
-                    className="w-full border-default-foreground"
-                    size="lg"
+                    className="w-full border-default-foreground shadow-btn"
+                    size="md"
                   >
                     Close
                   </Button>
@@ -146,9 +146,9 @@ export default function Navigation() {
                     onPress={handleLogout}
                     color="warning"
                     variant="solid"
-                    className="w-full text-white"
+                    className="w-full text-white shadow-btn"
                     startContent={<FontAwesomeIcon icon={faRightFromBracket} />}
-                    size="lg"
+                    size="md"
                   >
                     Logout
                   </Button>

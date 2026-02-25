@@ -5,6 +5,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import H1 from "@/src/components/elements/H1";
 import useFetch from "@/src/hooks/use-fetch";
+import useValidation from "@/src/hooks/use-validation";
+import { FetchError } from "@/src/libs/fetch-error";
+import { validateSetupFormData } from "@/src/libs/validation/auth-validations";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -15,38 +18,20 @@ export default function SetupPage() {
     password: "",
     confirmPassword: "",
   });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-
-  function clearError(field: string) {
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-  }
+  const {
+    validate,
+    isInvalid,
+    errorMessage,
+    setError,
+    setErrors,
+    revalidateOnError,
+  } = useValidation(validateSetupFormData);
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    setErrors({});
-
-    const nextErrors: Record<string, string> = {};
-
-    if (!formData.username.trim()) {
-      nextErrors.username = "Username is required";
-    }
-    if (!formData.password) {
-      nextErrors.password = "Password is required";
-    }
-    if (formData.password !== formData.confirmPassword) {
-      nextErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
+    const hasErrors = validate(formData);
+    if (hasErrors) return;
 
     try {
       await fetchData("/api/auth/setup", {
@@ -61,8 +46,19 @@ export default function SetupPage() {
 
       router.push("/");
       router.refresh();
-    } catch {
-      setErrors({ submit: "Failed to create account. Please try again." });
+    } catch (err) {
+      if (
+        err instanceof FetchError &&
+        err.data &&
+        typeof err.data === "object"
+      ) {
+        const data = err.data as { error?: unknown; errors?: unknown };
+        if (data.errors && typeof data.errors === "object") {
+          setErrors(data.errors as Record<string, string>);
+        }
+      } else {
+        setError("submit", "Failed to create account. Please try again.");
+      }
     }
   }
 
@@ -85,13 +81,12 @@ export default function SetupPage() {
             value={formData.username}
             onValueChange={(value) => {
               setFormData({ ...formData, username: value });
-              clearError("username");
+              revalidateOnError("username", value);
             }}
             autoComplete="username"
-            isRequired
             isDisabled={loading}
-            isInvalid={!!errors.username}
-            errorMessage={errors.username}
+            isInvalid={isInvalid("username")}
+            errorMessage={errorMessage("username")}
             autoFocus
           />
 
@@ -102,14 +97,18 @@ export default function SetupPage() {
             value={formData.password}
             onValueChange={(value) => {
               setFormData({ ...formData, password: value });
-              clearError("password");
-              clearError("confirmPassword");
+              revalidateOnError("password", value);
+              setErrors((prev) => {
+                if (!prev.confirmPassword) return prev;
+                const next = { ...prev };
+                delete next.confirmPassword;
+                return next;
+              });
             }}
             autoComplete="new-password"
-            isRequired
             isDisabled={loading}
-            isInvalid={!!errors.password}
-            errorMessage={errors.password}
+            isInvalid={isInvalid("password")}
+            errorMessage={errorMessage("password")}
           />
 
           <Input
@@ -119,19 +118,17 @@ export default function SetupPage() {
             value={formData.confirmPassword}
             onValueChange={(value) => {
               setFormData({ ...formData, confirmPassword: value });
-              clearError("confirmPassword");
-              clearError("password");
+              revalidateOnError("confirmPassword", value);
             }}
             autoComplete="new-password"
-            isRequired
             isDisabled={loading}
-            isInvalid={!!errors.confirmPassword}
-            errorMessage={errors.confirmPassword}
+            isInvalid={isInvalid("confirmPassword")}
+            errorMessage={errorMessage("confirmPassword")}
           />
 
-          {errors.submit && (
+          {errorMessage("submit") && (
             <p className="text-sm text-danger" role="alert">
-              {errors.submit}
+              {errorMessage("submit")}
             </p>
           )}
 
@@ -140,7 +137,7 @@ export default function SetupPage() {
             color="primary"
             isLoading={loading}
             isDisabled={loading}
-            className="mt-2"
+            className="mt-2 shadow-btn"
           >
             Create account
           </Button>

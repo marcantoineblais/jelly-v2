@@ -6,6 +6,7 @@
   /* Primary palette (replaces emerald-700/900 for brand color) */
   --color-primary: #047857;
   --color-primary-hover: #064e3b;
+  --shadow-btn: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
 }
 
 body {
