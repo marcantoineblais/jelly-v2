@@ -202,7 +202,7 @@ export default function ShowsClient({
     if (!selectedShow) return;
 
     const additionalValidation = {
-      show: selectedShow?.title.trim(),
+      show: selectedShow.title.trim(),
       nextEpisode,
     };
 
