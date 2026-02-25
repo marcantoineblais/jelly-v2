@@ -162,11 +162,13 @@ export default function ShowsClient({
   }, [selectedShow, isAccordionOpen, fetchFolders]);
 
   useEffect(() => {
-    if (!selectedShowId) {
-      setNextEpisode(null);
-      return;
-    }
-    fetchEpisode(selectedShowId);
+    startTransition(() => {
+      if (!selectedShowId) {
+        setNextEpisode(null);
+        return;
+      }
+      fetchEpisode(selectedShowId);
+    });
   }, [selectedShowId, fetchEpisode]);
 
   async function handleSearch() {
