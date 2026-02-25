@@ -113,6 +113,11 @@ export default function ShowsClient({
     return indexer ? indexer.categories : TORRENT_DEFAULT_CATEGORIES;
   }, [formData.indexer, indexers]);
 
+  const isOpen = useMemo(() => {
+    if (isAccordionOpen && selectedShow) return true;
+    if (!isAccordionOpen && selectedShow) return false;
+  }, [isAccordionOpen, selectedShow]);
+
   const fetchFolders = useCallback(
     async (libraryName: string) => {
       if (!libraryName) {
@@ -401,6 +406,8 @@ export default function ShowsClient({
         <div className="flex flex-col gap-2 p-3 bg-white/80 rounded-lg border border-stone-200">
           <div className="flex gap-2">
             <Select
+              className="min-w-0"
+              data-open={isOpen}
               label="Show"
               isInvalid={isInvalid("show")}
               errorMessage={errorMessage("show")}
