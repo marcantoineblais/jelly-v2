@@ -41,7 +41,7 @@ import {
 import { LibraryFoldersResponse } from "../api/shows/libraries/[name]/folders/route";
 import { validateFormData } from "@/src/libs/validations";
 import { formatSearchQuery, pad2 } from "@/src/libs/shows/library-utils";
-import { log } from "@/src/libs/logger";
+import { FetchError } from "@/src/libs/fetch-error";
 
 type ShowFormData = {
   title: string;
@@ -248,9 +248,11 @@ export default function ShowsClient({
       indexer,
       category,
     };
+
     const errors = validateFormData(payload, { src: "show" });
     if (Object.keys(errors).length > 0) {
       setErrors(errors);
+      return;
     }
 
     try {
@@ -268,8 +270,12 @@ export default function ShowsClient({
       setLibraryFolders([]);
       toggleAccordion();
       addToast({ title: "Show added", severity: "success" });
-    } catch {
-      /* useFetch shows error toast */
+    } catch (err) {
+      if (err instanceof FetchError) {
+        const serverErrors = (err.data as { errors?: Record<string, string> })
+          ?.errors;
+        if (serverErrors) setErrors(serverErrors);
+      }
     }
   }
 
@@ -296,12 +302,6 @@ export default function ShowsClient({
     const errors = validateFormData(payload, { src: "show" });
     if (Object.keys(errors).length > 0) {
       setErrors(errors);
-      log({
-        source: "shows",
-        message: "Errors:",
-        data: errors,
-        level: "warn",
-      });
       return;
     }
 
@@ -321,8 +321,12 @@ export default function ShowsClient({
       toggleAccordion();
       fetchEpisode(selectedShow.id);
       addToast({ title: "Show updated", severity: "success" });
-    } catch {
-      /* useFetch shows error toast */
+    } catch (err) {
+      if (err instanceof FetchError) {
+        const serverErrors = (err.data as { errors?: Record<string, string> })
+          ?.errors;
+        if (serverErrors) setErrors(serverErrors);
+      }
     }
   }
 
@@ -400,6 +404,8 @@ export default function ShowsClient({
             <div className="flex-1">
               <Select
                 label="Show"
+                isInvalid={!!errors.show_show}
+                errorMessage={errors.show_show}
                 placeholder="Select a show"
                 selectedKeys={selectedShowId ? [selectedShowId] : []}
                 selectionMode="single"
@@ -442,8 +448,11 @@ export default function ShowsClient({
                 label="Library"
                 selectedKeys={formData.library ? [formData.library] : []}
                 selectionMode="single"
+                isInvalid={!!errors.show_library}
+                errorMessage={errors.show_library}
                 onSelectionChange={(selection) => {
                   const name = [...selection][0]?.toString() ?? "";
+                  setErrors((prev) => ({ ...prev, show_library: "" }));
                   setFormData((prev) => ({
                     ...prev,
                     library: name,
@@ -460,12 +469,16 @@ export default function ShowsClient({
                 label="Title"
                 allowsCustomValue
                 inputValue={formData.title}
+                isInvalid={!!errors.show_title}
+                errorMessage={errors.show_title}
                 onClear={() => setFormData((prev) => ({ ...prev, title: "" }))}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, title: value }))
-                }
+                onValueChange={(value) => {
+                  setErrors((prev) => ({ ...prev, show_title: "" }));
+                  setFormData((prev) => ({ ...prev, title: value }));
+                }}
                 onSelectionChange={(key) => {
                   const title = key ? key.toString() : "";
+                  setErrors((prev) => ({ ...prev, show_title: "" }));
                   setFormData((prev) => ({ ...prev, title }));
                 }}
               >
@@ -487,27 +500,33 @@ export default function ShowsClient({
                   label="Season"
                   min={0}
                   value={formData.season}
-                  onValueChange={(value) =>
+                  isInvalid={!!errors.show_season}
+                  errorMessage={errors.show_season}
+                  onValueChange={(value) => {
+                    setErrors((prev) => ({ ...prev, show_season: "" }));
                     setFormData((prev) => ({
                       ...prev,
                       season: Math.max(value, 0),
-                    }))
-                  }
+                    }));
+                  }}
                 />
 
                 <NumberInput
                   label="Min episode"
                   min={0}
                   value={formData.minEpisode}
-                  onValueChange={(value) =>
+                  isInvalid={!!errors.show_minEpisode}
+                  errorMessage={errors.show_minEpisode}
+                  onValueChange={(value) => {
+                    setErrors((prev) => ({ ...prev, show_minEpisode: "" }));
                     setFormData((prev) => ({
                       ...prev,
                       minEpisode: Math.max(value, 0),
-                    }))
-                  }
+                    }));
+                  }}
                 />
               </div>
-              
+
               <Select
                 label="Indexer"
                 selectedKeys={formData.indexer ? [formData.indexer] : []}

@@ -7,6 +7,7 @@ import { validateFormData } from "@/src/libs/validations";
 export type UpdateShowResponse = {
   ok: boolean;
   show?: TrackedShow;
+  errors?: Record<string, string>;
   error?: string;
 };
 

@@ -15,6 +15,7 @@ export type ShowsResponse = {
 export type AddShowResponse = {
   ok: boolean;
   show?: TrackedShow;
+  errors?: Record<string, string>;
   error?: string;
 };
 
