@@ -15,6 +15,10 @@ export const AUTH_DATA_PATH =
   process.env.AUTH_DATA_PATH ?? "/data/auth/credentials.json";
 export const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+// Shows
+export const SHOWS_DATA_PATH =
+  process.env.SHOWS_DATA_PATH ?? "/data/shows.json";
+
 // Jackett
 export const JACKETT_URL = process.env.JACKETT_URL ?? "http://localhost:9117";
 export const JACKETT_API_KEY = process.env.JACKETT_API_KEY ?? "";

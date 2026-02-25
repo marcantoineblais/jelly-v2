@@ -107,6 +107,18 @@ export default function Navigation() {
                   </Button>
 
                   <Button
+                    href="/shows"
+                    onPress={() => handleNavigation("/shows")}
+                    variant="solid"
+                    color="primary"
+                    className="w-full text-lg"
+                    size="lg"
+                    isDisabled={pathname === "/shows"}
+                  >
+                    Shows
+                  </Button>
+
+                  <Button
                     href="/downloads"
                     onPress={() => handleNavigation("/downloads")}
                     variant="solid"

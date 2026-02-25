@@ -4,15 +4,9 @@ import { useMemo, useState } from "react";
 import {
   Button,
   Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
   Select,
   SelectItem,
   addToast,
-  useDisclosure,
 } from "@heroui/react";
 import type {
   JackettIndexer,
@@ -20,16 +14,13 @@ import type {
 } from "@/src/libs/torrents/jackett";
 import { SortBy, type FeedItem } from "@/src/libs/torrents/feed-format";
 import useFetch from "../../hooks/use-fetch";
-import { QbittorrentResponse } from "../api/qbit/torrents/route";
 import { FeedResponse } from "../api/torrents/feed/route";
 import {
   Accordion,
   AccordionButton,
   useAccordion,
 } from "@/src/components/accordion";
-import Table from "@/src/components/table/table";
-import TableItem from "@/src/components/table/feed-table-item";
-import MediaListEmpty from "@/src/components/media/MediaListEmpty";
+import TorrentResults from "@/src/components/torrents/TorrentResults";
 import { TORRENT_DEFAULT_CATEGORIES, TORRENT_SORT_BY, TORRENT_SORT_ORDER } from "@/src/config";
 
 type FormData = {
@@ -48,14 +39,7 @@ type TorrentsClientProps = {
 export default function TorrentsClient({ indexers }: TorrentsClientProps) {
   const { fetchData } = useFetch();
   const { isOpen, toggle } = useAccordion();
-  const {
-    isOpen: isModalOpen,
-    onOpen: onModalOpen,
-    onClose: onModalClose,
-    onOpenChange: onModalOpenChange,
-  } = useDisclosure();
 
-  // Form states
   const [formData, setFormData] = useState<FormData>(() => ({
     title: "",
     indexer: "",
@@ -65,13 +49,8 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
     limit: NaN,
   }));
 
-  // Data states
   const [items, setItems] = useState<FeedItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<FeedItem | null>(null);
-
-  // Loading states
   const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const [isAddingToQbittorrent, setIsAddingToQbittorrent] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   const categories: TorznabCategory[] = useMemo(() => {
@@ -81,55 +60,8 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
     return indexer.categories;
   }, [formData.indexer, indexers]);
 
-  function handleSelectItem(item: FeedItem) {
-    setSelectedItem(item);
-    onModalOpen();
-  }
-
-  function handleCloseModal() {
-    onModalClose();
-
-    setTimeout(() => {
-      setSelectedItem(null);
-    }, 200);
-  }
-
   function handleInputFocus() {
     if (!isOpen) toggle();
-  }
-
-  async function addToQbittorrent(item: FeedItem) {
-    if (!item.url) {
-      addToast({
-        title: "No link",
-        description: "This item has no magnet or torrent link to add.",
-        severity: "warning",
-      });
-      return;
-    }
-    const body = { url: item.url };
-    try {
-      await fetchData<QbittorrentResponse>("/api/qbit/torrents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        setIsLoading: setIsAddingToQbittorrent,
-      });
-
-      addToast({
-        title: "Added to qBittorrent",
-        description: item.title,
-        severity: "success",
-      });
-    } catch (e) {
-      addToast({
-        title: "Add failed",
-        description: e instanceof Error ? e.message : "Network error",
-        severity: "danger",
-      });
-    }
-
-    handleCloseModal();
   }
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
@@ -303,70 +235,7 @@ export default function TorrentsClient({ indexers }: TorrentsClientProps) {
           </div>
         </form>
 
-        {hasSearched && items.length === 0 && (
-          <div className="flex w-full grow justify-center items-center">
-            <MediaListEmpty
-              title="No torrents found"
-              message="Change your search criteria and try again."
-            />
-          </div>
-        )}
-
-        {hasSearched && items.length > 0 && (
-          <Table items={items}>
-            {(item) => (
-              <TableItem
-                key={item.id}
-                item={item}
-                onClick={() => handleSelectItem(item)}
-              />
-            )}
-          </Table>
-        )}
-
-        <Modal
-          isOpen={isModalOpen}
-          onOpenChange={onModalOpenChange}
-          placement="center"
-          scrollBehavior="inside"
-          onClose={handleCloseModal}
-        >
-          {selectedItem && (
-            <ModalContent>
-              <ModalHeader>Details</ModalHeader>
-              <ModalBody>
-                <div className="w-full">
-                  <p className="break-all">{selectedItem.title}</p>
-                  <div className="mt-4">
-                    <p>Size: {selectedItem.size}</p>
-                    <p>Seeds: {selectedItem.seeds}</p>
-                    <p>Leech: {selectedItem.leech}</p>
-                    <p>Published: {selectedItem.pubDate}</p>
-                  </div>
-                </div>
-              </ModalBody>
-              <ModalFooter className="flex justify-center gap-2">
-                <Button
-                  className="w-32"
-                  color="default"
-                  variant="ghost"
-                  onPress={handleCloseModal}
-                >
-                  Close
-                </Button>
-                <Button
-                  className="w-32"
-                  color="primary"
-                  variant="solid"
-                  onPress={() => addToQbittorrent(selectedItem)}
-                  isLoading={isAddingToQbittorrent}
-                >
-                  Download
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          )}
-        </Modal>
+        <TorrentResults items={items} hasSearched={hasSearched} />
       </main>
     </>
   );
