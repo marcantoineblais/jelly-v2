@@ -26,9 +26,9 @@ services:
     volumes:
       - /opt/gluetun/config:/gluetun
     # ports:
-    #   - "${QBITTORRENT_WEBUI_PORT:-8080}:${QBITTORRENT_WEBUI_PORT:-8080}"   # qBittorrent Web UI
-    #   - "${JACKETT_PORT:-9117}:9117"             # Jackett (no env for internal port)
-    #   - "${FLARESOLVERR_PORT:-8191}:${FLARESOLVERR_PORT:-8191}"               # FlareSolverr
+      - "${QBITTORRENT_WEBUI_PORT:-8080}:${QBITTORRENT_WEBUI_PORT:-8080}"   # qBittorrent Web UI
+      - "${JACKETT_PORT:-9117}:9117"             # Jackett (no env for internal port)
+      - "${FLARESOLVERR_PORT:-8191}:${FLARESOLVERR_PORT:-8191}"               # FlareSolverr
     restart: unless-stopped
     networks:
       - private
