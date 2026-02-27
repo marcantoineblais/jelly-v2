@@ -39,7 +39,6 @@ services:
     environment:
       - TZ=America/Toronto
       - LOG_LEVEL=info
-      - PORT=${FLARESOLVERR_PORT:-8191}
     depends_on:
       gluetun:
         condition: service_started

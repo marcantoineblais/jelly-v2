@@ -23,6 +23,7 @@ services:
       - SERVER_CITIES=${SERVER_CITIES}
       - STREAM_ONLY=${STREAM_ONLY:-on}
       - FIREWALL_OUTBOUND_SUBNETS=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      - FIREWALL_INPUT_PORTS=${FLARESOLVERR_PORT:-8191},9117,${QBITTORRENT_WEBUI_PORT:-8080}
     volumes:
       - /opt/gluetun/config:/gluetun
     # ports:
@@ -106,6 +107,7 @@ services:
     networks:
       - private
       - caddy_proxy
+    restart: unless-stopped
 
   files-server:
     image: *common-image
@@ -122,6 +124,7 @@ services:
       - socket-server
     networks:
       - private
+    restart: unless-stopped
 
 volumes:
   data:
