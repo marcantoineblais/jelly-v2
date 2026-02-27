@@ -45,7 +45,8 @@ services:
       - seccomp:unconfined
     environment:
       - TZ=America/Toronto
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
+      - DBUS_SESSION_BUS_ADDRESS=/dev/null
     depends_on:
       gluetun:
         condition: service_started
