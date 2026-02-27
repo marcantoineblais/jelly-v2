@@ -35,18 +35,12 @@ services:
       - caddy_proxy
 
   flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
+    image: ghcr.io/21hsmw/flaresolverr:latest
     container_name: jelly-flaresolverr
     network_mode: service:gluetun
-    shm_size: '2g'
-    cap_add:
-      - SYS_ADMIN
-    security_opt:
-      - seccomp:unconfined
     environment:
       - TZ=America/Toronto
-      - LOG_LEVEL=debug
-      - DBUS_SESSION_BUS_ADDRESS=/dev/null
+      - LOG_LEVEL=info
     depends_on:
       gluetun:
         condition: service_started
