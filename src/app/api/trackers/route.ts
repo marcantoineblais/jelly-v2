@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
-import { readShows, addShow } from "@/src/libs/shows/storage";
-import { getShowLibraries } from "@/src/libs/shows/library";
+import { readShows, addShow } from "@/src/libs/trackers/storage";
+import { getShowLibraries } from "@/src/libs/trackers/library";
 import type { TrackedShow } from "@/src/types/TrackedShow";
-import { validateFormData } from "@/src/libs/validation/show-validations";
+import { validateFormData } from "@/src/libs/validation/tracker-validations";
 
-export type ShowsResponse = {
+export type TrackersResponse = {
   ok: boolean;
   shows: TrackedShow[];
   libraries: { name: string; path: string }[];
   error?: string;
 };
 
-export type AddShowResponse = {
+export type AddTrackerResponse = {
   ok: boolean;
   show?: TrackedShow;
   errors?: Record<string, string>;
@@ -29,12 +29,12 @@ export async function GET() {
     return NextResponse.json({ ok: true, shows, libraries });
   } catch (err) {
     log({
-      source: "shows",
-      message: "Error listing shows:",
+      source: "trackers",
+      message: "Error listing trackers:",
       data: err,
       level: "error",
     });
-    const message = err instanceof Error ? err.message : "Failed to list shows";
+    const message = err instanceof Error ? err.message : "Failed to list trackers";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
@@ -69,12 +69,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, show }, { status: 201 });
   } catch (err) {
     log({
-      source: "shows",
-      message: "Error adding show:",
+      source: "trackers",
+      message: "Error adding tracker:",
       data: err,
       level: "error",
     });
-    const message = err instanceof Error ? err.message : "Failed to add show";
+    const message = err instanceof Error ? err.message : "Failed to add tracker";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

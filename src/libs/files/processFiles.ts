@@ -1,0 +1,222 @@
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
+import { Transform } from "stream";
+import { WebSocket } from "ws";
+import { formatNumber } from "@/src/libs/files/formatNumber.js";
+import { createFilename } from "@/src/libs/files/createFilename.js";
+import { readConfig } from "@/src/libs/readConfig";
+import { removeTorrentsForFile } from "@/src/libs/qbit/removeTorrents";
+import { cleanupTransferredFolders } from "@/src/libs/files/cleanupFolders";
+import {
+  sendProgress,
+  sendTransferStarted,
+  sendTransferCompleted,
+} from "@/src/libs/socket/transferProgress";
+import type { FileProgress } from "@/src/libs/socket/transferProgress";
+import type { MediaFile } from "@/src/types/MediaFile";
+
+const PROGRESS_THROTTLE_MS = 150;
+const CONFIG = readConfig();
+
+export interface TransferError {
+  file: MediaFile;
+  message: string;
+}
+
+// --- File transfer ---
+async function copyFileWithProgress({
+  file,
+  updatedPath,
+  errors,
+  ws,
+  progress,
+}: {
+  file: MediaFile;
+  updatedPath: string;
+  errors: TransferError[];
+  ws: WebSocket;
+  progress: FileProgress;
+}): Promise<void> {
+  try {
+    const destDir = path.dirname(updatedPath);
+    try {
+      await fs.access(destDir);
+    } catch {
+      await fs.mkdir(destDir, { recursive: true });
+    }
+
+    const stat = await fs.stat(file.path);
+    const fileSize = stat.size;
+
+    sendProgress({ ws, payload: {
+      ...progress,
+      currentFileBytesTransferred: 0,
+      currentFileSize: fileSize,
+      errors,
+    }});
+
+    await new Promise<void>((resolve, reject) => {
+      const readStream = fsSync.createReadStream(file.path);
+      const writeStream = fsSync.createWriteStream(updatedPath);
+      let bytesTransferred = 0;
+      let lastSend = 0;
+      let settled = false;
+
+      const done = (err?: Error) => {
+        if (settled) return;
+        settled = true;
+        readStream.destroy();
+        writeStream.destroy();
+        if (err) reject(err);
+        else resolve();
+      };
+
+      const progressTransform = new Transform({
+        transform(chunk, _encoding, callback) {
+          bytesTransferred += chunk.length;
+          const now = Date.now();
+          if (now - lastSend >= PROGRESS_THROTTLE_MS) {
+            lastSend = now;
+            sendProgress({ ws, payload: {
+              ...progress,
+              currentFileBytesTransferred: bytesTransferred,
+              currentFileSize: fileSize,
+              totalBytesTransferred:
+                progress.totalBytesTransferred + bytesTransferred,
+              errors,
+            }});
+          }
+          callback(null, chunk);
+        },
+      });
+
+      readStream.on("error", (err) => done(err));
+      writeStream.on("error", (err) => done(err));
+      progressTransform.on("error", (err) => done(err));
+
+      writeStream.on("finish", () => {
+        sendProgress({ ws, payload: {
+          ...progress,
+          currentFileBytesTransferred: fileSize,
+          currentFileSize: fileSize,
+          totalBytesTransferred: progress.totalBytesTransferred + fileSize,
+          errors,
+        }});
+        done();
+      });
+
+      readStream.pipe(progressTransform).pipe(writeStream);
+    });
+
+    await removeTorrentsForFile(file.path);
+    await fs.unlink(file.path);
+  } catch (error: unknown) {
+    let message = "Unknown error";
+    if (error instanceof Error) {
+      message = error.message;
+    }
+    errors.push({ file, message });
+  }
+}
+
+// --- Main job ---
+
+function buildDestinationPath(file: MediaFile): string | null {
+  const filename = createFilename(file.mediaInfo);
+  const basepath = file.library.path;
+  const type = file.library.type;
+  const season = file.mediaInfo?.season;
+  const year = file.mediaInfo?.year;
+  let folderName = file.mediaInfo?.title;
+  if (year && folderName) folderName = `${folderName} (${year})`;
+
+  if (!filename || !basepath || !folderName) return null;
+
+  if (type === "show") {
+    return path.join(
+      basepath,
+      folderName,
+      season ? `Season ${formatNumber(season)}` : "Specials",
+      filename + file.ext,
+    );
+  }
+
+  return path.join(basepath, folderName, filename + file.ext);
+}
+
+export async function processFilesJob(
+  files: MediaFile[],
+  ws: WebSocket,
+): Promise<void> {
+  const errors: TransferError[] = [];
+  const filesToProcess: {
+    file: MediaFile;
+    updatedPath: string;
+    filename: string;
+    fileSize: number;
+  }[] = [];
+  let totalSize = 0;
+
+  for (const file of files) {
+    const updatedPath = buildDestinationPath(file);
+    const filename = createFilename(file.mediaInfo);
+    if (!updatedPath || !filename) continue;
+
+    try {
+      const stat = await fs.stat(file.path);
+      totalSize += stat.size;
+      filesToProcess.push({ file, updatedPath, filename, fileSize: stat.size });
+    } catch {
+      filesToProcess.push({ file, updatedPath, filename, fileSize: 0 });
+    }
+  }
+
+  sendTransferStarted({
+    ws,
+    totalFiles: filesToProcess.length,
+    totalSize,
+    errors,
+  });
+
+  const transferredFolders = new Set<string>();
+  let totalBytesTransferred = 0;
+
+  for (let i = 0; i < filesToProcess.length; i++) {
+    const { file, updatedPath, filename, fileSize } = filesToProcess[i];
+
+    const errorCountBefore = errors.length;
+    await copyFileWithProgress({
+      file,
+      updatedPath,
+      errors,
+      ws,
+      progress: {
+        currentFile: filename,
+        processedFiles: i,
+        totalFiles: filesToProcess.length,
+        totalBytesTransferred,
+        totalSize,
+      },
+    });
+
+    const transferSucceeded = errors.length === errorCountBefore;
+    if (transferSucceeded) {
+      transferredFolders.add(path.dirname(file.path));
+    }
+
+    totalBytesTransferred += fileSize;
+  }
+
+  await cleanupTransferredFolders({
+    transferredFolders,
+    videosExt: CONFIG.videosExt,
+    downloadRoots: CONFIG.downloadPaths,
+  });
+
+  sendTransferCompleted({
+    ws,
+    totalFiles: filesToProcess.length,
+    errors,
+  });
+}

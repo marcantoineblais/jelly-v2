@@ -1,6 +1,6 @@
 {
   "name": "jelly",
-  "version": "3.2.6",
+  "version": "3.2.7",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -27,11 +27,13 @@
     "next": "^16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "tsx": "^4.21.0",
     "ws": "^8.19.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",

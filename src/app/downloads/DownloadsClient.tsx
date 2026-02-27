@@ -1,261 +1,240 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { Button, Input, Select, SelectItem, addToast } from "@heroui/react";
+import type {
+  JackettIndexer,
+  TorznabCategory,
+} from "@/src/libs/downloads/jackett";
+import { SortBy, type FeedItem } from "@/src/libs/downloads/feed-format";
+import useFetch from "../../hooks/use-fetch";
+import { FeedResponse } from "../api/downloads/feed/route";
 import {
-  Button,
-  Checkbox,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Select,
-  SelectItem,
-  useDisclosure,
-} from "@heroui/react";
-import { useEffect, useMemo, useState } from "react";
-import useFetch from "@/src/hooks/use-fetch";
-import { QbittorrentResponse } from "../api/qbit/torrents/route";
+  Accordion,
+  AccordionButton,
+  useAccordion,
+} from "@/src/components/accordion";
+import DownloadResults from "@/src/components/downloads/DownloadResults";
 import {
+  DOWNLOAD_DEFAULT_CATEGORIES,
   DOWNLOAD_SORT_BY,
   DOWNLOAD_SORT_ORDER,
-  POLL_INTERVAL_MS,
 } from "@/src/config";
-import type { QbitTorrent } from "@/src/libs/qbit/client";
-import { formatDataSize } from "@/src/libs/format-data-size";
-import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
-import Table from "@/src/components/table/table";
-import TorrentTableItem from "@/src/components/table/torrent-table-item";
-import MediaListEmpty from "@/src/components/media/MediaListEmpty";
-import { useSession } from "@/src/providers/session-provider-client";
 
-export type SortBy = "name" | "size" | "progress" | "status" | "eta";
-
-type DownloadsClientProps = {
-  initialTorrents: QbitTorrent[];
+type FormData = {
+  title: string;
+  indexer: string;
+  sortBy: SortBy;
+  sortOrder: "asc" | "desc";
+  category: string;
+  limit: number;
 };
 
-const DEFAULT_SORT_BY: SortBy = "name";
-const DEFAULT_SORT_ORDER = "asc" as const;
+type DownloadsClientProps = {
+  indexers: JackettIndexer[];
+};
 
-export default function DownloadsClient({
-  initialTorrents,
-}: DownloadsClientProps) {
-  const { session, updateSession } = useSession();
+export default function DownloadsClient({ indexers }: DownloadsClientProps) {
   const { fetchData } = useFetch();
-  const {
-    isOpen: isModalOpen,
-    onOpen: onModalOpen,
-    onClose: onModalClose,
-    onOpenChange: onModalOpenChange,
-  } = useDisclosure();
+  const { isOpen, toggle } = useAccordion();
 
-  const [torrents, setTorrents] = useState<QbitTorrent[]>(initialTorrents);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<QbitTorrent | null>(null);
-  const [deleteFiles, setDeleteFiles] = useState(false);
+  const [formData, setFormData] = useState<FormData>(() => ({
+    title: "",
+    indexer: "",
+    sortBy: "date" as SortBy,
+    sortOrder: "desc" as "asc" | "desc",
+    category: "",
+    limit: NaN,
+  }));
 
-  const sortBy = (session.downloads?.sortBy as SortBy) ?? DEFAULT_SORT_BY;
-  const sortOrder =
-    (session.downloads?.sortOrder as "asc" | "desc") ?? DEFAULT_SORT_ORDER;
+  const [items, setItems] = useState<FeedItem[]>([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  function setSortBy(value: SortBy) {
-    updateSession({ downloads: { sortBy: value, sortOrder } });
+  const categories: TorznabCategory[] = useMemo(() => {
+    const indexer = indexers.find((i) => i.id === formData.indexer);
+    if (!indexer) return DOWNLOAD_DEFAULT_CATEGORIES;
+
+    return indexer.categories;
+  }, [formData.indexer, indexers]);
+
+  function handleInputFocus() {
+    if (!isOpen) toggle();
   }
 
-  function setSortOrder(value: "asc" | "desc") {
-    updateSession({ downloads: { sortBy, sortOrder: value } });
-  }
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const { indexer, sortBy, sortOrder, category, limit } = formData;
+    const title = formData.title.trim();
 
-  const sortedTorrents = useMemo(() => {
-    const toSort = [...torrents];
-    return toSort.sort((a, b) => {
-      const mult = sortOrder === "asc" ? 1 : -1;
-      switch (sortBy) {
-        case "name":
-          return a.name.localeCompare(b.name) * mult;
-        case "eta":
-          return (a.eta - b.eta) * mult;
-        case "progress":
-          return (a.progress - b.progress) * mult;
-        case "size":
-          return (a.size - b.size) * mult;
-        case "status":
-          return a.state.localeCompare(b.state) * mult;
-        default:
-          return 0;
-      }
-    });
-  }, [torrents, sortBy, sortOrder]);
-
-  function handleSelectItem(item: QbitTorrent) {
-    setSelectedItem(item);
-    setDeleteFiles(false);
-    onModalOpen();
-  }
-
-  function handleCloseModal() {
-    onModalClose();
-    setTimeout(() => {
-      setSelectedItem(null);
-    }, 200);
-  }
-
-  function handleOpenChange(open: boolean) {
-    if (!open) handleCloseModal();
-    onModalOpenChange();
-  }
-
-  useEffect(() => {
-    const fetchTorrent = async () => {
-      try {
-        const { data } =
-          await fetchData<QbittorrentResponse>("/api/qbit/torrents");
-        setTorrents(data.torrents);
-      } catch {
-        setTorrents([]);
-      }
-    };
-
-    const id = setInterval(fetchTorrent, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [fetchData]);
-
-  async function deleteTorrent(hash: string, deleteFiles: boolean) {
-    if (hash.startsWith("mock-")) {
-      setTorrents((prev) => prev.filter((t) => t.hash !== hash));
+    if (!title && !category) {
+      addToast({
+        title: "Title or category is required",
+        description: "Please enter a title to search for torrents.",
+        severity: "warning",
+      });
       return;
     }
-    try {
-      const url = `/api/qbit/torrents/${encodeURIComponent(hash)}${deleteFiles ? "?deleteFiles=true" : ""}`;
-      const { data } = await fetchData<QbittorrentResponse>(url, {
-        method: "DELETE",
-      });
-      if (!data.ok) return;
-      setTorrents((prev) => prev.filter((t) => t.hash !== hash));
-    } catch {}
-  }
 
-  async function handleConfirmDelete() {
-    if (!selectedItem) return;
-    setIsDeleting(true);
     try {
-      await deleteTorrent(selectedItem.hash, deleteFiles);
-      handleCloseModal();
-    } finally {
-      setIsDeleting(false);
+      const searchParams = new URLSearchParams({
+        name: title || "*",
+        indexers: indexer,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+      });
+      if (category) searchParams.set("category", category);
+      if (Number.isFinite(limit) && limit > 0)
+        searchParams.set("limit", String(limit));
+      const { data } = await fetchData<FeedResponse>(
+        `/api/downloads/feed?${searchParams.toString()}`,
+        { setIsLoading: setIsSearchLoading },
+      );
+      setItems(
+        data.items.map((item) => ({ ...item, isAddingToQbittorrent: false })),
+      );
+      if (isOpen) toggle();
+    } catch {
+      setItems([]);
     }
+
+    setHasSearched(true);
   }
 
   return (
-    <main className="w-full flex-1 min-h-0 flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
-      {/* Sorting controls */}
-      <div className="flex gap-2 bg-white/80 rounded-lg border border-stone-200 p-3">
-        <Select
-          className="basis-2/3"
-          label="Sort by"
-          selectedKeys={[sortBy]}
-          onSelectionChange={(selection) => {
-            const key = Array.from(selection)[0] as SortBy;
-            if (key) setSortBy(key);
-          }}
+    <>
+      <main className="h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-2 p-3 bg-white/80 rounded-lg border border-stone-200"
         >
-          {DOWNLOAD_SORT_BY.map((sortBy) => (
-            <SelectItem key={sortBy}>{sortBy}</SelectItem>
-          ))}
-        </Select>
+          {/* Title input */}
+          <div>
+            <Input
+              type="text"
+              label="Title"
+              aria-label="Search by title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              autoComplete="off"
+              onFocus={handleInputFocus}
+            />
+          </div>
 
-        <Select
-          className="basis-1/3"
-          label="Order"
-          selectedKeys={[sortOrder]}
-          onSelectionChange={(selection) => {
-            const key = Array.from(selection)[0] as "asc" | "desc";
-            if (key) setSortOrder(key);
-          }}
-        >
-          {DOWNLOAD_SORT_ORDER.map((sortOrder) => (
-            <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
-          ))}
-        </Select>
-      </div>
-
-      {/* Torrents table */}
-      {sortedTorrents.length === 0 ? (
-        <div className="flex w-full grow justify-center items-center">
-          <MediaListEmpty
-            title="No torrents found"
-            message="Add some and come back later."
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4 flex-1 min-h-0 max-h-fit overflow-hidden">
-          <Table items={sortedTorrents}>
-            {(item) => (
-              <TorrentTableItem
-                key={item.hash}
-                item={item}
-                onClick={() => handleSelectItem(item)}
-              />
-            )}
-          </Table>
-        </div>
-      )}
-
-      <Modal
-        isOpen={isModalOpen}
-        onOpenChange={handleOpenChange}
-        placement="center"
-        scrollBehavior="inside"
-        onClose={handleCloseModal}
-      >
-        {selectedItem && (
-          <ModalContent>
-            <ModalHeader>Details</ModalHeader>
-            <ModalBody>
-              <div className="w-full">
-                <p className="break-all">{selectedItem.name}</p>
-                <div className="mt-4 flex flex-col gap-1">
-                  <p>Status: {formatState(selectedItem.state)}</p>
-                  <p>Progress: {(selectedItem.progress * 100).toFixed(1)}%</p>
-                  <p>Size: {formatDataSize(selectedItem.size)}</p>
-                  <p>Down: {formatSpeed(selectedItem.dlSpeed ?? 0)}</p>
-                  <p>Up: {formatSpeed(selectedItem.upSpeed ?? 0)}</p>
-                  <p>Seeds: {selectedItem.numSeeds ?? "-"}</p>
-                  <p>Leech: {selectedItem.numLeechs ?? "-"}</p>
-                  <p>ETA: {formatEta(selectedItem.eta ?? -1)}</p>
-                </div>
-                <div className="mt-4">
-                  <Checkbox
-                    isSelected={deleteFiles}
-                    onValueChange={setDeleteFiles}
-                  >
-                    Delete files
-                  </Checkbox>
-                </div>
+          {/* Accordion */}
+          <Accordion isOpen={isOpen}>
+            <div className="flex flex-col gap-2">
+              {/* Indexers select */}
+              <div>
+                <Select
+                  items={indexers}
+                  aria-label="Indexers selection"
+                  label="Indexers"
+                  placeholder="All indexers"
+                  selectionMode="single"
+                  selectedKeys={[formData.indexer]}
+                  onSelectionChange={(selection) => {
+                    const id = [...selection][0]?.toString() ?? "";
+                    const indexer = indexers.find((i) => i.id === id);
+                    setFormData((prev) => ({
+                      ...prev,
+                      indexer: id,
+                      category: "",
+                      limit: indexer?.limit ?? NaN,
+                    }));
+                  }}
+                >
+                  {(indexer) => (
+                    <SelectItem key={indexer.id}>{indexer.name}</SelectItem>
+                  )}
+                </Select>
               </div>
-            </ModalBody>
-            <ModalFooter className="flex justify-center gap-2">
-              <Button
-                className="w-32"
-                color="default"
-                variant="ghost"
-                onPress={handleCloseModal}
-              >
-                Close
-              </Button>
-              <Button
-                className="w-32"
-                color="danger"
-                variant="solid"
-                onPress={handleConfirmDelete}
-                isLoading={isDeleting}
-              >
-                Delete
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        )}
-      </Modal>
-    </main>
+
+              {/* Sort by select */}
+              <div className="flex gap-2">
+                <Select
+                  className="basis-3/5"
+                  label="Sort by"
+                  selectedKeys={[formData.sortBy]}
+                  selectionMode="single"
+                  onSelectionChange={(selection) =>
+                    setFormData((prev) => {
+                      const sortBy = Array.from(selection)[0];
+                      if (!sortBy) return prev;
+                      return { ...prev, sortBy: sortBy as SortBy };
+                    })
+                  }
+                >
+                  {DOWNLOAD_SORT_BY.map((sortBy) => (
+                    <SelectItem key={sortBy}>{sortBy}</SelectItem>
+                  ))}
+                </Select>
+                <Select
+                  className="basis-2/5"
+                  label="Order"
+                  selectionMode="single"
+                  selectedKeys={[formData.sortOrder]}
+                  onSelectionChange={(selection) =>
+                    setFormData((prev) => {
+                      const sortOrder = Array.from(selection)[0];
+                      if (!sortOrder) return prev;
+                      return {
+                        ...prev,
+                        sortOrder: sortOrder as "asc" | "desc",
+                      };
+                    })
+                  }
+                >
+                  {DOWNLOAD_SORT_ORDER.map((sortOrder) => (
+                    <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
+                  ))}
+                </Select>
+              </div>
+
+              {/* Category select */}
+              {categories.length > 0 && (
+                <div>
+                  <Select
+                    label="Category"
+                    items={categories}
+                    selectionMode="single"
+                    selectedKeys={[formData.category]}
+                    onSelectionChange={(selection) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        category: [...selection][0]?.toString() ?? "",
+                      }))
+                    }
+                  >
+                    {(category) => (
+                      <SelectItem key={category.id}>{category.name}</SelectItem>
+                    )}
+                  </Select>
+                </div>
+              )}
+            </div>
+          </Accordion>
+
+          {/* Search button */}
+          <div className="flex w-full justify-center gap-2">
+            <Button
+              className="w-32 shadow-btn disabled:opacity-50"
+              type="submit"
+              color="primary"
+              isLoading={isSearchLoading}
+            >
+              Search
+            </Button>
+
+            {/* Accordion button */}
+            <AccordionButton isOpen={isOpen} onToggle={toggle} />
+          </div>
+        </form>
+
+        <DownloadResults items={items} hasSearched={hasSearched} />
+      </main>
+    </>
   );
 }

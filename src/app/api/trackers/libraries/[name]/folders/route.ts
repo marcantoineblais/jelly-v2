@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
-import { findLibraryByName, listShowFolders } from "@/src/libs/shows/library";
+import { findLibraryByName, listShowFolders } from "@/src/libs/trackers/library";
 
 export type LibraryFoldersResponse = {
   ok: boolean;
@@ -26,7 +26,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     return NextResponse.json({ ok: true, folders });
   } catch (err) {
     log({
-      source: "shows/libraries/folders",
+      source: "trackers/libraries/folders",
       message: "Error listing folders:",
       data: err,
       level: "error",

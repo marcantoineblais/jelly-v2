@@ -95,30 +95,6 @@ export default function Navigation() {
                   </Button>
 
                   <Button
-                    href="/torrents"
-                    onPress={() => handleNavigation("/torrents")}
-                    variant="solid"
-                    color="primary"
-                    className="w-full text-lg shadow-btn"
-                    size="md"
-                    isDisabled={pathname === "/torrents"}
-                  >
-                    Torrents
-                  </Button>
-
-                  <Button
-                    href="/shows"
-                    onPress={() => handleNavigation("/shows")}
-                    variant="solid"
-                    color="primary"
-                    className="w-full text-lg shadow-btn"
-                    size="md"
-                    isDisabled={pathname === "/shows"}
-                  >
-                    Shows
-                  </Button>
-
-                  <Button
                     href="/downloads"
                     onPress={() => handleNavigation("/downloads")}
                     variant="solid"
@@ -128,6 +104,30 @@ export default function Navigation() {
                     isDisabled={pathname === "/downloads"}
                   >
                     Downloads
+                  </Button>
+
+                  <Button
+                    href="/trackers"
+                    onPress={() => handleNavigation("/trackers")}
+                    variant="solid"
+                    color="primary"
+                    className="w-full text-lg shadow-btn"
+                    size="md"
+                    isDisabled={pathname === "/trackers"}
+                  >
+                    Trackers
+                  </Button>
+
+                  <Button
+                    href="/torrents"
+                    onPress={() => handleNavigation("/torrents")}
+                    variant="solid"
+                    color="primary"
+                    className="w-full text-lg shadow-btn"
+                    size="md"
+                    isDisabled={pathname === "/torrents"}
+                  >
+                    Torrents
                   </Button>
                 </div>
                 <div className="grow flex justify-center">

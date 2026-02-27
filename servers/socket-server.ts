@@ -1,12 +1,12 @@
-require("dotenv").config();
-const { WebSocketServer } = require("ws");
+import "dotenv/config";
+import { WebSocketServer, WebSocket, RawData } from "ws";
 
-const port = parseInt(process.env.SOCKET_SERVER_PORT || "4001", 10);
+const port = parseInt(process.env.SOCKET_SERVER_PORT || "3001", 10);
 const wss = new WebSocketServer({ port, host: "0.0.0.0" });
-let lastStatus = null;
-let backendClient = null;
+let lastStatus: RawData | null = null;
+let backendClient: WebSocket | null = null;
 
-wss.on("connection", (client, request) => {
+wss.on("connection", (client) => {
   console.log("New client connected");
 
   // Send last status to new client if available
@@ -17,7 +17,7 @@ wss.on("connection", (client, request) => {
   // Identify backend (route.ts) by first message
   client.once("message", (message) => {
     try {
-      const data = JSON.parse(message);
+      const data = JSON.parse(message.toString());
       if (data && data.currentFile === "Process started") {
         backendClient = client;
       }
@@ -36,7 +36,7 @@ wss.on("connection", (client, request) => {
 
       // If the transfer is done, clear lastStatus and backendClient
       try {
-        const data = JSON.parse(msg);
+        const data = JSON.parse(msg.toString());
         if (data.isCompleted) {
           lastStatus = null;
           backendClient = null;

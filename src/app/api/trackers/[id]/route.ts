@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
-import { updateShow, removeShow } from "@/src/libs/shows/storage";
+import { updateShow, removeShow } from "@/src/libs/trackers/storage";
 import type { TrackedShow } from "@/src/types/TrackedShow";
-import { validateFormData } from "@/src/libs/validation/show-validations";
+import { validateFormData } from "@/src/libs/validation/tracker-validations";
 
-export type UpdateShowResponse = {
+export type UpdateTrackerResponse = {
   ok: boolean;
   show?: TrackedShow;
   errors?: Record<string, string>;
   error?: string;
 };
 
-export type DeleteShowResponse = {
+export type DeleteTrackerResponse = {
   ok: boolean;
   error?: string;
 };
@@ -48,7 +48,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const show = await updateShow(id, payload);
     if (!show) {
       return NextResponse.json(
-        { ok: false, error: "Show not found" },
+        { ok: false, error: "Tracker not found" },
         { status: 404 },
       );
     }
@@ -56,13 +56,13 @@ export async function PUT(request: Request, { params }: RouteParams) {
     return NextResponse.json({ ok: true, show });
   } catch (err) {
     log({
-      source: "shows",
-      message: "Error updating show:",
+      source: "trackers",
+      message: "Error updating tracker:",
       data: err,
       level: "error",
     });
     const message =
-      err instanceof Error ? err.message : "Failed to update show";
+      err instanceof Error ? err.message : "Failed to update tracker";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
@@ -73,7 +73,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     const removed = await removeShow(id);
     if (!removed) {
       return NextResponse.json(
-        { ok: false, error: "Show not found" },
+        { ok: false, error: "Tracker not found" },
         { status: 404 },
       );
     }
@@ -81,13 +81,13 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     log({
-      source: "shows",
-      message: "Error deleting show:",
+      source: "trackers",
+      message: "Error deleting tracker:",
       data: err,
       level: "error",
     });
     const message =
-      err instanceof Error ? err.message : "Failed to delete show";
+      err instanceof Error ? err.message : "Failed to delete tracker";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

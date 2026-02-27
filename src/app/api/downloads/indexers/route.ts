@@ -1,7 +1,7 @@
 import {
   getJackettIndexers,
   JackettIndexer,
-} from "@/src/libs/torrents/jackett";
+} from "@/src/libs/downloads/jackett";
 import { NextResponse } from "next/server";
 
 export type JackettIndexerResponse = {
@@ -15,7 +15,7 @@ export async function GET() {
     const indexers = await getJackettIndexers();
     return NextResponse.json({ ok: true, indexers });
   } catch (err) {
-    console.error("[torrents/indexers] error:", err);
+    console.error("[downloads/indexers] error:", err);
     const message =
       err instanceof Error ? err.message : "Failed to fetch Jackett indexers";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });

@@ -1,11 +1,11 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { dirname } from "path";
-import { SHOWS_DATA_PATH } from "@/src/config";
+import { TRACKERS_DATA_PATH } from "@/src/config";
 import type { TrackedShow } from "@/src/types/TrackedShow";
 
 export async function readShows(): Promise<TrackedShow[]> {
   try {
-    const raw = await readFile(SHOWS_DATA_PATH, "utf-8");
+    const raw = await readFile(TRACKERS_DATA_PATH, "utf-8");
     const data = JSON.parse(raw);
     if (Array.isArray(data)) return data as TrackedShow[];
   } catch {
@@ -15,8 +15,8 @@ export async function readShows(): Promise<TrackedShow[]> {
 }
 
 async function writeShows(shows: TrackedShow[]): Promise<void> {
-  await mkdir(dirname(SHOWS_DATA_PATH), { recursive: true });
-  await writeFile(SHOWS_DATA_PATH, JSON.stringify(shows, null, 2), "utf-8");
+  await mkdir(dirname(TRACKERS_DATA_PATH), { recursive: true });
+  await writeFile(TRACKERS_DATA_PATH, JSON.stringify(shows, null, 2), "utf-8");
 }
 
 export async function addShow(

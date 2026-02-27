@@ -124,6 +124,11 @@ async function getCookie(): Promise<string> {
   return cookiePromise;
 }
 
+function invalidateCookie(): void {
+  cookieCache = null;
+  cookiePromise = null;
+}
+
 export async function qbitRequest<T>(
   path: string,
   {
@@ -138,24 +143,31 @@ export async function qbitRequest<T>(
     contentType?: string;
   } = {},
 ): Promise<T> {
-  const cookie = await getCookie();
-  const url = new URL(`${API_PREFIX}${path}`);
-  if (searchParams) {
-    Object.entries(searchParams).forEach(([k, v]) =>
-      url.searchParams.set(k, v),
-    );
-  }
-  const headers: Record<string, string> = {
-    Cookie: cookie,
-    Referer: QBIT_URL,
-    Origin: QBIT_URL,
+  const doRequest = async (cookie: string) => {
+    const url = new URL(`${API_PREFIX}${path}`);
+    if (searchParams) {
+      Object.entries(searchParams).forEach(([k, v]) =>
+        url.searchParams.set(k, v),
+      );
+    }
+    const headers: Record<string, string> = {
+      Cookie: cookie,
+      Referer: QBIT_URL,
+      Origin: QBIT_URL,
+    };
+    if (contentType) headers["Content-Type"] = contentType;
+    return fetch(url.toString(), { method, headers, body });
   };
-  if (contentType) headers["Content-Type"] = contentType;
-  const res = await fetch(url.toString(), {
-    method,
-    headers,
-    body,
-  });
+
+  let cookie = await getCookie();
+  let res = await doRequest(cookie);
+
+  if (res.status === 401 || res.status === 403) {
+    invalidateCookie();
+    cookie = await getCookie();
+    res = await doRequest(cookie);
+  }
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`qBittorrent API ${path}: ${res.status} ${text}`);

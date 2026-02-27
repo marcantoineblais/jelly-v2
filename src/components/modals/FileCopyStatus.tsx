@@ -77,6 +77,7 @@ export default function FileCopyStatus({
             </div>
 
             <Progress
+              aria-label="File transfer progress"
               value={getProgressPercent()}
               classNames={{ indicator: "bg-primary" }}
             />

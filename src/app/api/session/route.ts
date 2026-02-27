@@ -7,8 +7,8 @@ import { getCurrentUser } from "@/src/libs/auth/login";
 import {
   readSession,
   writeSession,
-  type SessionData,
 } from "@/src/libs/session/storage";
+import { SessionData } from "@/src/providers/session-provider";
 
 export async function GET() {
   const cookieStore = await cookies();

@@ -7,6 +7,14 @@
   --color-primary: #047857;
   --color-primary-hover: #064e3b;
   --shadow-btn: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
+
+  /* Torrent status colors */
+  --color-status-downloading: rgb(59, 130, 246);
+  --color-status-stalled: rgb(245, 158, 11);
+  --color-status-completed: rgb(16, 185, 129);
+  --color-status-seeding: rgb(56, 189, 248);
+  --color-status-paused: rgb(156, 163, 175);
+  --color-status-error: rgb(239, 68, 68);
 }
 
 body {

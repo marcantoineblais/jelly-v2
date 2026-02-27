@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
-import { readShows } from "@/src/libs/shows/storage";
+import { readShows } from "@/src/libs/trackers/storage";
 import {
   findLibraryByName,
   getLastEpisode,
-  LastEpisode,
-} from "@/src/libs/shows/library";
-export type CheckShowResponse = {
+} from "@/src/libs/trackers/library";
+import { LastEpisode } from "@/src/libs/trackers/library-utils";
+export type CheckTrackerResponse = {
   ok: boolean;
   lastEpisode?: LastEpisode;
   error?: string;
@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const show = shows.find((s) => s.id === id);
     if (!show) {
       return NextResponse.json(
-        { ok: false, error: "Show not found" },
+        { ok: false, error: "Tracker not found" },
         { status: 404 },
       );
     }
@@ -42,12 +42,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
     return NextResponse.json({ ok: true, lastEpisode });
   } catch (err) {
     log({
-      source: "shows/check",
-      message: "Error checking show:",
+      source: "trackers/check",
+      message: "Error checking tracker:",
       data: err,
       level: "error",
     });
-    const message = err instanceof Error ? err.message : "Failed to check show";
+    const message = err instanceof Error ? err.message : "Failed to check tracker";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

@@ -2,11 +2,7 @@ import { readdirSync } from "fs";
 import { join } from "path";
 import { readConfig } from "@/src/libs/readConfig";
 import type { MediaLibrary } from "@/src/types/MediaLibrary";
-import { formatSeasonPath } from "./library-utils";
-import type { LastEpisode } from "./library-utils";
-
-export type { LastEpisode } from "./library-utils";
-export { pad2, formatSearchQuery, formatSeasonPath } from "./library-utils";
+import { formatSeasonPath, LastEpisode } from "./library-utils";
 
 const EPISODE_RE = /S(\d{2})E(\d{2})/i;
 

@@ -11,26 +11,26 @@ import {
   addToast,
   useDisclosure,
 } from "@heroui/react";
-import type { FeedItem } from "@/src/libs/torrents/feed-format";
+import type { FeedItem } from "@/src/libs/downloads/feed-format";
 import type { QbittorrentResponse } from "@/src/app/api/qbit/torrents/route";
 import useFetch from "@/src/hooks/use-fetch";
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
 
-type TorrentResultsProps = {
+type DownloadResultsProps = {
   items: FeedItem[];
   hasSearched: boolean;
   emptyTitle?: string;
   emptyMessage?: string;
 };
 
-export default function TorrentResults({
+export default function DownloadResults({
   items,
   hasSearched,
   emptyTitle = "No torrents found",
   emptyMessage = "Change your search criteria and try again.",
-}: TorrentResultsProps) {
+}: DownloadResultsProps) {
   const { fetchData } = useFetch();
   const {
     isOpen: isModalOpen,

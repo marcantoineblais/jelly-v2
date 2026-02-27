@@ -26,25 +26,25 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import type { TrackedShow } from "@/src/types/TrackedShow";
-import type { JackettIndexer } from "@/src/libs/torrents/jackett";
-import type { FeedItem } from "@/src/libs/torrents/feed-format";
-import type { CheckShowResponse } from "../api/shows/[id]/check/route";
-import type { FeedResponse } from "../api/torrents/feed/route";
-import { TORRENT_DEFAULT_CATEGORIES } from "@/src/config";
+import type { JackettIndexer } from "@/src/libs/downloads/jackett";
+import type { FeedItem } from "@/src/libs/downloads/feed-format";
+import type { CheckTrackerResponse } from "../api/trackers/[id]/check/route";
+import type { FeedResponse } from "../api/downloads/feed/route";
+import { DOWNLOAD_DEFAULT_CATEGORIES } from "@/src/config";
 import useFetch from "@/src/hooks/use-fetch";
-import TorrentResults from "@/src/components/torrents/TorrentResults";
+import DownloadResults from "@/src/components/downloads/DownloadResults";
 import {
   Accordion,
   AccordionButton,
   useAccordion,
 } from "@/src/components/accordion";
-import { LibraryFoldersResponse } from "../api/shows/libraries/[name]/folders/route";
-import { formatSearchQuery, pad2 } from "@/src/libs/shows/library-utils";
+import { LibraryFoldersResponse } from "../api/trackers/libraries/[name]/folders/route";
+import { formatSearchQuery, pad2 } from "@/src/libs/trackers/library-utils";
 import { FetchError } from "@/src/libs/fetch-error";
 import useValidation from "@/src/hooks/use-validation";
-import { validateFormData } from "@/src/libs/validation/show-validations";
+import { validateFormData } from "@/src/libs/validation/tracker-validations";
 
-type ShowFormData = {
+type TrackerFormData = {
   title: string;
   season: number;
   minEpisode: number;
@@ -54,7 +54,7 @@ type ShowFormData = {
   category: string;
 };
 
-const EMPTY_FORM: ShowFormData = {
+const EMPTY_FORM: TrackerFormData = {
   title: "",
   season: 1,
   minEpisode: 1,
@@ -64,17 +64,17 @@ const EMPTY_FORM: ShowFormData = {
   category: "",
 };
 
-type ShowsClientProps = {
+type TrackersClientProps = {
   initialShows: TrackedShow[];
   libraries: { name: string; path: string }[];
   indexers: JackettIndexer[];
 };
 
-export default function ShowsClient({
+export default function TrackersClient({
   initialShows,
   libraries,
   indexers,
-}: ShowsClientProps) {
+}: TrackersClientProps) {
   const { fetchData } = useFetch();
   const { validate, isInvalid, errorMessage, setErrors, revalidateOnError } =
     useValidation(validateFormData);
@@ -93,7 +93,7 @@ export default function ShowsClient({
   const [nextEpisode, setNextEpisode] = useState<number>(1);
   const [items, setItems] = useState<FeedItem[]>([]);
 
-  const [formData, setFormData] = useState<ShowFormData>(EMPTY_FORM);
+  const [formData, setFormData] = useState<TrackerFormData>(EMPTY_FORM);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [libraryFolders, setLibraryFolders] = useState<string[]>([]);
 
@@ -115,7 +115,7 @@ export default function ShowsClient({
 
   const categories = useMemo(() => {
     const indexer = indexers.find((i) => i.id === formData.indexer);
-    return indexer ? indexer.categories : TORRENT_DEFAULT_CATEGORIES;
+    return indexer ? indexer.categories : DOWNLOAD_DEFAULT_CATEGORIES;
   }, [formData.indexer, indexers]);
 
   const isOpen = useMemo(() => {
@@ -131,7 +131,7 @@ export default function ShowsClient({
       }
       try {
         const { data } = await fetchData<LibraryFoldersResponse>(
-          `/api/shows/libraries/${encodeURIComponent(libraryName)}/folders`,
+          `/api/trackers/libraries/${encodeURIComponent(libraryName)}/folders`,
         );
         setLibraryFolders(data.folders);
       } catch {
@@ -144,8 +144,8 @@ export default function ShowsClient({
   const fetchEpisode = useCallback(
     async (showId: string) => {
       try {
-        const { data } = await fetchData<CheckShowResponse>(
-          `/api/shows/${showId}/check`,
+        const { data } = await fetchData<CheckTrackerResponse>(
+          `/api/trackers/${showId}/check`,
           { setIsLoading: setIsSearchDisabled },
         );
         const lastEpisode = data.lastEpisode ?? null;
@@ -164,7 +164,6 @@ export default function ShowsClient({
     [fetchData, selectedShow],
   );
 
-  // Update form data when accordion is opened
   useEffect(() => {
     if (!isAccordionOpen) return;
     startTransition(() => {
@@ -185,7 +184,6 @@ export default function ShowsClient({
     });
   }, [selectedShow, isAccordionOpen]);
 
-  // Fetch next episode when show is selected
   useEffect(() => {
     startTransition(() => {
       if (!selectedShowId) {
@@ -235,7 +233,7 @@ export default function ShowsClient({
 
     try {
       const { data } = await fetchData<FeedResponse>(
-        `/api/torrents/feed?${params}`,
+        `/api/downloads/feed?${params}`,
         { setIsLoading: setIsSearchLoading },
       );
       setItems(data.items);
@@ -269,7 +267,7 @@ export default function ShowsClient({
 
     try {
       const { data } = await fetchData<{ ok: boolean; show: TrackedShow }>(
-        "/api/shows",
+        "/api/trackers",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -281,7 +279,7 @@ export default function ShowsClient({
       setFormData(EMPTY_FORM);
       setLibraryFolders([]);
       toggleAccordion();
-      addToast({ title: "Show added", severity: "success" });
+      addToast({ title: "Tracker added", severity: "success" });
     } catch (err) {
       if (err instanceof FetchError) {
         const serverErrors = (err.data as { errors?: Record<string, string> })
@@ -316,7 +314,7 @@ export default function ShowsClient({
 
     try {
       const { data } = await fetchData<{ ok: boolean; show: TrackedShow }>(
-        `/api/shows/${selectedShow.id}`,
+        `/api/trackers/${selectedShow.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -329,7 +327,7 @@ export default function ShowsClient({
       );
       toggleAccordion();
       fetchEpisode(selectedShow.id);
-      addToast({ title: "Show updated", severity: "success" });
+      addToast({ title: "Tracker updated", severity: "success" });
     } catch (err) {
       if (err instanceof FetchError) {
         const serverErrors = (err.data as { errors?: Record<string, string> })
@@ -348,7 +346,7 @@ export default function ShowsClient({
   async function handleDeleteConfirm() {
     if (!deletingShow) return;
     try {
-      await fetchData(`/api/shows/${deletingShow.id}`, {
+      await fetchData(`/api/trackers/${deletingShow.id}`, {
         method: "DELETE",
         setIsLoading: setIsDeleting,
       });
@@ -359,7 +357,7 @@ export default function ShowsClient({
         setItems([]);
         setLastEpisode(null);
       }
-      addToast({ title: "Show removed", severity: "success" });
+      addToast({ title: "Tracker removed", severity: "success" });
     } catch {
       /* useFetch shows error toast */
     }
@@ -436,7 +434,7 @@ export default function ShowsClient({
                 variant="ghost"
                 color="danger"
                 onPress={handleDeleteClick}
-                aria-label="Delete show"
+                aria-label="Delete tracker"
                 className="self-center"
               >
                 <FontAwesomeIcon icon={faTrash} />
@@ -593,7 +591,7 @@ export default function ShowsClient({
           </div>
         </div>
 
-        <TorrentResults
+        <DownloadResults
           items={items}
           hasSearched={hasSearched}
           emptyTitle="No results found"

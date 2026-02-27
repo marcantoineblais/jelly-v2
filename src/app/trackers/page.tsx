@@ -1,7 +1,7 @@
-import { getJackettIndexers } from "@/src/libs/torrents/jackett";
-import { getShowLibraries } from "@/src/libs/shows/library";
-import { readShows } from "@/src/libs/shows/storage";
-import ShowsClient from "./ShowsClient";
+import { getJackettIndexers } from "@/src/libs/downloads/jackett";
+import { getShowLibraries } from "@/src/libs/trackers/library";
+import { readShows } from "@/src/libs/trackers/storage";
+import TrackersClient from "./TrackersClient";
 
 export const dynamic = "force-dynamic";
 
@@ -10,12 +10,12 @@ async function getIndexers() {
     const result = await getJackettIndexers();
     return result.indexers;
   } catch (err) {
-    console.error("[shows] Failed to fetch indexers:", err);
+    console.error("[trackers] Failed to fetch indexers:", err);
     return [];
   }
 }
 
-export default async function ShowsPage() {
+export default async function TrackersPage() {
   const [indexers, shows] = await Promise.all([getIndexers(), readShows()]);
 
   const libraries = getShowLibraries().map((lib) => ({
@@ -24,7 +24,7 @@ export default async function ShowsPage() {
   }));
 
   return (
-    <ShowsClient
+    <TrackersClient
       initialShows={shows}
       libraries={libraries}
       indexers={indexers}

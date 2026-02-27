@@ -9,7 +9,7 @@ export default function MediaInfoLine({
     <li className="w-full pb-1.5">
       <div className="flex flex-col">
         <label className="text-sm">{label}</label>
-        <article className="overflow-x-auto text-nowrap no-scrollbar">
+        <article className="text-sm overflow-x-auto text-nowrap no-scrollbar">
           {content}
         </article>
       </div>

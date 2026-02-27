@@ -37,6 +37,31 @@ export function formatState(state: string): string {
   return label !== undefined ? label : state || "-";
 }
 
+/** Collapse qBittorrent raw state into a UI-level status bucket. */
+export function getStatusCategory(state: string): string {
+  const s = (state || "").trim();
+  switch (s) {
+    case "downloading":
+    case "forcedDL":
+      return "downloading";
+    case "stalledDL":
+      return "stalled";
+    case "stalledUP":
+    case "pausedUP":
+      return "completed";
+    case "uploading":
+    case "forcedUP":
+      return "seeding";
+    case "pausedDL":
+      return "paused";
+    case "error":
+    case "missingFiles":
+      return "error";
+    default:
+      return "other";
+  }
+}
+
 /** ETA in seconds; 8640000 or negative = unknown in qBittorrent. */
 export function formatEta(seconds: number): string {
   if (seconds <= 0 || !Number.isFinite(seconds) || seconds >= 8640000)

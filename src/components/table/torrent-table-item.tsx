@@ -1,6 +1,11 @@
 import { formatDataSize } from "@/src/libs/format-data-size";
 import type { QbitTorrent } from "@/src/libs/qbit/client";
-import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
+import {
+  formatEta,
+  formatSpeed,
+  formatState,
+  getStatusCategory,
+} from "@/src/libs/qbit/format";
 import { Progress } from "@heroui/react";
 
 export type TorrentTableItemProps = {
@@ -8,13 +13,34 @@ export type TorrentTableItemProps = {
   item: QbitTorrent;
 };
 
+const progressColor: Record<string, "primary" | "success" | "warning" | "danger" | "default"> = {
+  downloading: "primary",
+  stalled: "warning",
+  completed: "success",
+  seeding: "primary",
+  paused: "default",
+  error: "danger",
+  other: "primary",
+};
+
 export default function TorrentTableItem({
   item,
   onClick = () => {},
 }: TorrentTableItemProps) {
+  const status = getStatusCategory(item.state);
+
   return (
     <div
-      className="flex flex-col w-full min-h-fit overflow-hidden p-4 bg-white"
+      data-status={status}
+      className={[
+        "flex flex-col w-full min-h-fit overflow-hidden p-4 bg-white border-l-4 border-l-transparent",
+        "data-[status=downloading]:border-l-status-downloading",
+        "data-[status=stalled]:border-l-status-stalled data-[status=stalled]:bg-status-stalled/10",
+        "data-[status=completed]:border-l-status-completed data-[status=completed]:bg-status-completed/10",
+        "data-[status=seeding]:border-l-status-seeding",
+        "data-[status=paused]:border-l-status-paused data-[status=paused]:bg-status-paused/10",
+        "data-[status=error]:border-l-status-error data-[status=error]:bg-status-error/10",
+      ].join(" ")}
       onClick={onClick}
     >
       <p className="whitespace-nowrap overflow-hidden w-full truncate">
@@ -23,7 +49,7 @@ export default function TorrentTableItem({
       <div className="w-full">
         <Progress
           value={item.progress * 100}
-          color="primary"
+          color={progressColor[status] ?? "primary"}
           aria-label="Progress"
         />
         <div className="flex justify-between content-between text-xs">
@@ -33,7 +59,18 @@ export default function TorrentTableItem({
       </div>
 
       <div className="pt-2 flex justify-between text-xs text-neutral-500">
-        <span className="basis-1/2 whitespace-nowrap">
+        <span
+          data-status={status}
+          className={[
+            "basis-1/2 whitespace-nowrap font-medium",
+            "data-[status=downloading]:text-status-downloading",
+            "data-[status=stalled]:text-status-stalled",
+            "data-[status=completed]:text-status-completed",
+            "data-[status=seeding]:text-status-seeding",
+            "data-[status=paused]:text-status-paused",
+            "data-[status=error]:text-status-error",
+          ].join(" ")}
+        >
           {formatState(item.state)}
         </span>
         <span className="basis-1/2 whitespace-nowrap">

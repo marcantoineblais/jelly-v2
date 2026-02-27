@@ -1,4 +1,4 @@
-import { FeedItem } from "@/src/libs/torrents/feed-format";
+import { FeedItem } from "@/src/libs/downloads/feed-format";
 
 export type FeedTableItemProps = {
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;

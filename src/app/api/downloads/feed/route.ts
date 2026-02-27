@@ -1,7 +1,7 @@
-import { TORRENT_SORT_BY, TORRENT_SORT_ORDER } from "@/src/config";
+import { DOWNLOAD_SORT_BY, DOWNLOAD_SORT_ORDER } from "@/src/config";
 import { log } from "@/src/libs/logger";
-import { FeedItem, SortBy } from "@/src/libs/torrents/feed-format";
-import { searchJackett } from "@/src/libs/torrents/jackett";
+import { FeedItem, SortBy } from "@/src/libs/downloads/feed-format";
+import { searchJackett } from "@/src/libs/downloads/jackett";
 import { NextResponse } from "next/server";
 
 export type FeedResponse = {
@@ -32,8 +32,8 @@ export async function GET(request: Request) {
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
     const validLimit =
       limit != null && !Number.isNaN(limit) && limit > 0 ? limit : undefined;
-    const validSortBy = TORRENT_SORT_BY.includes(sortBy) ? sortBy : undefined;
-    const validSortOrder = TORRENT_SORT_ORDER.includes(sortOrder)
+    const validSortBy = DOWNLOAD_SORT_BY.includes(sortBy) ? sortBy : undefined;
+    const validSortOrder = DOWNLOAD_SORT_ORDER.includes(sortOrder)
       ? sortOrder
       : undefined;
     const options = {
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     log({
-      source: "torrents/feed",
+      source: "downloads/feed",
       message: "Error: ",
       data: err,
       level: "error",

@@ -1,17 +1,11 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { dirname } from "path";
 import { SESSION_DATA_PATH } from "@/src/config";
+import { SessionData } from "@/src/providers/session-provider";
 
 export type DownloadFilters = {
   sortBy: string;
   sortOrder: "asc" | "desc";
-};
-
-export type SessionData = {
-  downloads?: {
-    sortBy?: string;
-    sortOrder?: "asc" | "desc";
-  };
 };
 
 function sessionFilePath(username: string): string {

@@ -1,4 +1,4 @@
-import type { SessionData } from "@/src/libs/session/storage";
+import { SessionData } from "@/src/providers/session-provider";
 
 type FetchFn = (
   url: string,

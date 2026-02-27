@@ -40,7 +40,7 @@ services:
     network_mode: service:gluetun
     environment:
       - TZ=America/Toronto
-      - LOG_LEVEL=warn
+      - LOG_LEVEL=info
     depends_on:
       gluetun:
         condition: service_started
@@ -101,7 +101,7 @@ services:
   socket-server:
     image: *common-image
     container_name: jelly-socket-server
-    command: ["node", "socket-server.js"]
+    command: ["npx", "tsx", "servers/socket-server.ts"]
     env_file: stack.env
     networks:
       - private
@@ -110,7 +110,7 @@ services:
   files-server:
     image: *common-image
     container_name: jelly-files-server
-    command: ["node", "file-server.js"]
+    command: ["npx", "tsx", "servers/file-server.ts"]
     env_file: stack.env
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro

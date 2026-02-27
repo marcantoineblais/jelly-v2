@@ -6,7 +6,7 @@ import { readSession } from "@/src/libs/session/storage";
 import SessionProviderClient from "./session-provider-client";
 
 export type SessionData = {
-  downloads?: {
+  torrents?: {
     sortBy?: string;
     sortOrder?: "asc" | "desc";
   };

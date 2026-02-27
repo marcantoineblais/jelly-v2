@@ -2,8 +2,10 @@ import { useCallback } from "react";
 import { log } from "../libs/logger";
 import { FetchError } from "../libs/fetch-error";
 import { addToast } from "@heroui/react";
+import { useRouter } from "next/navigation";
 
 export default function useFetch() {
+  const router = useRouter();
   const fetchData = useCallback(
     async <T,>(
       url: string,
@@ -11,12 +13,14 @@ export default function useFetch() {
         method = "GET",
         body,
         headers,
+        silent = false,
         setIsLoading = () => {},
         setIsDisabled = () => {},
       }: {
         method?: string;
         body?: BodyInit;
         headers?: HeadersInit;
+        silent?: boolean;
         setIsLoading?: (isLoading: boolean) => void;
         setIsDisabled?: (isDisabled: boolean) => void;
       } = {},
@@ -31,6 +35,14 @@ export default function useFetch() {
           message: "Response: ",
           data: response,
         });
+
+        if (response.status === 401) {
+          router.push("/login");
+          throw new FetchError("Session expired", {
+            data: {},
+            status: 401,
+          });
+        }
 
         if (!response.ok) {
           let data: unknown;
@@ -65,14 +77,16 @@ export default function useFetch() {
           data: error,
           level: "error",
         });
-        addToast({
-          title: "Error",
-          description:
-            error instanceof Error
-              ? error.message
-              : "An unexpected error occurred",
-          severity: "danger",
-        });
+        if (!silent) {
+          addToast({
+            title: "Error",
+            description:
+              error instanceof Error
+                ? error.message
+                : "An unexpected error occurred",
+            severity: "danger",
+          });
+        }
 
         if (error instanceof FetchError) {
           throw error;

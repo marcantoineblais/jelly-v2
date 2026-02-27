@@ -17,25 +17,25 @@ export const AUTH_DATA_PATH =
   process.env.AUTH_DATA_PATH ?? "/data/auth/credentials.json";
 export const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-// Shows
-export const SHOWS_DATA_PATH =
+// Trackers
+export const TRACKERS_DATA_PATH =
   process.env.SHOWS_DATA_PATH ?? "/data/shows.json";
 
 // Jackett
 export const JACKETT_URL = process.env.JACKETT_URL ?? "http://localhost:9117";
 export const JACKETT_API_KEY = process.env.JACKETT_API_KEY ?? "";
 
-// Downloads
+// Torrents
 export const INCOMPLETE_DOWNLOADS_PATH =
   process.env.INCOMPLETE_DOWNLOADS_PATH ?? "downloads/temp";
 export const POLL_INTERVAL_MS = 3000;
-export const DOWNLOAD_SORT_BY = ["name", "eta", "progress", "size", "status"];
-export const DOWNLOAD_SORT_ORDER = ["asc", "desc"];
-
-// Torrents
-export const TORRENT_SORT_BY = ["date", "name", "seeds", "size"];
+export const TORRENT_SORT_BY = ["name", "eta", "progress", "size", "status"];
 export const TORRENT_SORT_ORDER = ["asc", "desc"];
-export const TORRENT_DEFAULT_CATEGORIES = [
+
+// Downloads
+export const DOWNLOAD_SORT_BY = ["date", "name", "seeds", "size"];
+export const DOWNLOAD_SORT_ORDER = ["asc", "desc"];
+export const DOWNLOAD_DEFAULT_CATEGORIES = [
   { id: "1000", name: "Console" },
   { id: "1010", name: "Console/NDS" },
   { id: "1020", name: "Console/PSP" },

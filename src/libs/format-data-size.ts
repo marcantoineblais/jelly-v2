@@ -2,7 +2,7 @@ export function formatDataSize(
   bytes?: number | string | null,
   options: { sizeRef?: number } = {},
 ) {
-  if (!bytes) return "-";
+  if (bytes == null) return "-";
 
   let value = 0;
   if (typeof bytes === "string") {

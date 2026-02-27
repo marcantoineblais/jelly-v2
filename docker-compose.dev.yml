@@ -1,23 +1,54 @@
 # Per-machine: set host paths in .env (DOWNLOADS_PATH, ENCODE_PATH, TV_SHOWS_PATH, etc.).
 # qBittorrent: set Default save path = /downloads in Web UI. Incomplete use default downloads/temp.
+# VPN: set WIREGUARD_PRIVATE_KEY (Proton VPN WireGuard) in .env. Optional: SERVER_COUNTRIES (e.g. Canada). Ports: QBITTORRENT_WEBUI_PORT, JACKETT_PORT, FLARESOLVERR_PORT.
+# No Docker healthcheck: external endpoints (e.g. api.ipify.org) can fail independently of VPN. Gluetun has internal monitoring and auto-restarts VPN on drop.
+# FIREWALL_INPUT_PORTS: Gluetun blocks inbound by default; allow these ports so the host can reach qBittorrent/Jackett/FlareSolverr.
 
 services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: jelly-gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TZ=America/Toronto
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - SERVER_COUNTRIES=${SERVER_COUNTRIES:-Canada}
+      - SERVER_CITIES=${SERVER_CITIES}
+      - STREAM_ONLY=${STREAM_ONLY:-on}
+      - FIREWALL_OUTBOUND_SUBNETS=10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      - FIREWALL_INPUT_PORTS=${FLARESOLVERR_PORT:-8191},9117,${QBITTORRENT_WEBUI_PORT:-8080}
+    volumes:
+      - /opt/gluetun/config:/gluetun
+    ports:
+      - ${FLARESOLVERR_PORT:-8191}:${FLARESOLVERR_PORT:-8191}
+      - ${JACKETT_PORT:-9117}:9117
+      - ${QBITTORRENT_WEBUI_PORT:-8080}:${QBITTORRENT_WEBUI_PORT:-8080}
+    restart: unless-stopped
+    networks:
+      - private
+
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: jelly-flaresolverr
+    network_mode: service:gluetun
     environment:
       - TZ=America/Toronto
       - LOG_LEVEL=info
       - PORT=${FLARESOLVERR_PORT:-8191}
+    depends_on:
+      gluetun:
+        condition: service_started
     restart: unless-stopped
-    ports:
-      - ${FLARESOLVERR_PORT:-8191}:${FLARESOLVERR_PORT:-8191}
-    networks:
-      - private
 
   jackett:
     image: linuxserver/jackett:latest
     container_name: jelly-jackett
+    network_mode: service:gluetun
     environment:
       - PUID=1000
       - PGID=1000
@@ -25,16 +56,16 @@ services:
     volumes:
       - /opt/jackett/config:/config
     depends_on:
-      - flaresolverr
+      gluetun:
+        condition: service_started
+      flaresolverr:
+        condition: service_started
     restart: unless-stopped
-    ports:
-      - ${JACKETT_PORT:-9117}:9117 # Jackett has no env for internal port
-    networks:
-      - private
 
   qbittorrent:
     image: linuxserver/qbittorrent:latest
     container_name: jelly-qbittorrent
+    network_mode: service:gluetun
     environment:
       - PUID=1000
       - PGID=1000
@@ -43,11 +74,10 @@ services:
     volumes:
       - /opt/qbittorrent/config:/config
       - /mnt/downloads:/downloads
+    depends_on:
+      gluetun:
+        condition: service_started
     restart: unless-stopped
-    ports:
-      - ${QBITTORRENT_WEBUI_PORT:-8080}:${QBITTORRENT_WEBUI_PORT:-8080}
-    networks:
-      - private
 
 networks:
   private:

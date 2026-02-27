@@ -1,20 +1,23 @@
-import { listTorrents } from "@/src/libs/qbit/client";
+import { getJackettIndexers } from "@/src/libs/downloads/jackett";
 import DownloadsClient from "./DownloadsClient";
 
 export const dynamic = "force-dynamic";
 
-async function getTorrents() {
+async function getIndexers() {
   try {
-    const torrents = await listTorrents();
-    return torrents;
+    const result = await getJackettIndexers();
+    const indexers = result.indexers.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    return indexers;
   } catch (err) {
-    console.error("[downloads] Failed to fetch torrents:", err);
+    console.error("[downloads] Failed to fetch indexers:", err);
     return [];
   }
 }
 
 export default async function DownloadsPage() {
-  const initialTorrents = await getTorrents();
+  const indexers = await getIndexers();
 
-  return <DownloadsClient initialTorrents={initialTorrents} />;
+  return <DownloadsClient indexers={indexers} />;
 }
