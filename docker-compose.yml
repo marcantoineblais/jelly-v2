@@ -41,7 +41,7 @@ services:
     shm_size: '2g'
     environment:
       - TZ=America/Toronto
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
     depends_on:
       gluetun:
         condition: service_started
