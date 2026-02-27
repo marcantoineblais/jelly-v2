@@ -49,12 +49,15 @@ async function copyFileWithProgress({
     const stat = await fs.stat(file.path);
     const fileSize = stat.size;
 
-    sendProgress({ ws, payload: {
-      ...progress,
-      currentFileBytesTransferred: 0,
-      currentFileSize: fileSize,
-      errors,
-    }});
+    sendProgress({
+      ws,
+      payload: {
+        ...progress,
+        currentFileBytesTransferred: 0,
+        currentFileSize: fileSize,
+        errors,
+      },
+    });
 
     await new Promise<void>((resolve, reject) => {
       const readStream = fsSync.createReadStream(file.path);
@@ -78,14 +81,17 @@ async function copyFileWithProgress({
           const now = Date.now();
           if (now - lastSend >= PROGRESS_THROTTLE_MS) {
             lastSend = now;
-            sendProgress({ ws, payload: {
-              ...progress,
-              currentFileBytesTransferred: bytesTransferred,
-              currentFileSize: fileSize,
-              totalBytesTransferred:
-                progress.totalBytesTransferred + bytesTransferred,
-              errors,
-            }});
+            sendProgress({
+              ws,
+              payload: {
+                ...progress,
+                currentFileBytesTransferred: bytesTransferred,
+                currentFileSize: fileSize,
+                totalBytesTransferred:
+                  progress.totalBytesTransferred + bytesTransferred,
+                errors,
+              },
+            });
           }
           callback(null, chunk);
         },
@@ -96,13 +102,16 @@ async function copyFileWithProgress({
       progressTransform.on("error", (err) => done(err));
 
       writeStream.on("finish", () => {
-        sendProgress({ ws, payload: {
-          ...progress,
-          currentFileBytesTransferred: fileSize,
-          currentFileSize: fileSize,
-          totalBytesTransferred: progress.totalBytesTransferred + fileSize,
-          errors,
-        }});
+        sendProgress({
+          ws,
+          payload: {
+            ...progress,
+            currentFileBytesTransferred: fileSize,
+            currentFileSize: fileSize,
+            totalBytesTransferred: progress.totalBytesTransferred + fileSize,
+            errors,
+          },
+        });
         done();
       });
 

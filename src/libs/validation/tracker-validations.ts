@@ -2,15 +2,16 @@ const validateShow = (show: unknown) => {
   if (!show) return "Show is required";
   if (typeof show !== "string") return "Show must be a string";
   return null;
-}
+};
 
 const validateNextEpisode = (nextEpisode: unknown) => {
   if (nextEpisode === undefined) return "Next episode is required";
   if (typeof nextEpisode !== "number") return "Next episode must be a number";
-  if (isNaN(nextEpisode) || nextEpisode < 1) return "Next episode must be a positive number";
+  if (isNaN(nextEpisode) || nextEpisode < 1)
+    return "Next episode must be a positive number";
   if (!Number.isInteger(nextEpisode)) return "Next episode must be an integer";
   return null;
-}
+};
 
 const validateTitle = (title: unknown) => {
   if (typeof title !== "string") return "Title must be a string";
@@ -51,9 +52,7 @@ const validationsMap: Record<string, (value: unknown) => string | null> = {
   library: validateLibrary,
 };
 
-export function validateFormData(
-  data: Record<string, unknown>
-) {
+export function validateFormData(data: Record<string, unknown>) {
   const errors: Record<string, string> = {};
   const entries = Object.entries(data);
   entries.forEach(([key, value]) => {

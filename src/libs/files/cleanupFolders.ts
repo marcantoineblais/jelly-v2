@@ -23,7 +23,10 @@ async function containsVideoFiles({
   for (const entry of entries) {
     if (entry.isDirectory()) {
       const subDirPath = path.join(dirPath, entry.name);
-      const subDirHasVideos = await containsVideoFiles({ dirPath: subDirPath, videosExt });
+      const subDirHasVideos = await containsVideoFiles({
+        dirPath: subDirPath,
+        videosExt,
+      });
       if (subDirHasVideos) {
         return true;
       }
@@ -95,7 +98,10 @@ export async function cleanupTransferredFolders({
       const exists = await directoryExists(folder);
       if (!exists) continue;
 
-      const hasVideos = await containsVideoFiles({ dirPath: folder, videosExt });
+      const hasVideos = await containsVideoFiles({
+        dirPath: folder,
+        videosExt,
+      });
       if (hasVideos) continue;
 
       log({ source, message: "Deleting folder", data: folder });
@@ -109,7 +115,10 @@ export async function cleanupTransferredFolders({
           break;
         }
 
-        const parentHasVideos = await containsVideoFiles({ dirPath: parentDir, videosExt });
+        const parentHasVideos = await containsVideoFiles({
+          dirPath: parentDir,
+          videosExt,
+        });
         if (parentHasVideos) {
           break;
         }
@@ -120,7 +129,12 @@ export async function cleanupTransferredFolders({
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      log({ source, message: "Error deleting folder", data: { folder, error: message }, level: "warn" });
+      log({
+        source,
+        message: "Error deleting folder",
+        data: { folder, error: message },
+        level: "warn",
+      });
     }
   }
 }

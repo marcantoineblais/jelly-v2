@@ -102,7 +102,7 @@ export default function useFetch() {
         setIsDisabled(false);
       }
     },
-    [],
+    [router],
   );
 
   return { fetchData };

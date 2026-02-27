@@ -23,12 +23,15 @@ export default function useValidation(
     setErrors((prev) => ({ ...prev, [fieldName]: error }));
   }, []);
 
-  const validate = useCallback((data: Record<string, unknown>) => {
-    const newErrors = validationFunction(data);
-    const hasErrors = Object.keys(newErrors).length > 0;
-    setErrors(newErrors);
-    return hasErrors;
-  }, [validationFunction]);
+  const validate = useCallback(
+    (data: Record<string, unknown>) => {
+      const newErrors = validationFunction(data);
+      const hasErrors = Object.keys(newErrors).length > 0;
+      setErrors(newErrors);
+      return hasErrors;
+    },
+    [validationFunction],
+  );
 
   const revalidateOnError = useCallback(
     (fieldName: string, value: unknown) => {

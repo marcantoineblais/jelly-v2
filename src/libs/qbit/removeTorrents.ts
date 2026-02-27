@@ -30,7 +30,10 @@ function filePathMatchesTorrent({
   downloadRoots: string[];
 }): boolean {
   const normFile = normalizePathForCompare({ filePath, downloadRoots });
-  const normContent = normalizePathForCompare({ filePath: contentPath, downloadRoots });
+  const normContent = normalizePathForCompare({
+    filePath: contentPath,
+    downloadRoots,
+  });
   return normFile === normContent || normFile.startsWith(normContent + "/");
 }
 
@@ -49,7 +52,11 @@ export async function removeTorrentsForFile(filePath: string): Promise<void> {
     const toRemove: string[] = [];
     for (const t of torrents) {
       const contentPath = t.content_path ?? t.contentPath ?? "";
-      const matches = filePathMatchesTorrent({ filePath, contentPath, downloadRoots: downloadPaths });
+      const matches = filePathMatchesTorrent({
+        filePath,
+        contentPath,
+        downloadRoots: downloadPaths,
+      });
       if (contentPath && matches) {
         toRemove.push(t.hash);
       }
@@ -67,9 +74,6 @@ export async function removeTorrentsForFile(filePath: string): Promise<void> {
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn(
-      "qBittorrent: could not remove torrents for file:",
-      message,
-    );
+    console.warn("qBittorrent: could not remove torrents for file:", message);
   }
 }

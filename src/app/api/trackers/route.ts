@@ -34,7 +34,8 @@ export async function GET() {
       data: err,
       level: "error",
     });
-    const message = err instanceof Error ? err.message : "Failed to list trackers";
+    const message =
+      err instanceof Error ? err.message : "Failed to list trackers";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
@@ -74,7 +75,8 @@ export async function POST(request: Request) {
       data: err,
       level: "error",
     });
-    const message = err instanceof Error ? err.message : "Failed to add tracker";
+    const message =
+      err instanceof Error ? err.message : "Failed to add tracker";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

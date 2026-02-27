@@ -26,8 +26,7 @@ export default function LoginPage() {
     setError,
     setErrors,
     revalidateOnError,
-  } =
-    useValidation(validateLoginFormData);
+  } = useValidation(validateLoginFormData);
 
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,7 +45,11 @@ export default function LoginPage() {
       router.push(from && from.startsWith("/") ? from : "/");
       router.refresh();
     } catch (err) {
-      if (err instanceof FetchError && err.data && typeof err.data === "object") {
+      if (
+        err instanceof FetchError &&
+        err.data &&
+        typeof err.data === "object"
+      ) {
         const data = err.data as { error?: unknown; errors?: unknown };
         if (data.errors && typeof data.errors === "object") {
           setErrors(data.errors as Record<string, string>);

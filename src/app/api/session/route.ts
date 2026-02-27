@@ -4,10 +4,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { JWT_COOKIE_NAME } from "@/src/config";
 import { getCurrentUser } from "@/src/libs/auth/login";
-import {
-  readSession,
-  writeSession,
-} from "@/src/libs/session/storage";
+import { readSession, writeSession } from "@/src/libs/session/storage";
 import { SessionData } from "@/src/providers/session-provider";
 
 export async function GET() {

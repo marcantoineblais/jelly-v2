@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
-import { findLibraryByName, listShowFolders } from "@/src/libs/trackers/library";
+import {
+  findLibraryByName,
+  listShowFolders,
+} from "@/src/libs/trackers/library";
 
 export type LibraryFoldersResponse = {
   ok: boolean;

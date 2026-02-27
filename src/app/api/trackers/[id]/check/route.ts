@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
 import { readShows } from "@/src/libs/trackers/storage";
-import {
-  findLibraryByName,
-  getLastEpisode,
-} from "@/src/libs/trackers/library";
+import { findLibraryByName, getLastEpisode } from "@/src/libs/trackers/library";
 import { LastEpisode } from "@/src/libs/trackers/library-utils";
 export type CheckTrackerResponse = {
   ok: boolean;
@@ -47,7 +44,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
       data: err,
       level: "error",
     });
-    const message = err instanceof Error ? err.message : "Failed to check tracker";
+    const message =
+      err instanceof Error ? err.message : "Failed to check tracker";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
