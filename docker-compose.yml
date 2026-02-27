@@ -39,9 +39,13 @@ services:
     container_name: jelly-flaresolverr
     network_mode: service:gluetun
     shm_size: '2g'
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
     environment:
       - TZ=America/Toronto
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=info
     depends_on:
       gluetun:
         condition: service_started
