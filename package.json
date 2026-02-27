@@ -1,6 +1,6 @@
 {
-  "name": "jelly-v2",
-  "version": "3.2.5",
+  "name": "jelly",
+  "version": "3.2.6",
   "private": true,
   "scripts": {
     "dev": "next dev",

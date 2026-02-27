@@ -108,6 +108,11 @@ export default function ShowsClient({
 
   const selectedShow = shows.find((s) => s.id === selectedShowId);
 
+  const sortedShows = useMemo(
+    () => [...shows].sort((a, b) => a.title.localeCompare(b.title)),
+    [shows],
+  );
+
   const categories = useMemo(() => {
     const indexer = indexers.find((i) => i.id === formData.indexer);
     return indexer ? indexer.categories : TORRENT_DEFAULT_CATEGORIES;
@@ -420,7 +425,7 @@ export default function ShowsClient({
                 revalidateOnError("show", value);
               }}
             >
-              {shows.map((show) => (
+              {sortedShows.map((show) => (
                 <SelectItem key={show.id}>{show.title}</SelectItem>
               ))}
             </Select>

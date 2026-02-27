@@ -4,7 +4,7 @@
 # No Docker healthcheck: external endpoints (e.g. api.ipify.org) can fail independently of VPN. Gluetun has internal monitoring and auto-restarts VPN on drop.
 # Jelly: use http://jelly-gluetun:<port> for each (JACKETT_PORT, FLARESOLVERR_PORT, QBITTORRENT_WEBUI_PORT).
 # FIREWALL_INPUT_PORTS: Gluetun blocks inbound by default; allow these ports so jelly can reach qBittorrent/Jackett/FlareSolverr.
-x-common-image: &common-image ghcr.io/marcantoineblais/jelly:3.2.5
+x-common-image: &common-image ghcr.io/marcantoineblais/jelly:3.2.6
 
 services:
   gluetun:
