@@ -13,19 +13,6 @@ export type TorrentTableItemProps = {
   item: QbitTorrent;
 };
 
-const progressColor: Record<
-  string,
-  "primary" | "success" | "warning" | "danger" | "default"
-> = {
-  downloading: "primary",
-  stalled: "warning",
-  completed: "success",
-  seeding: "primary",
-  paused: "default",
-  error: "danger",
-  other: "primary",
-};
-
 export default function TorrentTableItem({
   item,
   onClick = () => {},
