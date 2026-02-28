@@ -118,8 +118,8 @@ export default function TorrentsClient({
       }
     };
 
-    const id = setInterval(pollTorrents, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
+    // const id = setInterval(pollTorrents, POLL_INTERVAL_MS);
+    // return () => clearInterval(id);
   }, [fetchData]);
 
   async function deleteTorrent(hash: string, deleteFiles: boolean) {

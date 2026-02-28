@@ -38,11 +38,11 @@ export default function TorrentTableItem({
       className={[
         "flex flex-col w-full min-h-fit overflow-hidden p-4 bg-white border-l-4 border-l-transparent",
         "data-[status=downloading]:border-l-status-downloading",
-        "data-[status=stalled]:border-l-status-stalled data-[status=stalled]:bg-status-stalled/10",
-        "data-[status=completed]:border-l-status-completed data-[status=completed]:bg-status-completed/10",
-        "data-[status=seeding]:border-l-status-seeding",
-        "data-[status=paused]:border-l-status-paused data-[status=paused]:bg-status-paused/10",
-        "data-[status=error]:border-l-status-error data-[status=error]:bg-status-error/10",
+        "data-[status=stalled]:border-l-status-stalled data-[status=stalled]:bg-status-stalled/5",
+        "data-[status=completed]:border-l-status-completed data-[status=completed]:bg-status-completed/5",
+        "data-[status=seeding]:border-l-status-completed data-[status=seeding]:bg-status-completed/5",
+        "data-[status=paused]:border-l-status-paused data-[status=paused]:bg-status-paused/5",
+        "data-[status=error]:border-l-status-error data-[status=error]:bg-status-error/5",
       ].join(" ")}
       onClick={onClick}
     >
@@ -51,8 +51,19 @@ export default function TorrentTableItem({
       </p>
       <div className="w-full">
         <Progress
+          data-status={status}
+          className="group"
+          classNames={{
+            indicator: [
+              "group-data-[status=downloading]:bg-status-downloading",
+              "group-data-[status=stalled]:bg-status-stalled",
+              "group-data-[status=completed]:bg-status-completed",
+              "group-data-[status=seeding]:bg-status-completed",
+              "group-data-[status=paused]:bg-status-paused",
+              "group-data-[status=error]:bg-status-error",
+            ].join(" "),
+          }}
           value={item.progress * 100}
-          color={progressColor[status] ?? "primary"}
           aria-label="Progress"
         />
         <div className="flex justify-between content-between text-xs">
@@ -69,7 +80,7 @@ export default function TorrentTableItem({
             "data-[status=downloading]:text-status-downloading",
             "data-[status=stalled]:text-status-stalled",
             "data-[status=completed]:text-status-completed",
-            "data-[status=seeding]:text-status-seeding",
+            "data-[status=seeding]:text-status-completed",
             "data-[status=paused]:text-status-paused",
             "data-[status=error]:text-status-error",
           ].join(" ")}

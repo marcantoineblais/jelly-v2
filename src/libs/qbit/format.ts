@@ -43,7 +43,10 @@ export function getStatusCategory(state: string): string {
   switch (s) {
     case "downloading":
     case "forcedDL":
+    case "allocating":
+    case "moving":
       return "downloading";
+    case "metaDL":
     case "stalledDL":
       return "stalled";
     case "stalledUP":
