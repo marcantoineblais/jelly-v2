@@ -15,6 +15,7 @@ services:
       - /dev/net/tun:/dev/net/tun
     environment:
       - TZ=America/Toronto
+      - IPV6=off
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
