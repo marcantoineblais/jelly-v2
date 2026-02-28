@@ -35,7 +35,7 @@ services:
       - caddy_proxy
 
   flaresolverr:
-    image: ghcr.io/21hsmw/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: jelly-flaresolverr
     network_mode: service:gluetun
     environment:
