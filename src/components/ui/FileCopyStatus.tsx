@@ -1,16 +1,10 @@
 "use client";
 
-import {
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalHeader,
-  Progress,
-} from "@heroui/react";
+import { Progress } from "@heroui/react";
 import { formatDataSize } from "@/src/libs/format-data-size";
+import H3 from "../elements/H3";
 
 export default function FileCopyStatus({
-  isOpen = false,
   currentFile = "",
   processedFiles = 0,
   totalFiles = 0,
@@ -47,45 +41,47 @@ export default function FileCopyStatus({
   }
 
   function getHeader() {
-    return `Files processed: ${processedFiles} / ${totalFiles}`;
+    return `Files transferred: ${processedFiles}/${totalFiles}`;
   }
 
   function getProgress() {
     if (totalSize != null && totalSize > 0 && totalBytesTransferred != null) {
-      const remaining = Math.max(0, totalSize - totalBytesTransferred);
-      const formattedBytes = formatDataSize(remaining, { sizeRef: totalSize });
-      return `${formattedBytes} remaining`;
+      const remaining = Math.max(0, totalBytesTransferred);
+      return formatDataSize(remaining, { sizeRef: totalSize });
+    }
+
+    return "";
+  }
+
+  function getTotalSize() {
+    if (totalSize != null && totalSize > 0) {
+      return formatDataSize(totalSize, { sizeRef: totalSize });
     }
 
     return "";
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      placement="center"
-      hideCloseButton
-      isDismissable={false}
-    >
-      <ModalContent className="overflow-hidden">
-        <ModalHeader>{getHeader()}</ModalHeader>
+    <div className="p-4 w-full h-full flex flex-col justify-center items-center gap-8">
+      <H3 className="w-full px-4 pt-3 pb-1 font-semibold text-center">{getHeader()}</H3>
 
-        <ModalBody className="overflow-hidden">
-          <div className="w-full pb-8 overflow-hidden">
-            <div className="w-full text-nowrap text-ellipsis overflow-hidden">
-              {currentFile || "Copying"}
-            </div>
+      <div className="w-full px-4 pb-4">
+        <div className="w-full text-nowrap text-ellipsis overflow-hidden text-default-500 mb-1">
+          {currentFile || "Copying"}
+        </div>
 
-            <Progress
-              aria-label="File transfer progress"
-              value={getProgressPercent()}
-              classNames={{ indicator: "bg-primary" }}
-            />
+        <Progress
+          aria-label="File transfer progress"
+          value={getProgressPercent()}
+          classNames={{ indicator: "bg-primary" }}
+          size="sm"
+        />
 
-            <div className="w-full flex justify-center">{getProgress()}</div>
-          </div>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+        <div className="w-full flex justify-between text-default-400 mt-1">
+          <span>{getProgress()}</span>
+          <span>{getTotalSize()}</span>
+        </div>
+      </div>
+    </div>
   );
 }

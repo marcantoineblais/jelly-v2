@@ -12,8 +12,8 @@ import {
 } from "react";
 import { addToast } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
-import FileSelectionBox from "../modals/FileSelectionBox";
-import FileCopyStatus from "../modals/FileCopyStatus";
+import FileSelectionBox from "../ui/FileSelectionBox";
+import FileCopyStatus from "../ui/FileCopyStatus";
 import { validateData } from "@/src/libs/files/validateData";
 import { sortFilesByLibrary } from "@/src/libs/files/sortFilesByLibrary";
 import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-socket";
@@ -27,7 +27,7 @@ export default function MediaList({
   files: MediaFile[];
   libraries: MediaLibrary[];
 }) {
-  const [showBin, setShowBin] = useState(true);
+  const [binSelected, setBinSelected] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilesLoading, setIsFilesLoading] = useState(false);
   const [validatedFiles, setValidatedFiles] = useState<MediaFile[]>(
@@ -80,7 +80,7 @@ export default function MediaList({
     }
   }, []);
 
-  const { isTransferInProgress, transferStatus, isProgressBarOpen } =
+  const { isTransferInProgress, transferStatus } =
     useFileTransferWebSocket(fetchFiles);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function MediaList({
   }, [sortedFiles]);
 
   useEffect(() => {
-    if (!showBin) return;
+    if (binSelected) return;
     const currentKeys = Object.keys(sortedFiles);
     const newKeys = currentKeys.filter(
       (key) => !availableKeysRef.current.includes(key),
@@ -107,7 +107,7 @@ export default function MediaList({
     if (newKeys.length > 0) {
       setSelectedKeys((prev) => new Set([...prev, ...newKeys]));
     }
-  }, [sortedFiles, showBin]);
+  }, [sortedFiles, binSelected]);
 
   function handleSelect(
     selected: boolean,
@@ -128,18 +128,18 @@ export default function MediaList({
   }
 
   function handleSelectionChange(keys: "all" | Set<string | number>) {
-    let isBinSelected = true;
+    let isBinSelected = false;
     setSelectedKeys((prev) => {
       const prevKeys = prev as Set<string | number>;
       const newKeys = keys as Set<string | number>;
 
       if (newKeys.has("bin") && !prevKeys.has("bin")) {
-        isBinSelected = false;
+        isBinSelected = true;
         return new Set(["bin"]);
       }
 
       if (prevKeys.has("bin") && newKeys.size === 0) {
-        isBinSelected = false;
+        isBinSelected = true;
         return new Set([]);
       }
 
@@ -147,7 +147,7 @@ export default function MediaList({
       return newKeys;
     });
 
-    setShowBin((prev) => {
+    setBinSelected((prev) => {
       if (prev !== isBinSelected) {
         setValidatedFiles((prev) =>
           prev.map((file) => ({ ...file, isSelected: false })),
@@ -302,6 +302,22 @@ export default function MediaList({
     }
   }
 
+  if (isTransferInProgress) {
+    return (
+      <FileCopyStatus
+        currentFile={transferStatus?.currentFile}
+        processedFiles={transferStatus?.processedFiles}
+        totalFiles={transferStatus?.totalFiles}
+        currentFileBytesTransferred={
+          transferStatus?.currentFileBytesTransferred
+        }
+        currentFileSize={transferStatus?.currentFileSize}
+        totalBytesTransferred={transferStatus?.totalBytesTransferred}
+        totalSize={transferStatus?.totalSize}
+      />
+    );
+  }
+
   if (isFilesLoading) {
     return null;
   }
@@ -327,9 +343,11 @@ export default function MediaList({
         onDelete={handleDelete}
         onRestore={handleRestore}
         onSave={handleSave}
-        disabled={selectedFiles.length === 0 || isTransferInProgress}
-        saveInProgress={isProgressBarOpen}
-        showBin={showBin}
+        editDisabled={selectedFiles.length === 0}
+        deleteDisabled={selectedFiles.length === 0}
+        restoreDisabled={selectedFiles.length === 0}
+        saveDisabled={isTransferInProgress || Object.entries(sortedFiles).length === 0}
+        binSelected={binSelected}
       />
 
       <MediaEditForm
@@ -338,19 +356,6 @@ export default function MediaList({
         isOpen={isModalOpen}
         onClose={handleClose}
         onSaveMediaInfo={handleSaveMediaInfo}
-      />
-
-      <FileCopyStatus
-        isOpen={isProgressBarOpen}
-        currentFile={transferStatus?.currentFile}
-        processedFiles={transferStatus?.processedFiles}
-        totalFiles={transferStatus?.totalFiles}
-        currentFileBytesTransferred={
-          transferStatus?.currentFileBytesTransferred
-        }
-        currentFileSize={transferStatus?.currentFileSize}
-        totalBytesTransferred={transferStatus?.totalBytesTransferred}
-        totalSize={transferStatus?.totalSize}
       />
     </div>
   );
