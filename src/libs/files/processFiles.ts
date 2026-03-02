@@ -142,7 +142,7 @@ function buildDestinationPath(file: MediaFile): string | null {
 
   if (!filename || !basepath) return null;
 
-  if (type === undefined) {
+  if (type === undefined || type === null) {
     return path.join(basepath, filename + file.ext);
   }
 
