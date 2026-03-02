@@ -126,6 +126,7 @@ async function copyFileWithProgress({
       message = error.message;
     }
     errors.push({ file, message });
+    console.error(`[processFiles] Transfer failed ${file.path}: ${message}`);
   }
 }
 
@@ -176,14 +177,27 @@ export async function processFilesJob(
   for (const file of files) {
     const updatedPath = buildDestinationPath(file);
     const filename = createFilename(file.mediaInfo);
-    if (!updatedPath || !filename) continue;
+
+    if (!updatedPath || !filename) {
+      const reason = !updatedPath
+        ? "Could not determine destination path (check library and title)"
+        : "Could not build filename";
+      errors.push({ file, message: reason });
+      console.error(
+        `[processFiles] Skipped ${file.path}: ${reason}`,
+      );
+      continue;
+    }
 
     try {
       const stat = await fs.stat(file.path);
       totalSize += stat.size;
       filesToProcess.push({ file, updatedPath, filename, fileSize: stat.size });
-    } catch {
-      filesToProcess.push({ file, updatedPath, filename, fileSize: 0 });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "File not found or inaccessible";
+      errors.push({ file, message });
+      console.error(`[processFiles] Skipped ${file.path}: ${message}`);
     }
   }
 

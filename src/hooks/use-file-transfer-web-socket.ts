@@ -71,6 +71,19 @@ export function useFileTransferWebSocket(
               });
               return;
             }
+
+            const transferErrors = data.errors as Array<{ file?: { path?: string; name?: string }; message: string }> | undefined;
+            if (Array.isArray(transferErrors) && transferErrors.length > 0) {
+              const description =
+                transferErrors.length === 1
+                  ? transferErrors[0].message
+                  : `${transferErrors.length} file(s) had errors. First: ${transferErrors[0].message}`;
+              addToast({
+                title: "Transfer completed with errors",
+                description,
+                severity: "warning",
+              });
+            }
           }
 
           if (data.totalFiles && data.processedFiles !== undefined) {
