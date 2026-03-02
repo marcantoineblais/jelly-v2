@@ -13,7 +13,8 @@ export function validateData(file: MediaFile) {
   const season = file.mediaInfo.season;
   const episode = file.mediaInfo.episode;
   const year = file.mediaInfo.year;
-  const { type, name, path } = file.library;
+  const lib = file.library ?? {};
+  const { type, name, path } = lib;
 
   const errors = [];
   if (!title) errors.push(VALIDATION_ERROR.title);

@@ -133,8 +133,8 @@ async function copyFileWithProgress({
 
 function buildDestinationPath(file: MediaFile): string | null {
   const filename = createFilename(file.mediaInfo);
-  const basepath = file.library.path;
-  const type = file.library.type;
+  const basepath = file.library?.path;
+  const type = file.library?.type;
   const season = file.mediaInfo?.season;
   const year = file.mediaInfo?.year;
   let folderName = file.mediaInfo?.title;
