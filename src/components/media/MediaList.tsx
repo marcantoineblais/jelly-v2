@@ -74,7 +74,7 @@ export default function MediaList({
     } finally {
       setIsFilesLoading(false);
     }
-  }, []);
+  }, [fetchData]);
 
   const { isTransferInProgress, transferStatus } =
     useFileTransferWebSocket(fetchFiles);
