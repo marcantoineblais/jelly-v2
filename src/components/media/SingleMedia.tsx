@@ -16,7 +16,7 @@ export default function SingleMedia({
   const season = info.season ? `${formatNumber(info.season)}` : "None";
   const episode = info.episode ? `${formatNumber(info.episode)}` : "None";
   const year = info.year ? info.year.toString() : "None";
-  const type = file.library.type ? file.library.type : "No type";
+  const type = file.library?.type ?? "";
   const fileSize = file.size != null ? formatDataSize(file.size) : "Unknown";
   const elements = [
     { label: "File path", content: file.path },
