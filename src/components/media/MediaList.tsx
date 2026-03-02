@@ -19,6 +19,7 @@ import { sortFilesByLibrary } from "@/src/libs/files/sortFilesByLibrary";
 import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-socket";
 import MediaListEmpty from "./MediaListEmpty";
 import MediaListAccordion from "./MediaListAccordion";
+import useFetch from "@/src/hooks/use-fetch";
 
 export default function MediaList({
   files = [],
@@ -27,6 +28,7 @@ export default function MediaList({
   files: MediaFile[];
   libraries: MediaLibrary[];
 }) {
+  const { fetchData } = useFetch();
   const [binSelected, setBinSelected] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilesLoading, setIsFilesLoading] = useState(false);
@@ -59,15 +61,9 @@ export default function MediaList({
   const fetchFiles = useCallback(async () => {
     setIsFilesLoading(true);
     try {
-      const response = await fetch("/api/files", {
-        method: "POST",
+      const { data } = await fetchData<{ files: MediaFile[] }>("/api/files", {
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) {
-        console.error("Failed to fetch files");
-        return;
-      }
-      const data = await response.json();
       setValidatedFiles(
         data.files.map((file: MediaFile) => ({
           ...file,

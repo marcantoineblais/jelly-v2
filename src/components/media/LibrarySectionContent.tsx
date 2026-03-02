@@ -27,7 +27,7 @@ export default function LibrarySectionContent({
     );
   }
 
-  if (type === "movie") {
+  if (type === "movie" || type == null) {
     return (
       <MoviesContent
         sectionKey={sectionKey}

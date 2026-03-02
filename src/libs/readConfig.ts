@@ -56,7 +56,7 @@ export function readConfig() {
   const libraries: MediaLibrary[] = librariesRaw.map((lib) => ({
     name: lib.name,
     path: lib.path,
-    type: lib.type === "show" || lib.type === "movie" ? lib.type : undefined,
+    type: lib.type as "show" | "movie",
   }));
 
   const videosExt = fromEnvOrDefault(

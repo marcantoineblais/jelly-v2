@@ -61,11 +61,11 @@ function extractTitle(filename: string = "") {
     /\-?(\-+|\s+)s\d{2}e\d{2}(\-?e\d{2})?(\-+|\s+|$).*$/i,
     "",
   ); // remove everything after the episode
+  title = title.replaceAll(/\[.*\]/g, ""); // remove author and info in []
+  title = title.replaceAll(/\(.*\)/g, ""); // remove author and info in ()
   title = title.replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, ""); // remove everything after the resolution
   title = title.replace(/\-?(^|\-+|\s+)\d{4}(\-+|\s+|$).*$/, ""); // remove everything after the year
   title = title.replace(/\-?(^|e|\-+|\s+)\d{2}(\-+|\s+|$).*$/i, ""); // remove everything after episode number
-  title = title.replaceAll(/\[.*\]/g, ""); // remove author and info in []
-  title = title.replaceAll(/\(.*\)/g, ""); // remove author and info in ()
 
   return capitalize(title.trim());
 }

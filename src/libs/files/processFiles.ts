@@ -140,7 +140,13 @@ function buildDestinationPath(file: MediaFile): string | null {
   let folderName = file.mediaInfo?.title;
   if (year && folderName) folderName = `${folderName} (${year})`;
 
-  if (!filename || !basepath || !folderName) return null;
+  if (!filename || !basepath) return null;
+
+  if (type === undefined) {
+    return path.join(basepath, filename + file.ext);
+  }
+
+  if (!folderName) return null;
 
   if (type === "show") {
     return path.join(

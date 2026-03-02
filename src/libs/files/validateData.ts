@@ -23,7 +23,7 @@ export function validateData(file: MediaFile) {
     errors.push(VALIDATION_ERROR.episode);
   if (year === undefined && type === "movie")
     errors.push(VALIDATION_ERROR.year);
-  if (!type || !name || !path) errors.push(VALIDATION_ERROR.library);
+  if (!name || !path) errors.push(VALIDATION_ERROR.library);
 
   return errors;
 }
