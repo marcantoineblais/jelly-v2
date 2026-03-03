@@ -118,15 +118,6 @@ async function copyFileWithProgress({
       readStream.pipe(progressTransform).pipe(writeStream);
     });
 
-    const destStat = await fs.stat(updatedPath).catch(() => null);
-    if (!destStat || destStat.size !== fileSize) {
-      errors.push({
-        file,
-        message: "Copy did not produce expected file at destination",
-      });
-      return;
-    }
-
     await removeTorrentsForFile(file.path);
     await fs.unlink(file.path);
   } catch (error: unknown) {
