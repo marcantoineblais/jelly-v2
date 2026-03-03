@@ -118,6 +118,15 @@ async function copyFileWithProgress({
       readStream.pipe(progressTransform).pipe(writeStream);
     });
 
+    const destStat = await fs.stat(updatedPath).catch(() => null);
+    if (!destStat || destStat.size !== fileSize) {
+      errors.push({
+        file,
+        message: "Copy did not produce expected file at destination",
+      });
+      return;
+    }
+
     await removeTorrentsForFile(file.path);
     await fs.unlink(file.path);
   } catch (error: unknown) {
@@ -126,7 +135,6 @@ async function copyFileWithProgress({
       message = error.message;
     }
     errors.push({ file, message });
-    console.error(`[processFiles] Transfer failed ${file.path}: ${message}`);
   }
 }
 
@@ -179,13 +187,12 @@ export async function processFilesJob(
     const filename = createFilename(file.mediaInfo);
 
     if (!updatedPath || !filename) {
-      const reason = !updatedPath
-        ? "Could not determine destination path (check library and title)"
-        : "Could not build filename";
-      errors.push({ file, message: reason });
-      console.error(
-        `[processFiles] Skipped ${file.path}: ${reason}`,
-      );
+      errors.push({
+        file,
+        message: !updatedPath
+          ? "Could not determine destination path (check library and title)"
+          : "Could not build filename",
+      });
       continue;
     }
 
@@ -194,10 +201,11 @@ export async function processFilesJob(
       totalSize += stat.size;
       filesToProcess.push({ file, updatedPath, filename, fileSize: stat.size });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "File not found or inaccessible";
-      errors.push({ file, message });
-      console.error(`[processFiles] Skipped ${file.path}: ${message}`);
+      errors.push({
+        file,
+        message:
+          err instanceof Error ? err.message : "File not found or inaccessible",
+      });
     }
   }
 
