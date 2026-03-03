@@ -60,12 +60,14 @@ function extractTitle(filename: string = "") {
   let title = filename.replace(
     /\-?(\-+|\s+)s\d{2}e\d{2}(\-?e\d{2})?(\-+|\s+|$).*$/i,
     "",
-  ); // remove everything after the episode
+  ); // remove everything after S00E00
   title = title.replaceAll(/\[.*\]/g, ""); // remove author and info in []
   title = title.replaceAll(/\(.*\)/g, ""); // remove author and info in ()
   title = title.replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, ""); // remove everything after the resolution
-  title = title.replace(/\-?(^|\-+|\s+)\d{4}(\-+|\s+|$).*$/, ""); // remove everything after the year
-  title = title.replace(/\-?(^|e|\-+|\s+)\d{2}(\-+|\s+|$).*$/i, ""); // remove everything after episode number
+  title = title.replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, ""); // remove everything after the year
+  title = title.replace(/\-?(\-+|\s+)s\d{1,2}(\-+|\s+|$).*$/i, ""); // remove everything after standalone season (e.g. S01 when downloading full season)
+  title = title.replace(/\-?(\-+|\s+)e[p]?\s*\d{1,3}(\-+|\s+|$).*$/i, ""); // remove everything after episode number
+  title = title.replace(/\-?(\-+|\s+)\d{2}$/, ""); // remove trailing 2 digits (usually season or episode)
 
   return capitalize(title.trim());
 }
