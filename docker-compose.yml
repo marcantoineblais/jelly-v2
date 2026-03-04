@@ -3,7 +3,7 @@
 # VPN: set WIREGUARD_PRIVATE_KEY (Proton VPN WireGuard) in .env. Optional: SERVER_COUNTRIES (e.g. Canada). Ports: QBITTORRENT_WEBUI_PORT, JACKETT_PORT, FLARESOLVERR_PORT.
 # Jelly: use http://jelly-gluetun:<port> for each (JACKETT_PORT, FLARESOLVERR_PORT, QBITTORRENT_WEBUI_PORT).
 # FIREWALL_INPUT_PORTS: Gluetun blocks inbound by default; allow these ports so jelly can reach qBittorrent/Jackett/FlareSolverr.
-x-common-image: &common-image ghcr.io/marcantoineblais/jelly:3.3.3
+x-common-image: &common-image ghcr.io/marcantoineblais/jelly:3.3.5
 
 services:
   gluetun:
