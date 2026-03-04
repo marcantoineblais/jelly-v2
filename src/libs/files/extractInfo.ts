@@ -81,21 +81,29 @@ function extractYear(filename: string = "") {
 }
 
 function extractSeries(filename: string = "") {
-  let seriesMatch = filename.match(
+  const match1 = filename.match(
     /(^|\-+|\s+)s(\d{2})e(\d{2})(\-?e\d{2})?(\-+|\s+|$)/i,
   );
+  const match2 = filename.match(/(^|\-+|\s+)e[p]?\s*(\d{1,3})(\-+|\s+|$)/i);
+  const match3 = filename.match(/^(\d{1,3})/);
+  const match4 = filename.match(
+    /(^|\-+|\s+)s(?:eason)?\s*(\d{1,2})(\-+|\s+|$)/i,
+  );
+
   let season;
   let episode;
 
-  if (seriesMatch) {
-    season = parseInt(seriesMatch[2], 10);
-    episode = parseInt(seriesMatch[3], 10);
-  } else {
-    seriesMatch = filename.match(/(\-+|\s+)e?(\d{2})(\-+|\s+|$)/i);
+  if (match1) {
+    season = parseInt(match1[2], 10);
+    episode = parseInt(match1[3], 10);
+  } else if (match2) {
+    episode = parseInt(match2[2], 10);
+  } else if (match3) {
+    episode = parseInt(match3[1], 10);
+  }
 
-    if (seriesMatch) {
-      episode = parseInt(seriesMatch[2], 10);
-    }
+  if (season === undefined && match4) {
+    season = parseInt(match4[2], 10);
   }
 
   return [season, episode];
