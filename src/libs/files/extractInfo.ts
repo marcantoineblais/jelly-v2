@@ -61,8 +61,8 @@ function extractTitle(filename: string = "") {
     /\-?(\-+|\s+)s\d{2}e\d{2}(\-?e\d{2})?(\-+|\s+|$).*$/i,
     "",
   ); // remove everything after S00E00
-  title = title.replaceAll(/\[.*\]/g, ""); // remove author and info in []
-  title = title.replaceAll(/\(.*\)/g, ""); // remove author and info in ()
+  title = title.replaceAll(/\[.*?\]/g, ""); // remove each [...] segment (non-greedy)
+  title = title.replaceAll(/\(.*?\)/g, ""); // remove each (...) segment (non-greedy)
   title = title.replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, ""); // remove everything after the resolution
   title = title.replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, ""); // remove everything after the year
   title = title.replace(/\-?(\-+|\s+)s\d{1,2}(\-+|\s+|$).*$/i, ""); // remove everything after standalone season (e.g. S01 when downloading full season)
