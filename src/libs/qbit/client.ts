@@ -3,7 +3,6 @@
  * Requires QBIT_URL, QBIT_USER, QBIT_PASS in env.
  */
 
-import { JACKETT_URL } from "@/src/config";
 
 const QBIT_URL = process.env.QBIT_URL ?? "http://localhost:8080";
 const QBIT_USER = process.env.QBIT_USER ?? "admin";
@@ -198,87 +197,19 @@ export async function listTorrents(params?: {
   return raw.map(mapQbitTorrent);
 }
 
-/**
- * Rewrite localhost/127.0.0.1 in Jackett-generated download URLs to the
- * configured JACKETT_URL host so the jelly server can reach them.
- */
-function rewriteJackettHost(url: string): string {
-  try {
-    const parsed = new URL(url);
-    if (
-      parsed.hostname === "localhost" ||
-      parsed.hostname === "127.0.0.1"
-    ) {
-      const jackettBase = new URL(JACKETT_URL.replace(/\/$/, ""));
-      parsed.hostname = jackettBase.hostname;
-      parsed.port = jackettBase.port;
-    }
-    return parsed.toString();
-  } catch {
-    return url;
-  }
-}
-
-async function fetchTorrentBytes(downloadUrl: string): Promise<ArrayBuffer> {
-  const torrentRes = await fetch(downloadUrl);
-  if (!torrentRes.ok) {
-    throw new Error(
-      `Failed to fetch torrent file: ${torrentRes.status} ${torrentRes.statusText}`,
-    );
-  }
-
-  const contentType = torrentRes.headers.get("content-type") ?? "";
-  const arrayBuffer = await torrentRes.arrayBuffer();
-
-  // Cloudflare challenge pages are returned as HTML with HTTP 200.
-  // Detect them by content-type or by checking the first byte for 'd' (0x64),
-  // the bencoding dictionary marker that all valid .torrent files start with.
-  const isHtml =
-    contentType.includes("text/html") || contentType.includes("text/plain");
-  const startsWithBencode = new Uint8Array(arrayBuffer)[0] === 0x64;
-  if (isHtml || !startsWithBencode) {
-    throw new Error(
-      `Torrent fetch returned non-torrent content (possible Cloudflare block). Content-Type: ${contentType || "unknown"}`,
-    );
-  }
-
-  return arrayBuffer;
-}
-
 export async function addTorrent(url: string): Promise<void> {
-  // Magnet links are passed directly; qBittorrent handles them natively.
-  if (url.startsWith("magnet:")) {
-    await qbitRequest("/torrents/add", {
-      method: "POST",
-      contentType: "application/x-www-form-urlencoded",
-      body: new URLSearchParams({ urls: url }).toString(),
-    });
-    return;
+  if (!url) {
+    throw new Error("No download URL provided for this torrent");
   }
-
-  // For .torrent URLs (including Cloudflare-protected trackers like YGG),
-  // download the file server-side through Jackett's proxy → Byparr (Cloudflare
-  // solver), then upload the raw bytes to qBittorrent. Retry once on failure
-  // since Cloudflare solvers are probabilistic.
-  const downloadUrl = rewriteJackettHost(url);
-  let lastError: Error | undefined;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const arrayBuffer = await fetchTorrentBytes(downloadUrl);
-      const blob = new Blob([arrayBuffer], { type: "application/x-bittorrent" });
-      const formData = new FormData();
-      formData.append("torrents", blob, "torrent.torrent");
-      await qbitRequest("/torrents/add", { method: "POST", formData });
-      return;
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (attempt < 2) {
-        // Brief pause before retry so the solver can refresh its session.
-        await new Promise((r) => setTimeout(r, 2000));
-      }
-    }
-  }
-  throw lastError;
+  // Pass the URL (magnet link or .torrent URL) directly to qBittorrent.
+  // qBittorrent shares the same network namespace as Jackett (both behind
+  // gluetun), so localhost Jackett proxy URLs resolve correctly. Jackett
+  // handles the Cloudflare bypass via Byparr before returning the torrent.
+  await qbitRequest("/torrents/add", {
+    method: "POST",
+    contentType: "application/x-www-form-urlencoded",
+    body: new URLSearchParams({ urls: url }).toString(),
+  });
 }
 
 export async function deleteTorrent(
