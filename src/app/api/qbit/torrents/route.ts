@@ -1,4 +1,5 @@
 import { listTorrents, addTorrent, QbitTorrent } from "@/src/libs/qbit/client";
+import { log } from "@/src/libs/logger";
 import { NextResponse } from "next/server";
 
 export type QbittorrentResponse = {
@@ -37,6 +38,12 @@ export async function POST(request: Request) {
     await addTorrent(url);
     return NextResponse.json({ ok: true });
   } catch (err) {
+    log({
+      source: "qbit/torrents",
+      message: "Failed to add torrent",
+      data: err,
+      level: "error",
+    });
     const message = err instanceof Error ? err.message : "Add torrent failed";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });
   }

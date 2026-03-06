@@ -41,7 +41,10 @@ services:
       - caddy_proxy
 
   flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
+    # Byparr: drop-in FlareSolverr replacement using Camoufox (Firefox-based
+    # anti-detect browser). More reliable against modern Cloudflare than the
+    # original FlareSolverr Chromium approach. Same API/port — no other changes needed.
+    image: ghcr.io/thephaseless/byparr:latest
     container_name: jelly-flaresolverr
     network_mode: service:gluetun
     user: ${PUID:-1000}:${PGID:-1000}

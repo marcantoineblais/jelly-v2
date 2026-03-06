@@ -51,14 +51,17 @@ export default function useFetch() {
           } catch {
             data = {};
           }
-          throw new FetchError(response.statusText, {
+          const message =
+            (data as { error?: string })?.error || response.statusText;
+          throw new FetchError(message, {
             data,
             status: response.status,
           });
         }
         const data = await response.json();
         if (data.ok !== undefined && !data.ok) {
-          throw new FetchError(response.statusText, {
+          const message = data.error || response.statusText;
+          throw new FetchError(message, {
             data,
             status: response.status,
           });
