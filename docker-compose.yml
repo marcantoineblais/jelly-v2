@@ -87,11 +87,7 @@ services:
   jelly:
     image: *common-image
     container_name: jelly
-    user: "${PUID:-1000}:${PGID:-1000}"
     env_file: stack.env
-    environment:
-      - PUID=${PUID:-1000}
-      - PGID=${PGID:-1000}
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
@@ -119,12 +115,8 @@ services:
   files-server:
     image: *common-image
     container_name: jelly-files-server
-    user: "${PUID:-1000}:${PGID:-1000}"
     command: ["npx", "tsx", "servers/file-server.ts"]
     env_file: stack.env
-    environment:
-      - PUID=${PUID:-1000}
-      - PGID=${PGID:-1000}
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
