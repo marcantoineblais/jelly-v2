@@ -3,6 +3,8 @@
  * Requires QBIT_URL, QBIT_USER, QBIT_PASS in env.
  */
 
+import { JACKETT_URL } from "@/src/config";
+
 const QBIT_URL = process.env.QBIT_URL ?? "http://localhost:8080";
 const QBIT_USER = process.env.QBIT_USER ?? "admin";
 const QBIT_PASS = process.env.QBIT_PASS ?? "adminadmin";
@@ -136,11 +138,13 @@ export async function qbitRequest<T>(
     searchParams = {},
     body,
     contentType,
+    formData,
   }: {
     method?: "GET" | "POST" | "DELETE";
     searchParams?: Record<string, string>;
     body?: string;
     contentType?: string;
+    formData?: FormData;
   } = {},
 ): Promise<T> {
   const doRequest = async (cookie: string) => {
@@ -156,7 +160,7 @@ export async function qbitRequest<T>(
       Origin: QBIT_URL,
     };
     if (contentType) headers["Content-Type"] = contentType;
-    return fetch(url.toString(), { method, headers, body });
+    return fetch(url.toString(), { method, headers, body: formData ?? body });
   };
 
   let cookie = await getCookie();
@@ -194,12 +198,54 @@ export async function listTorrents(params?: {
   return raw.map(mapQbitTorrent);
 }
 
+/**
+ * Rewrite localhost/127.0.0.1 in Jackett-generated download URLs to the
+ * configured JACKETT_URL host so the jelly server can reach them.
+ */
+function rewriteJackettHost(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.hostname === "localhost" ||
+      parsed.hostname === "127.0.0.1"
+    ) {
+      const jackettBase = new URL(JACKETT_URL.replace(/\/$/, ""));
+      parsed.hostname = jackettBase.hostname;
+      parsed.port = jackettBase.port;
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 export async function addTorrent(url: string): Promise<void> {
-  const body = { urls: url };
+  // Magnet links are passed directly; qBittorrent handles them natively.
+  if (url.startsWith("magnet:")) {
+    await qbitRequest("/torrents/add", {
+      method: "POST",
+      contentType: "application/x-www-form-urlencoded",
+      body: new URLSearchParams({ urls: url }).toString(),
+    });
+    return;
+  }
+
+  // For .torrent URLs (including Cloudflare-protected trackers like YGG),
+  // download the file server-side through Jackett's proxy → FlareSolverr,
+  // then upload the raw bytes to qBittorrent. This avoids qBittorrent having
+  // to bypass Cloudflare on its own.
+  const downloadUrl = rewriteJackettHost(url);
+  const torrentRes = await fetch(downloadUrl);
+  if (!torrentRes.ok) {
+    throw new Error(`Failed to fetch torrent file: ${torrentRes.status}`);
+  }
+  const arrayBuffer = await torrentRes.arrayBuffer();
+  const blob = new Blob([arrayBuffer], { type: "application/x-bittorrent" });
+  const formData = new FormData();
+  formData.append("torrents", blob, "torrent.torrent");
   await qbitRequest("/torrents/add", {
     method: "POST",
-    contentType: "application/x-www-form-urlencoded",
-    body: new URLSearchParams(body).toString(),
+    formData,
   });
 }
 
