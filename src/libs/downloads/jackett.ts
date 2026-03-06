@@ -193,16 +193,23 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
   const items = ensureArray<typeof rawItems>(rawItems);
   return items.map((item, index) => {
     const title = item.title ?? "";
-    const url = item.link ?? "";
     const rawPubDate = item.pubDate ?? "";
     const pubDateMs = rawPubDate ? new Date(rawPubDate).getTime() : 0;
     const pubDate = formatDate(rawPubDate);
     const size = formatDataSize(item.size);
-    const attrs = item.torznab_attr ?? [];
-    const seeds = attrs?.find((a: any) => a.name === "seeders")?.value ?? 0;
-    const leech =
-      attrs?.find((a: any) => a.name === "leechers" || a.name === "peers")
-        ?.value ?? 0;
+    const attrs: Array<{ name: string; value: string }> = item.torznab_attr ?? [];
+    const seedsRaw = attrs.find((a) => a.name === "seeders")?.value;
+    const leechRaw = attrs.find((a) => a.name === "leechers" || a.name === "peers")?.value;
+    const seeds = seedsRaw != null ? parseInt(seedsRaw, 10) : null;
+    const leech = leechRaw != null ? parseInt(leechRaw, 10) : null;
+
+    // Prefer the magnet link from search result attributes when available.
+    // This avoids the secondary page-scrape Jackett does for its proxy download
+    // URL, which is a common source of timeouts and selector failures on sites
+    // like 1337x that require fetching the torrent detail page to extract it.
+    const magnetUrl = attrs.find((a) => a.name === "magneturl")?.value;
+    const url = magnetUrl || item.link || "";
+
     return {
       id: index,
       title,
