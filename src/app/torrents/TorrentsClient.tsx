@@ -190,7 +190,7 @@ export default function TorrentsClient({
           />
         </div>
       ) : (
-        <div className="flex flex-col gap-4 shrink-0 overflow-hidden">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <Table items={sortedTorrents}>
             {(item) => (
               <TorrentTableItem
