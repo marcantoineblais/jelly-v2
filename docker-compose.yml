@@ -103,7 +103,6 @@ services:
     image: *common-image
     container_name: jelly
     env_file: stack.env
-    user: ${PUID:-1000}:${PGID:-1000}
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
@@ -123,7 +122,6 @@ services:
     container_name: jelly-socket-server
     command: ["npx", "tsx", "servers/socket-server.ts"]
     env_file: stack.env
-    user: ${PUID:-1000}:${PGID:-1000}
     networks:
       - private
       - caddy_proxy
