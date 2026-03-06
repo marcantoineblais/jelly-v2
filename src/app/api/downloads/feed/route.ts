@@ -8,8 +8,6 @@ export type FeedResponse = {
   ok: boolean;
   items: FeedItem[];
   total: number | null;
-  page: number;
-  limit: number;
   error?: string;
 };
 
@@ -46,7 +44,7 @@ export async function GET(request: Request) {
     const { items, total } = await searchJackett(query, indexerId, options);
     return NextResponse.json({
       ok: true,
-      items: items as FeedItem[],
+      items,
       total,
     });
   } catch (err) {

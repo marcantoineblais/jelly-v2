@@ -11,7 +11,6 @@ export type FeedItem = {
   size: string | null;
   seeds: number | null;
   leech: number | null;
-  source: string;
 };
 
 export type SortBy = "date" | "seeds" | "size" | "name";

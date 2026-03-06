@@ -23,5 +23,6 @@ export function formatSearchQuery({
   episode: number;
   additionalQuery?: string;
 }): string {
-  return `${title} S${pad2(season)}E${pad2(episode)} ${additionalQuery ?? ""}`;
+  const base = `${title} S${pad2(season)}E${pad2(episode)}`;
+  return additionalQuery ? `${base} ${additionalQuery}` : base;
 }

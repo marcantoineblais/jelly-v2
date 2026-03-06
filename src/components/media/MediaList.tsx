@@ -262,7 +262,12 @@ export default function MediaList({
       (file) => file.errors && file.errors.length > 0,
     );
     if (incompleteFiles.length > 0) {
-      console.error("Some files are missing informations.");
+      const count = incompleteFiles.length;
+      addToast({
+        title: `${count} file${count > 1 ? "s are" : " is"} missing information`,
+        description: "Fix all required fields before saving.",
+        color: "warning",
+      });
       return;
     }
 

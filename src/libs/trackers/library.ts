@@ -43,15 +43,14 @@ export async function getLastEpisode(
 
 async function findHighestEpisode(seasonPath: string): Promise<number> {
   try {
-    const entries = readdirSync(seasonPath);
-    if (entries.length === 0) return 0;
-
-    const lastEntry = entries[entries.length - 1];
-    const match = lastEntry.match(EPISODE_RE);
-    if (!match) return 0;
-
-    const lastEpisode = parseInt(match[2], 10);
-    return isNaN(lastEpisode) ? 0 : lastEpisode;
+    let highest = 0;
+    for (const entry of readdirSync(seasonPath)) {
+      const match = entry.match(EPISODE_RE);
+      if (!match) continue;
+      const episode = parseInt(match[2], 10);
+      if (!isNaN(episode) && episode > highest) highest = episode;
+    }
+    return highest;
   } catch {
     return 0;
   }

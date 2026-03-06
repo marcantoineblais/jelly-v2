@@ -44,16 +44,18 @@ export function sendTransferStarted({
   totalSize: number;
   errors: TransferError[];
 }): void {
-  ws.send(
-    JSON.stringify({
-      currentFile: "Process started",
-      processedFiles: 0,
-      totalFiles,
-      totalBytesTransferred: 0,
-      totalSize,
-      errors,
-    }),
-  );
+  try {
+    ws.send(
+      JSON.stringify({
+        currentFile: "Process started",
+        processedFiles: 0,
+        totalFiles,
+        totalBytesTransferred: 0,
+        totalSize,
+        errors,
+      }),
+    );
+  } catch {}
 }
 
 export function sendTransferCompleted({
@@ -65,13 +67,15 @@ export function sendTransferCompleted({
   totalFiles: number;
   errors: TransferError[];
 }): void {
-  ws.send(
-    JSON.stringify({
-      currentFile: "Files transfer completed",
-      processedFiles: totalFiles,
-      totalFiles,
-      isCompleted: true,
-      errors,
-    }),
-  );
+  try {
+    ws.send(
+      JSON.stringify({
+        currentFile: "Files transfer completed",
+        processedFiles: totalFiles,
+        totalFiles,
+        isCompleted: true,
+        errors,
+      }),
+    );
+  } catch {}
 }
