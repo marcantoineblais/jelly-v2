@@ -23,7 +23,7 @@ export default function TorrentTableItem({
     <div
       data-status={status}
       className={[
-        "flex flex-col w-full min-h-fit overflow-hidden p-4 bg-white border-l-4 border-l-transparent",
+        "flex flex-col w-full min-h-fit shrink-0 overflow-hidden p-4 bg-white border-l-4 border-l-transparent",
         "data-[status=downloading]:border-l-status-downloading",
         "data-[status=stalled]:border-l-status-stalled data-[status=stalled]:bg-status-stalled/5",
         "data-[status=completed]:border-l-status-completed data-[status=completed]:bg-status-completed/5",
