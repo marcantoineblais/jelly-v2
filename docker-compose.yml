@@ -61,7 +61,6 @@ services:
     image: linuxserver/jackett:latest
     container_name: jelly-jackett
     network_mode: service:gluetun
-    user: ${PUID:-1000}:${PGID:-1000}
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
       - net.ipv6.conf.default.disable_ipv6=1
@@ -82,7 +81,6 @@ services:
     image: linuxserver/qbittorrent:latest
     container_name: jelly-qbittorrent
     network_mode: service:gluetun
-    user: ${PUID:-1000}:${PGID:-1000}
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
       - net.ipv6.conf.default.disable_ipv6=1
