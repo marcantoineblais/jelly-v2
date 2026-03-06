@@ -9,6 +9,7 @@ services:
   gluetun:
     image: qmcgaw/gluetun:latest
     container_name: jelly-gluetun
+    user: ${PUID:-1000}:${PGID:-1000}
     cap_add:
       - NET_ADMIN
     devices:
@@ -44,6 +45,7 @@ services:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: jelly-flaresolverr
     network_mode: service:gluetun
+    user: ${PUID:-1000}:${PGID:-1000}
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
       - net.ipv6.conf.default.disable_ipv6=1
@@ -59,6 +61,7 @@ services:
     image: linuxserver/jackett:latest
     container_name: jelly-jackett
     network_mode: service:gluetun
+    user: ${PUID:-1000}:${PGID:-1000}
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
       - net.ipv6.conf.default.disable_ipv6=1
@@ -79,6 +82,7 @@ services:
     image: linuxserver/qbittorrent:latest
     container_name: jelly-qbittorrent
     network_mode: service:gluetun
+    user: ${PUID:-1000}:${PGID:-1000}
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
       - net.ipv6.conf.default.disable_ipv6=1
@@ -99,6 +103,7 @@ services:
     image: *common-image
     container_name: jelly
     env_file: stack.env
+    user: ${PUID:-1000}:${PGID:-1000}
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
@@ -118,6 +123,7 @@ services:
     container_name: jelly-socket-server
     command: ["npx", "tsx", "servers/socket-server.ts"]
     env_file: stack.env
+    user: ${PUID:-1000}:${PGID:-1000}
     networks:
       - private
       - caddy_proxy
@@ -128,6 +134,7 @@ services:
     container_name: jelly-files-server
     command: ["npx", "tsx", "servers/file-server.ts"]
     env_file: stack.env
+    user: ${PUID:-1000}:${PGID:-1000}
     volumes:
       - /opt/jelly/config.json:/app/config.json:ro
       # Add host paths for file-server to read/write
