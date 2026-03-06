@@ -100,7 +100,7 @@ export function useFileTransferWebSocket(
             setIsProgressBarOpen(true);
           }
         } catch {
-          fetchFiles();
+          await fetchFiles();
         }
       };
 

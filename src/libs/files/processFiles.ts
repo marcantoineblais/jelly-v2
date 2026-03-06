@@ -3,8 +3,8 @@ import fsSync from "fs";
 import path from "path";
 import { Transform } from "stream";
 import { WebSocket } from "ws";
-import { formatNumber } from "@/src/libs/files/formatNumber.js";
-import { createFilename } from "@/src/libs/files/createFilename.js";
+import { formatNumber } from "@/src/libs/files/formatNumber";
+import { createFilename } from "@/src/libs/files/createFilename";
 import { readConfig } from "@/src/libs/readConfig";
 import { removeTorrentsForFile } from "@/src/libs/qbit/removeTorrents";
 import { cleanupTransferredFolders } from "@/src/libs/files/cleanupFolders";
@@ -118,7 +118,7 @@ async function copyFileWithProgress({
       readStream.pipe(progressTransform).pipe(writeStream);
     });
 
-    await removeTorrentsForFile(file.path);
+    await removeTorrentsForFile(file.path, CONFIG.downloadPaths);
     await fs.unlink(file.path);
   } catch (error: unknown) {
     let message = "Unknown error";

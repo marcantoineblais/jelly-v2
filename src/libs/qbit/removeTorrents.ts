@@ -1,6 +1,6 @@
 import path from "path";
 import { qbitRequest } from "./client";
-import { readConfig } from "@/src/libs/readConfig";
+import { log } from "@/src/libs/logger";
 
 function normalizePathForCompare({
   filePath,
@@ -43,9 +43,8 @@ interface TorrentInfo {
   contentPath?: string;
 }
 
-export async function removeTorrentsForFile(filePath: string): Promise<void> {
+export async function removeTorrentsForFile(filePath: string, downloadPaths: string[]): Promise<void> {
   try {
-    const { downloadPaths } = readConfig();
     const torrents = await qbitRequest<TorrentInfo[]>("/torrents/info");
     if (!Array.isArray(torrents)) return;
 
@@ -72,8 +71,7 @@ export async function removeTorrentsForFile(filePath: string): Promise<void> {
         }).toString(),
       });
     }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn("qBittorrent: could not remove torrents for file:", message);
+  } catch (err) {
+    log({ source: "removeTorrents", message: "Could not remove torrents for file", data: err, level: "warn" });
   }
 }
