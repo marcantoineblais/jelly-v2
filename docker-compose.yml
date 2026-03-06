@@ -9,7 +9,6 @@ services:
   gluetun:
     image: qmcgaw/gluetun:latest
     container_name: jelly-gluetun
-    user: ${PUID:-1000}:${PGID:-1000}
     cap_add:
       - NET_ADMIN
     devices:
