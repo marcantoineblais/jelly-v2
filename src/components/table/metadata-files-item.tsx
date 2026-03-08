@@ -3,10 +3,13 @@ import type { QbitTorrentFile } from "@/src/libs/qbit/client";
 
 export type MetadataFilesItemProps = {
   file: QbitTorrentFile;
-  maxSize: number;
+  maxSize?: number;
 };
 
-export default function MetadataFilesItem({ file, maxSize }: MetadataFilesItemProps) {
+export default function MetadataFilesItem({
+  file,
+  maxSize,
+}: MetadataFilesItemProps) {
   return (
     <li className="w-full py-0.5 first:pt-0 last:pb-0">
       <div className="p-4 flex flex-col gap-2">

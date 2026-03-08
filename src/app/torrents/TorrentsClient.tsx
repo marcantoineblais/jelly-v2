@@ -22,8 +22,6 @@ import {
   POLL_INTERVAL_MS,
 } from "@/src/config";
 import type { QbitTorrent, QbitTorrentFile } from "@/src/libs/qbit/client";
-import { formatDataSize } from "@/src/libs/format-data-size";
-import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
 import Table from "@/src/components/table/table";
 import TorrentTableItem from "@/src/components/table/torrent-table-item";
 import MetadataFilesItem from "@/src/components/table/metadata-files-item";
@@ -238,11 +236,7 @@ export default function TorrentsClient({
                 ) : torrentFiles.length > 0 ? (
                   <Table items={torrentFiles}>
                     {(file) => (
-                      <MetadataFilesItem
-                        key={file.index}
-                        file={file}
-                        maxSize={Math.max(...torrentFiles.map((f) => f.size))}
-                      />
+                      <MetadataFilesItem key={file.index} file={file} />
                     )}
                   </Table>
                 ) : null}

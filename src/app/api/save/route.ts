@@ -37,7 +37,12 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    log({ source: "save", message: "Error processing files", data: error, level: "error" });
+    log({
+      source: "save",
+      message: "Error processing files",
+      data: error,
+      level: "error",
+    });
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }

@@ -43,7 +43,10 @@ interface TorrentInfo {
   contentPath?: string;
 }
 
-export async function removeTorrentsForFile(filePath: string, downloadPaths: string[]): Promise<void> {
+export async function removeTorrentsForFile(
+  filePath: string,
+  downloadPaths: string[],
+): Promise<void> {
   try {
     const torrents = await qbitRequest<TorrentInfo[]>("/torrents/info");
     if (!Array.isArray(torrents)) return;
@@ -72,6 +75,11 @@ export async function removeTorrentsForFile(filePath: string, downloadPaths: str
       });
     }
   } catch (err) {
-    log({ source: "removeTorrents", message: "Could not remove torrents for file", data: err, level: "warn" });
+    log({
+      source: "removeTorrents",
+      message: "Could not remove torrents for file",
+      data: err,
+      level: "warn",
+    });
   }
 }

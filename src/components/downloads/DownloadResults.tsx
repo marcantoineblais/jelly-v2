@@ -229,8 +229,6 @@ export default function DownloadResults({
     setTimeout(resetModalState, 200);
   }
 
-  const maxSize = files.length > 0 ? Math.max(...files.map((f) => f.size)) : 0;
-
   return (
     <>
       {hasSearched && items.length === 0 && (
@@ -262,7 +260,8 @@ export default function DownloadResults({
           <ModalContent>
             <ModalHeader>Metadata</ModalHeader>
 
-            <ModalBody>
+            <ModalBody className="flex flex-col gap-2">
+              <p>selectedItem?.title</p>
               {files.length === 0 ? (
                 <div className="w-full flex justify-center py-8">
                   <Spinner size="lg" />
@@ -272,7 +271,7 @@ export default function DownloadResults({
                   <p className="text-start">Files:</p>
                   <Table items={files}>
                     {(file) => (
-                      <MetadataFilesItem key={file.index} file={file} maxSize={maxSize} />
+                      <MetadataFilesItem key={file.index} file={file} />
                     )}
                   </Table>
                 </>

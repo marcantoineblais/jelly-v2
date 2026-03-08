@@ -72,7 +72,12 @@ export function useFileTransferWebSocket(
               return;
             }
 
-            const transferErrors = data.errors as Array<{ file?: { path?: string; name?: string }; message: string }> | undefined;
+            const transferErrors = data.errors as
+              | Array<{
+                  file?: { path?: string; name?: string };
+                  message: string;
+                }>
+              | undefined;
             if (Array.isArray(transferErrors) && transferErrors.length > 0) {
               const description =
                 transferErrors.length === 1

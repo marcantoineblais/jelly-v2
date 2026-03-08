@@ -63,7 +63,9 @@ export default function FileCopyStatus({
 
   return (
     <div className="p-4 w-full h-full flex flex-col justify-center items-center gap-8">
-      <H3 className="w-full px-4 pt-3 pb-1 font-semibold text-center">{getHeader()}</H3>
+      <H3 className="w-full px-4 pt-3 pb-1 font-semibold text-center">
+        {getHeader()}
+      </H3>
 
       <div className="w-full px-4 pb-4">
         <div className="w-full text-nowrap text-ellipsis overflow-hidden text-default-500 mb-1">

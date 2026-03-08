@@ -16,7 +16,12 @@ export async function GET() {
     const indexers = await getJackettIndexers();
     return NextResponse.json({ ok: true, indexers });
   } catch (err) {
-    log({ source: "downloads/indexers", message: "Failed to fetch indexers", data: err, level: "error" });
+    log({
+      source: "downloads/indexers",
+      message: "Failed to fetch indexers",
+      data: err,
+      level: "error",
+    });
     const message =
       err instanceof Error ? err.message : "Failed to fetch Jackett indexers";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });

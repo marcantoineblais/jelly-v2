@@ -347,7 +347,9 @@ export default function MediaList({
         editDisabled={selectedFiles.length === 0}
         deleteDisabled={selectedFiles.length === 0}
         restoreDisabled={selectedFiles.length === 0}
-        saveDisabled={isTransferInProgress || Object.entries(sortedFiles).length === 0}
+        saveDisabled={
+          isTransferInProgress || Object.entries(sortedFiles).length === 0
+        }
         binSelected={binSelected}
       />
 

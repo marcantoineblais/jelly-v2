@@ -3,7 +3,6 @@
  * Requires QBIT_URL, QBIT_USER, QBIT_PASS in env.
  */
 
-
 const QBIT_URL = process.env.QBIT_URL ?? "http://localhost:8080";
 const QBIT_USER = process.env.QBIT_USER ?? "admin";
 const QBIT_PASS = process.env.QBIT_PASS ?? "adminadmin";
@@ -218,7 +217,6 @@ export async function addTorrent(url: string): Promise<void> {
   });
 }
 
-
 /**
  * Get the file list for a torrent by hash.
  * Returns null when qBittorrent hasn't resolved metadata yet (magnet links)
@@ -275,7 +273,9 @@ function extractMagnetHash(url: string): string | null {
   if (raw.length === 40) return raw.toLowerCase();
   if (raw.length === 32) {
     const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    let bits = 0, value = 0, hex = "";
+    let bits = 0,
+      value = 0,
+      hex = "";
     for (const ch of raw.toUpperCase()) {
       const idx = alpha.indexOf(ch);
       if (idx === -1) return null;

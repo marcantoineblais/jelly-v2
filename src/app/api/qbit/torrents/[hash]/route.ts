@@ -1,4 +1,9 @@
-import { deleteTorrent, getTorrentFiles, pauseTorrent, resumeTorrent } from "@/src/libs/qbit/client";
+import {
+  deleteTorrent,
+  getTorrentFiles,
+  pauseTorrent,
+  resumeTorrent,
+} from "@/src/libs/qbit/client";
 import { log } from "@/src/libs/logger";
 import { NextResponse } from "next/server";
 
@@ -39,8 +44,14 @@ export async function DELETE(
     await deleteTorrent(hash, deleteFiles);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    log({ source: "qbit/torrents/[hash]", message: "Failed to delete torrent", data: err, level: "error" });
-    const message = err instanceof Error ? err.message : "Delete torrent failed";
+    log({
+      source: "qbit/torrents/[hash]",
+      message: "Failed to delete torrent",
+      data: err,
+      level: "error",
+    });
+    const message =
+      err instanceof Error ? err.message : "Delete torrent failed";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });
   }
 }
@@ -67,8 +78,14 @@ export async function PATCH(
     }
     return NextResponse.json({ ok: true });
   } catch (err) {
-    log({ source: "qbit/torrents/[hash]", message: "Failed to update torrent", data: err, level: "error" });
-    const message = err instanceof Error ? err.message : "Update torrent failed";
+    log({
+      source: "qbit/torrents/[hash]",
+      message: "Failed to update torrent",
+      data: err,
+      level: "error",
+    });
+    const message =
+      err instanceof Error ? err.message : "Update torrent failed";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });
   }
 }

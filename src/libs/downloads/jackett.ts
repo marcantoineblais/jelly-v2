@@ -197,9 +197,12 @@ export function parseTorznabXml(xml: string): TorrentSearchItem[] {
     const pubDateMs = rawPubDate ? new Date(rawPubDate).getTime() : 0;
     const pubDate = formatDate(rawPubDate);
     const size = formatDataSize(item.size);
-    const attrs: Array<{ name: string; value: string }> = item.torznab_attr ?? [];
+    const attrs: Array<{ name: string; value: string }> =
+      item.torznab_attr ?? [];
     const seedsRaw = attrs.find((a) => a.name === "seeders")?.value;
-    const leechRaw = attrs.find((a) => a.name === "leechers" || a.name === "peers")?.value;
+    const leechRaw = attrs.find(
+      (a) => a.name === "leechers" || a.name === "peers",
+    )?.value;
     const seeds = seedsRaw != null ? parseInt(seedsRaw, 10) : null;
     const leech = leechRaw != null ? parseInt(leechRaw, 10) : null;
 

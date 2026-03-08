@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { deleteTorrent, previewTorrent, QbitTorrentFile } from "@/src/libs/qbit/client";
+import {
+  deleteTorrent,
+  previewTorrent,
+  QbitTorrentFile,
+} from "@/src/libs/qbit/client";
 import { log } from "@/src/libs/logger";
 
 export type TorrentPreviewResponse = {
