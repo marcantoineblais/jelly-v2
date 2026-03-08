@@ -46,7 +46,7 @@ export default function Navigation() {
 
   return (
     <div className="w-full bg-primary/10">
-      <div className="py-0.5 px-2 flex gap-4 justify-between items-center">
+      <div className="container-main py-0.5 px-2 flex gap-4 justify-between items-center">
         <div className="basis-1/3 flex items-center">
           <Link href="/" className="flex items-center" tabIndex={-1}>
             <Image

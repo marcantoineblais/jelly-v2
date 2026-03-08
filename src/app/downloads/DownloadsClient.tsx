@@ -103,7 +103,7 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
 
   return (
     <>
-      <main className="h-full w-full flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
+      <main className="container-main h-full w-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
         <form
           onSubmit={handleSubmit}
           className="flex flex-col gap-2 p-3 bg-white/80 rounded-lg border border-stone-200"

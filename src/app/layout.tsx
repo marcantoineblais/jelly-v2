@@ -22,7 +22,7 @@ export default function RootLayout({
         <ConfigProvider>
           <SessionProvider>
             <ToastMessagesProvider>
-              <div className="h-dvh w-dvw flex flex-col overflow-hidden">
+              <div className="h-dvh w-dvw flex flex-col overflow-hidden bg-stone-100">
                 <Navigation />
                 {children}
               </div>

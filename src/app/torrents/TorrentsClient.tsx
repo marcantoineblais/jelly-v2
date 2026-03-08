@@ -149,7 +149,7 @@ export default function TorrentsClient({
   }
 
   return (
-    <main className="w-full flex-1 min-h-0 flex flex-col gap-4 bg-stone-100 p-4 pb-8 overflow-hidden">
+    <main className="container-main w-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
       {/* Sorting controls */}
       <div className="flex gap-2 bg-white/80 rounded-lg border border-stone-200 p-3">
         <Select

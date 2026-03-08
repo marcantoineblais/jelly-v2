@@ -10,7 +10,7 @@ export default function Home() {
   const files = readFolders(downloadPaths, videosExt, libraries);
 
   return (
-    <main className="h-full w-full flex flex-col gap-3 bg-stone-100 overflow-hidden">
+    <main className="container-main h-full w-full flex flex-col gap-3 overflow-hidden">
       <MediaList files={files} libraries={libraries} />
     </main>
   );
