@@ -228,16 +228,14 @@ export default function TorrentsClient({
           <ModalContent>
             <ModalHeader>Details</ModalHeader>
             <ModalBody className="flex flex-col gao-2">
-              <p>{selectedItem?.title}</p>
+              <p>{selectedItem?.name}</p>
               {isLoadingFiles ? (
                 <div className="flex justify-center py-4">
                   <Spinner size="sm" />
                 </div>
               ) : torrentFiles.length > 0 ? (
                 <Table items={torrentFiles}>
-                  {(file) => (
-                    <MetadataFilesItem key={file.index} file={file} />
-                  )}
+                  {(file) => <MetadataFilesItem key={file.index} file={file} />}
                 </Table>
               ) : null}
             </ModalBody>
