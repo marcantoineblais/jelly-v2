@@ -19,7 +19,7 @@ import { POLL_INTERVAL_MS } from "@/src/config";
 import useFetch from "@/src/hooks/use-fetch";
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
-import MetadataFilesItem from "@/src/components/table/metadata-files-item";
+import TorrentFileTree from "@/src/components/torrent-file-tree/FileTree";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
 
 type HashFilesResponse = { ok: boolean; files?: QbitTorrentFile[] };
@@ -262,7 +262,7 @@ export default function DownloadResults({
             <ModalHeader>Metadata</ModalHeader>
 
             <ModalBody className="flex flex-col gap-2">
-              <p>{selectedItem?.title}</p>
+              <p className="break-all">{selectedItem?.title}</p>
               {files.length === 0 ? (
                 <div className="w-full flex justify-center py-8">
                   <Spinner size="lg" />
@@ -270,11 +270,7 @@ export default function DownloadResults({
               ) : (
                 <>
                   <p className="text-start">Files:</p>
-                  <Table items={files}>
-                    {(file) => (
-                      <MetadataFilesItem key={file.index} file={file} />
-                    )}
-                  </Table>
+                  <TorrentFileTree files={files} />
                 </>
               )}
             </ModalBody>

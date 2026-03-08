@@ -24,7 +24,7 @@ import {
 import type { QbitTorrent, QbitTorrentFile } from "@/src/libs/qbit/client";
 import Table from "@/src/components/table/table";
 import TorrentTableItem from "@/src/components/table/torrent-table-item";
-import MetadataFilesItem from "@/src/components/table/metadata-files-item";
+import TorrentFileTree from "@/src/components/torrent-file-tree/FileTree";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
 import { useSession } from "@/src/providers/session-provider-client";
 
@@ -228,15 +228,13 @@ export default function TorrentsClient({
           <ModalContent>
             <ModalHeader>Details</ModalHeader>
             <ModalBody className="flex flex-col gao-2">
-              <p>{selectedItem?.name}</p>
+              <p className="break-all">{selectedItem?.name}</p>
               {isLoadingFiles ? (
                 <div className="flex justify-center py-4">
                   <Spinner size="sm" />
                 </div>
               ) : torrentFiles.length > 0 ? (
-                <Table items={torrentFiles}>
-                  {(file) => <MetadataFilesItem key={file.index} file={file} />}
-                </Table>
+                <TorrentFileTree files={torrentFiles} />
               ) : null}
             </ModalBody>
             <ModalFooter className="flex flex-col gap-2">
