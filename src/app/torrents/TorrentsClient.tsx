@@ -10,6 +10,7 @@ import {
   ModalHeader,
   Select,
   SelectItem,
+  Spinner,
   useDisclosure,
 } from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
@@ -20,11 +21,12 @@ import {
   TORRENT_SORT_ORDER,
   POLL_INTERVAL_MS,
 } from "@/src/config";
-import type { QbitTorrent } from "@/src/libs/qbit/client";
+import type { QbitTorrent, QbitTorrentFile } from "@/src/libs/qbit/client";
 import { formatDataSize } from "@/src/libs/format-data-size";
 import { formatEta, formatSpeed, formatState } from "@/src/libs/qbit/format";
 import Table from "@/src/components/table/table";
 import TorrentTableItem from "@/src/components/table/torrent-table-item";
+import MetadataFilesItem from "@/src/components/table/metadata-files-item";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
 import { useSession } from "@/src/providers/session-provider-client";
 
@@ -53,6 +55,8 @@ export default function TorrentsClient({
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<QbitTorrent | null>(null);
   const [deleteFiles, setDeleteFiles] = useState(false);
+  const [torrentFiles, setTorrentFiles] = useState<QbitTorrentFile[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
 
   const sortBy = (session.torrents?.sortBy as SortBy) ?? DEFAULT_SORT_BY;
   const sortOrder =
@@ -87,16 +91,30 @@ export default function TorrentsClient({
     });
   }, [torrents, sortBy, sortOrder]);
 
-  function handleSelectItem(item: QbitTorrent) {
+  async function handleSelectItem(item: QbitTorrent) {
     setSelectedItem(item);
     setDeleteFiles(false);
+    setTorrentFiles([]);
+    setIsLoadingFiles(true);
     onModalOpen();
+    try {
+      const { data } = await fetchData<{
+        ok: boolean;
+        files?: QbitTorrentFile[];
+      }>(`/api/qbit/torrents/${item.hash}`, { silent: true });
+      setTorrentFiles(data.files ?? []);
+    } catch {
+      /* non-critical — show empty list */
+    } finally {
+      setIsLoadingFiles(false);
+    }
   }
 
   function handleCloseModal() {
     onModalClose();
     setTimeout(() => {
       setSelectedItem(null);
+      setTorrentFiles([]);
     }, 200);
   }
 
@@ -149,7 +167,7 @@ export default function TorrentsClient({
   }
 
   return (
-    <main className="container-main w-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
+    <main className="container-main w-full h-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
       {/* Sorting controls */}
       <div className="flex gap-2 bg-white/80 rounded-lg border border-stone-200 p-3">
         <Select
@@ -183,24 +201,22 @@ export default function TorrentsClient({
 
       {/* Torrents table */}
       {sortedTorrents.length === 0 ? (
-        <div className="flex w-full grow justify-center items-center">
+        <div className="flex w-full h-full justify-center items-center">
           <MediaListEmpty
             title="No torrents found"
             message="Add some and come back later."
           />
         </div>
       ) : (
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <Table items={sortedTorrents}>
-            {(item) => (
-              <TorrentTableItem
-                key={item.hash}
-                item={item}
-                onClick={() => handleSelectItem(item)}
-              />
-            )}
-          </Table>
-        </div>
+        <Table items={sortedTorrents}>
+          {(item) => (
+            <TorrentTableItem
+              key={item.hash}
+              item={item}
+              onClick={() => handleSelectItem(item)}
+            />
+          )}
+        </Table>
       )}
 
       <Modal
@@ -214,46 +230,47 @@ export default function TorrentsClient({
           <ModalContent>
             <ModalHeader>Details</ModalHeader>
             <ModalBody>
-              <div className="w-full">
-                <p className="break-all">{selectedItem.name}</p>
-                <div className="mt-4 flex flex-col gap-1">
-                  <p>Status: {formatState(selectedItem.state)}</p>
-                  <p>Progress: {(selectedItem.progress * 100).toFixed(1)}%</p>
-                  <p>Size: {formatDataSize(selectedItem.size)}</p>
-                  <p>Down: {formatSpeed(selectedItem.dlSpeed ?? 0)}</p>
-                  <p>Up: {formatSpeed(selectedItem.upSpeed ?? 0)}</p>
-                  <p>Seeds: {selectedItem.numSeeds ?? "-"}</p>
-                  <p>Leech: {selectedItem.numLeechs ?? "-"}</p>
-                  <p>ETA: {formatEta(selectedItem.eta ?? -1)}</p>
-                </div>
-                <div className="mt-4">
-                  <Checkbox
-                    isSelected={deleteFiles}
-                    onValueChange={setDeleteFiles}
-                  >
-                    Delete files
-                  </Checkbox>
-                </div>
+              <div className="mt-2">
+                {isLoadingFiles ? (
+                  <div className="flex justify-center py-4">
+                    <Spinner size="sm" />
+                  </div>
+                ) : torrentFiles.length > 0 ? (
+                  <Table items={torrentFiles}>
+                    {(file) => (
+                      <MetadataFilesItem
+                        key={file.index}
+                        file={file}
+                        maxSize={Math.max(...torrentFiles.map((f) => f.size))}
+                      />
+                    )}
+                  </Table>
+                ) : null}
               </div>
             </ModalBody>
-            <ModalFooter className="flex justify-center gap-2">
-              <Button
-                className="w-32"
-                color="default"
-                variant="ghost"
-                onPress={handleCloseModal}
-              >
-                Close
-              </Button>
-              <Button
-                className="w-32"
-                color="danger"
-                variant="solid"
-                onPress={handleConfirmDelete}
-                isLoading={isDeleting}
-              >
-                Delete
-              </Button>
+            <ModalFooter className="flex flex-col gap-2">
+              <Checkbox isSelected={deleteFiles} onValueChange={setDeleteFiles}>
+                Delete files
+              </Checkbox>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  className="w-32"
+                  color="default"
+                  variant="ghost"
+                  onPress={handleCloseModal}
+                >
+                  Close
+                </Button>
+                <Button
+                  className="w-32"
+                  color="danger"
+                  variant="solid"
+                  onPress={handleConfirmDelete}
+                  isLoading={isDeleting}
+                >
+                  Delete
+                </Button>
+              </div>
             </ModalFooter>
           </ModalContent>
         )}

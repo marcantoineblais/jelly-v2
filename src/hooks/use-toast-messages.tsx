@@ -10,7 +10,7 @@ export default function ToastMessagesProvider({
   return (
     <HeroUIProvider className="h-full">
       {children}
-      <ToastProvider placement="bottom-center" />
+      <ToastProvider placement="bottom-right" />
     </HeroUIProvider>
   );
 }

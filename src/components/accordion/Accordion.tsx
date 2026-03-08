@@ -16,7 +16,7 @@ export default function Accordion({ isOpen, children }: AccordionProps) {
 
   return (
     <div
-      className="overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 h-full data-open:max-h-full"
+      className="relative overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 h-full data-open:max-h-full"
       data-open={isOpen || undefined}
       onTransitionEnd={handleTransitionEnd}
     >

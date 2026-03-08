@@ -51,6 +51,12 @@ export type QbitTorrent = {
   magnetUri: string;
 };
 
+export type QbitTorrentFile = {
+  index: number;
+  name: string;
+  size: number;
+};
+
 function mapQbitTorrent(raw: QbitTorrentRaw): QbitTorrent {
   return {
     hash: raw.hash,
@@ -210,6 +216,147 @@ export async function addTorrent(url: string): Promise<void> {
     contentType: "application/x-www-form-urlencoded",
     body: new URLSearchParams({ urls: url }).toString(),
   });
+}
+
+
+/**
+ * Get the file list for a torrent by hash.
+ * Returns null when qBittorrent hasn't resolved metadata yet (magnet links)
+ * — callers should retry after a short delay.
+ */
+export async function getTorrentFiles(
+  hash: string,
+): Promise<QbitTorrentFile[] | null> {
+  try {
+    const files = await qbitRequest<QbitTorrentFile[]>("/torrents/files", {
+      searchParams: { hash },
+    });
+    return files ?? [];
+  } catch (err) {
+    // 409 = metadata not yet available (newer qBittorrent versions)
+    if (err instanceof Error && err.message.includes("409")) return null;
+    throw err;
+  }
+}
+
+export async function pauseTorrent(hash: string): Promise<void> {
+  const body = new URLSearchParams({ hashes: hash }).toString();
+  const opts = {
+    method: "POST" as const,
+    contentType: "application/x-www-form-urlencoded",
+    body,
+  };
+  try {
+    // qBittorrent 5.x renamed /pause → /stop
+    await qbitRequest("/torrents/stop", opts);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("404")) {
+      await qbitRequest("/torrents/pause", opts);
+    } else {
+      throw err;
+    }
+  }
+}
+
+export type TorrentPreview = {
+  hash: string;
+  files: QbitTorrentFile[];
+  alreadyExists: boolean;
+};
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function extractMagnetHash(url: string): string | null {
+  const match = url.match(/urn:btih:([a-zA-Z0-9]+)/i);
+  if (!match) return null;
+  const raw = match[1];
+  if (raw.length === 40) return raw.toLowerCase();
+  if (raw.length === 32) {
+    const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let bits = 0, value = 0, hex = "";
+    for (const ch of raw.toUpperCase()) {
+      const idx = alpha.indexOf(ch);
+      if (idx === -1) return null;
+      value = (value << 5) | idx;
+      bits += 5;
+      if (bits >= 8) {
+        hex += ((value >>> (bits - 8)) & 0xff).toString(16).padStart(2, "0");
+        bits -= 8;
+      }
+    }
+    return hex;
+  }
+  return null;
+}
+
+/**
+ * Add a torrent to qBittorrent and resolve its hash + initial file list.
+ * If the torrent is already present, returns its info immediately without
+ * adding a duplicate. Throws if the hash cannot be resolved after ~30 s.
+ */
+export async function previewTorrent(url: string): Promise<TorrentPreview> {
+  const currentTorrents = await listTorrents();
+  const before = new Set(currentTorrents.map((t) => t.hash.toLowerCase()));
+  const magnetHash = extractMagnetHash(url);
+
+  // Fast path: torrent already in qBittorrent (detectable via magnet hash)
+  if (magnetHash && before.has(magnetHash)) {
+    const files = (await getTorrentFiles(magnetHash)) ?? [];
+    return { hash: magnetHash, files, alreadyExists: true };
+  }
+
+  await addTorrent(url);
+
+  // Poll until the new entry appears (max ~30 s)
+  let hash: string | null = null;
+  for (let i = 0; i < 30; i++) {
+    await sleep(1000);
+    const current = await listTorrents();
+    const newEntry = current.find((t) => !before.has(t.hash.toLowerCase()));
+    if (newEntry) {
+      hash = newEntry.hash.toLowerCase();
+      break;
+    }
+  }
+
+  // Slow path: no new entry found — assume duplicate, find it in the list
+  if (!hash) {
+    const current = await listTorrents();
+    const existing = magnetHash
+      ? current.find((t) => t.hash.toLowerCase() === magnetHash)
+      : current
+          .filter((t) => !before.has(t.hash.toLowerCase()))
+          .sort((a, b) => b.addedOn - a.addedOn)[0];
+    if (existing) {
+      const files = (await getTorrentFiles(existing.hash)) ?? [];
+      return { hash: existing.hash.toLowerCase(), files, alreadyExists: true };
+    }
+    throw new Error("Could not resolve torrent hash after adding");
+  }
+
+  const files = (await getTorrentFiles(hash)) ?? [];
+  return { hash, files, alreadyExists: false };
+}
+
+export async function resumeTorrent(hash: string): Promise<void> {
+  const body = new URLSearchParams({ hashes: hash }).toString();
+  const opts = {
+    method: "POST" as const,
+    contentType: "application/x-www-form-urlencoded",
+    body,
+  };
+  try {
+    // qBittorrent 5.x renamed /resume → /start
+    await qbitRequest("/torrents/start", opts);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("404")) {
+      await qbitRequest("/torrents/resume", opts);
+    } else {
+      throw err;
+    }
+  }
 }
 
 export async function deleteTorrent(
