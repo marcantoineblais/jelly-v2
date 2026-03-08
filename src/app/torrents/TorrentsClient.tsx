@@ -227,20 +227,19 @@ export default function TorrentsClient({
         {selectedItem && (
           <ModalContent>
             <ModalHeader>Details</ModalHeader>
-            <ModalBody>
-              <div className="mt-2">
-                {isLoadingFiles ? (
-                  <div className="flex justify-center py-4">
-                    <Spinner size="sm" />
-                  </div>
-                ) : torrentFiles.length > 0 ? (
-                  <Table items={torrentFiles}>
-                    {(file) => (
-                      <MetadataFilesItem key={file.index} file={file} />
-                    )}
-                  </Table>
-                ) : null}
-              </div>
+            <ModalBody className="flex flex-col gao-2">
+              <p>{selectedItem?.title}</p>
+              {isLoadingFiles ? (
+                <div className="flex justify-center py-4">
+                  <Spinner size="sm" />
+                </div>
+              ) : torrentFiles.length > 0 ? (
+                <Table items={torrentFiles}>
+                  {(file) => (
+                    <MetadataFilesItem key={file.index} file={file} />
+                  )}
+                </Table>
+              ) : null}
             </ModalBody>
             <ModalFooter className="flex flex-col gap-2">
               <Checkbox isSelected={deleteFiles} onValueChange={setDeleteFiles}>
