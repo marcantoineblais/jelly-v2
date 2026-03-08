@@ -22,6 +22,18 @@
   user-select: none;
 }
 
+/* Prevent iOS Safari from auto-zooming the viewport on input focus.
+   Safari zooms in whenever a focused input has font-size < 16px.
+   This targets the actual <input>/<select>/<textarea> elements rendered
+   inside HeroUI components, not the wrapper divs. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 p {
   user-select: text;
 }
