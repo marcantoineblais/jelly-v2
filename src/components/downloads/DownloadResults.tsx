@@ -261,7 +261,7 @@ export default function DownloadResults({
             <ModalHeader>Metadata</ModalHeader>
 
             <ModalBody className="flex flex-col gap-2">
-              <p>selectedItem?.title</p>
+              <p>{selectedItem?.title}</p>
               {files.length === 0 ? (
                 <div className="w-full flex justify-center py-8">
                   <Spinner size="lg" />
