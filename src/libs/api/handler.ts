@@ -1,21 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyHandler = (...args: any[]) => Promise<NextResponse>;
+type RouteContext<P extends Record<string, string | string[]> = Record<string, string | string[]>> = {
+  params: Promise<P>;
+};
+
+type AnyHandler<P extends Record<string, string | string[]> = Record<string, string | string[]>> = (
+  req: NextRequest,
+  ctx: RouteContext<P>,
+) => Promise<NextResponse>;
 
 /**
  * Wraps a Next.js route handler with consistent error handling and logging.
  * Handles any uncaught error by logging it and returning a JSON error response.
  */
-export function withHandler<T extends AnyHandler>(
+export function withHandler<P extends Record<string, string | string[]>>(
   source: string,
-  fn: T,
+  fn: AnyHandler<P>,
   options: { status?: number } = {},
-): T {
-  return (async (...args: Parameters<T>) => {
+): AnyHandler<P> {
+  return async (req: NextRequest, ctx: RouteContext<P>) => {
     try {
-      return await fn(...args);
+      return await fn(req, ctx);
     } catch (err) {
       log({ source, message: "Request failed", data: err, level: "error" });
       const message = err instanceof Error ? err.message : "Request failed";
@@ -24,5 +30,5 @@ export function withHandler<T extends AnyHandler>(
         { status: options.status ?? 500 },
       );
     }
-  }) as T;
+  };
 }
