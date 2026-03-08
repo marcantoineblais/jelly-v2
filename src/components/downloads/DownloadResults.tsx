@@ -15,6 +15,7 @@ import {
 import type { FeedItem } from "@/src/libs/downloads/feed-format";
 import type { TorrentPreviewResponse } from "@/src/app/api/qbit/torrents/preview/route";
 import type { QbitTorrentFile } from "@/src/libs/qbit/client";
+import { POLL_INTERVAL_MS } from "@/src/config";
 import useFetch from "@/src/hooks/use-fetch";
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
@@ -107,7 +108,7 @@ export default function DownloadResults({
         } catch {
           // Keep retrying — transient errors are expected while metadata loads
         }
-      }, 1000);
+      }, POLL_INTERVAL_MS);
     },
     [fetchData, stopPolling],
   );

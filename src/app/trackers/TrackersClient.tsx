@@ -64,6 +64,18 @@ const EMPTY_FORM: TrackerFormData = {
   category: "",
 };
 
+function buildTrackerPayload(formData: TrackerFormData) {
+  return {
+    title: formData.title.trim(),
+    library: formData.library.trim(),
+    season: formData.season,
+    minEpisode: formData.minEpisode,
+    additionalQuery: formData.additionalQuery.trim(),
+    indexer: formData.indexer.trim(),
+    category: formData.category.trim(),
+  };
+}
+
 type TrackersClientProps = {
   initialShows: TrackedShow[];
   libraries: { name: string; path: string }[];
@@ -244,24 +256,7 @@ export default function TrackersClient({
   }
 
   async function handleAdd() {
-    const title = formData.title.trim();
-    const library = formData.library.trim();
-    const season = formData.season;
-    const minEpisode = formData.minEpisode;
-    const additionalQuery = formData.additionalQuery.trim();
-    const indexer = formData.indexer.trim();
-    const category = formData.category.trim();
-
-    const payload = {
-      title,
-      library,
-      season,
-      minEpisode,
-      additionalQuery,
-      indexer,
-      category,
-    };
-
+    const payload = buildTrackerPayload(formData);
     const hasErrors = validate(payload);
     if (hasErrors) return;
 
@@ -291,24 +286,7 @@ export default function TrackersClient({
 
   async function handleUpdate() {
     if (!selectedShow) return;
-    const title = formData.title.trim();
-    const library = formData.library.trim();
-    const season = formData.season;
-    const minEpisode = formData.minEpisode;
-    const additionalQuery = formData.additionalQuery.trim();
-    const indexer = formData.indexer.trim();
-    const category = formData.category.trim();
-
-    const payload = {
-      title,
-      library,
-      season,
-      minEpisode,
-      additionalQuery,
-      indexer,
-      category,
-    };
-
+    const payload = buildTrackerPayload(formData);
     const hasErrors = validate(payload);
     if (hasErrors) return;
 

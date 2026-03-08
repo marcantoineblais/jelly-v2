@@ -79,6 +79,8 @@ function mapQbitTorrent(raw: QbitTorrentRaw): QbitTorrent {
 }
 
 const COOKIE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const PREVIEW_POLL_MAX_RETRIES = 30;
+const PREVIEW_POLL_INTERVAL_MS = 1000;
 
 // Module-level cache. In Next.js: persists for process lifetime (serverful) or
 // per cold start (serverless). Reduces login calls when multiple qbit requests
@@ -311,8 +313,8 @@ export async function previewTorrent(url: string): Promise<TorrentPreview> {
 
   // Poll until the new entry appears (max ~30 s)
   let hash: string | null = null;
-  for (let i = 0; i < 30; i++) {
-    await sleep(1000);
+  for (let i = 0; i < PREVIEW_POLL_MAX_RETRIES; i++) {
+    await sleep(PREVIEW_POLL_INTERVAL_MS);
     const current = await listTorrents();
     const newEntry = current.find((t) => !before.has(t.hash.toLowerCase()));
     if (newEntry) {

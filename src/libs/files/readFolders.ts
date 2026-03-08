@@ -4,6 +4,7 @@ import { MediaFile } from "../../types/MediaFile";
 import { extractInfo } from "./extractInfo";
 import { assignDefaultLibrary } from "./assignDefaultLibrary";
 import { MediaLibrary } from "@/src/types/MediaLibrary";
+import { log } from "@/src/libs/logger";
 
 export function readFolders(
   folders: string[],
@@ -51,7 +52,7 @@ function extractFilesFromFolder(
 ) {
   const exists = fs.existsSync(folderPath);
   if (!exists) {
-    console.error(`[Read Folders Lib] Folder does not exist: ${folderPath}`);
+    log({ source: "readFolders", message: `Folder does not exist: ${folderPath}`, level: "error" });
     return filesList;
   }
   let entries: string[];

@@ -15,6 +15,7 @@ import MediaEditForm from "./MediaEditForm";
 import FileSelectionBox from "../ui/FileSelectionBox";
 import FileCopyStatus from "../ui/FileCopyStatus";
 import { validateData } from "@/src/libs/files/validateData";
+import { log } from "@/src/libs/logger";
 import { sortFilesByLibrary } from "@/src/libs/files/sortFilesByLibrary";
 import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-socket";
 import MediaListEmpty from "./MediaListEmpty";
@@ -293,7 +294,7 @@ export default function MediaList({
         return;
       }
     } catch (error) {
-      console.error(error);
+      log({ source: "MediaList", message: "Unexpected save error", data: error, level: "error" });
       addToast({
         title: "Unexpected error",
         description:

@@ -1,4 +1,5 @@
 import { listTorrents } from "@/src/libs/qbit/client";
+import { log } from "@/src/libs/logger";
 import TorrentsClient from "./TorrentsClient";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +9,7 @@ async function getTorrents() {
     const torrents = await listTorrents();
     return torrents;
   } catch (err) {
-    console.error("[torrents] Failed to fetch torrents:", err);
+    log({ source: "torrents/page", message: "Failed to fetch torrents", data: err, level: "error" });
     return [];
   }
 }

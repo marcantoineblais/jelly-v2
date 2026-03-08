@@ -1,6 +1,6 @@
 import { listTorrents, addTorrent, QbitTorrent } from "@/src/libs/qbit/client";
-import { log } from "@/src/libs/logger";
 import { NextResponse } from "next/server";
+import { withHandler } from "@/src/libs/api/handler";
 
 export type QbittorrentResponse = {
   ok: boolean;
@@ -8,8 +8,9 @@ export type QbittorrentResponse = {
   error?: string;
 };
 
-export async function GET(request: Request) {
-  try {
+export const GET = withHandler(
+  "qbit/torrents",
+  async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get("filter") ?? undefined;
     const sort = searchParams.get("sort") ?? undefined;
@@ -20,15 +21,13 @@ export async function GET(request: Request) {
       reverse: reverse === "true",
     });
     return NextResponse.json({ ok: true, torrents });
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "qBittorrent request failed";
-    return NextResponse.json({ ok: false, error: message }, { status: 502 });
-  }
-}
+  },
+  { status: 502 },
+);
 
-export async function POST(request: Request) {
-  try {
+export const POST = withHandler(
+  "qbit/torrents",
+  async (request: Request) => {
     const body = await request.json();
     const url = body.url?.trim();
     if (!url || typeof url !== "string") {
@@ -37,14 +36,6 @@ export async function POST(request: Request) {
 
     await addTorrent(url);
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    log({
-      source: "qbit/torrents",
-      message: "Failed to add torrent",
-      data: err,
-      level: "error",
-    });
-    const message = err instanceof Error ? err.message : "Add torrent failed";
-    return NextResponse.json({ ok: false, error: message }, { status: 502 });
-  }
-}
+  },
+  { status: 502 },
+);

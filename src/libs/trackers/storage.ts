@@ -41,6 +41,13 @@ export async function updateShow(
   return shows[index];
 }
 
+export async function readShowById(
+  id: string,
+): Promise<TrackedShow | null> {
+  const shows = await readShows();
+  return shows.find((s) => s.id === id) ?? null;
+}
+
 export async function removeShow(id: string): Promise<boolean> {
   const shows = await readShows();
   const filtered = shows.filter((s) => s.id !== id);

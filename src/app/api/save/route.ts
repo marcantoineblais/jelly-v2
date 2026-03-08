@@ -1,51 +1,40 @@
 export const runtime = "nodejs";
 
 import { FILE_SERVER_URL } from "@/src/config";
-import { log } from "@/src/libs/logger";
 import { NextRequest, NextResponse } from "next/server";
+import { withHandler } from "@/src/libs/api/handler";
 
-export async function POST(request: NextRequest) {
-  try {
-    const files = await request.json();
+export const POST = withHandler("save", async (request: NextRequest) => {
+  const files = await request.json();
 
-    if (!FILE_SERVER_URL) {
-      return NextResponse.json(
-        { ok: false, error: "File server URL not configured" },
-        { status: 500 },
-      );
-    }
+  if (!FILE_SERVER_URL) {
+    return NextResponse.json(
+      { ok: false, error: "File server URL not configured" },
+      { status: 500 },
+    );
+  }
 
-    const res = await fetch(`${FILE_SERVER_URL}/process-files`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ files }),
-    });
+  const res = await fetch(`${FILE_SERVER_URL}/process-files`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ files }),
+  });
 
-    if (!res.ok) {
-      let message = "Failed to submit job";
-      try {
-        const data = await res.json();
-        if (data && typeof data === "object" && "error" in data) {
-          message = (data as { error?: string }).error || message;
-        }
-      } catch {
-        // ignore JSON parse errors and fall back to default message
+  if (!res.ok) {
+    let message = "Failed to submit job";
+    try {
+      const data = await res.json();
+      if (data && typeof data === "object" && "error" in data) {
+        message = (data as { error?: string }).error || message;
       }
-      return NextResponse.json(
-        { ok: false, error: message },
-        { status: res.status || 500 },
-      );
+    } catch {
+      // ignore JSON parse errors and fall back to default message
     }
-  } catch (error) {
-    log({
-      source: "save",
-      message: "Error processing files",
-      data: error,
-      level: "error",
-    });
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: message },
+      { status: res.status || 500 },
+    );
   }
 
   return NextResponse.json({ ok: true });
-}
+});

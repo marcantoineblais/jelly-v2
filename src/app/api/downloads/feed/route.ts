@@ -1,8 +1,8 @@
 import { DOWNLOAD_SORT_BY, DOWNLOAD_SORT_ORDER } from "@/src/config";
-import { log } from "@/src/libs/logger";
 import { FeedItem, SortBy } from "@/src/libs/downloads/feed-format";
 import { searchJackett } from "@/src/libs/downloads/jackett";
 import { NextResponse } from "next/server";
+import { withHandler } from "@/src/libs/api/handler";
 
 export type FeedResponse = {
   ok: boolean;
@@ -11,8 +11,9 @@ export type FeedResponse = {
   error?: string;
 };
 
-export async function GET(request: Request) {
-  try {
+export const GET = withHandler(
+  "downloads/feed",
+  async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const name = searchParams.get("name") ?? searchParams.get("q") ?? "";
     const indexerParam = searchParams.get("indexers") ?? "";
@@ -42,21 +43,7 @@ export async function GET(request: Request) {
     };
 
     const { items, total } = await searchJackett(query, indexerId, options);
-    return NextResponse.json({
-      ok: true,
-      items,
-      total,
-    });
-  } catch (err) {
-    log({
-      source: "downloads/feed",
-      message: "Error: ",
-      data: err,
-      level: "error",
-    });
-
-    const message =
-      err instanceof Error ? err.message : "Failed to search torrents";
-    return NextResponse.json({ ok: false, error: message }, { status: 502 });
-  }
-}
+    return NextResponse.json({ ok: true, items, total });
+  },
+  { status: 502 },
+);

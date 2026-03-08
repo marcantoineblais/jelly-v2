@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { log } from "@/src/libs/logger";
 import { updateShow, removeShow } from "@/src/libs/trackers/storage";
 import type { TrackedShow } from "@/src/types/TrackedShow";
 import { validateFormData } from "@/src/libs/validation/tracker-validations";
+import { withHandler } from "@/src/libs/api/handler";
 
 export type UpdateTrackerResponse = {
   ok: boolean;
@@ -18,8 +18,9 @@ export type DeleteTrackerResponse = {
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function PUT(request: Request, { params }: RouteParams) {
-  try {
+export const PUT = withHandler(
+  "trackers",
+  async (request: Request, { params }: RouteParams) => {
     const { id } = await params;
     const body = await request.json();
     const title = body.title?.trim();
@@ -54,21 +55,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     return NextResponse.json({ ok: true, show });
-  } catch (err) {
-    log({
-      source: "trackers",
-      message: "Error updating tracker:",
-      data: err,
-      level: "error",
-    });
-    const message =
-      err instanceof Error ? err.message : "Failed to update tracker";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
-}
+  },
+);
 
-export async function DELETE(_request: Request, { params }: RouteParams) {
-  try {
+export const DELETE = withHandler(
+  "trackers",
+  async (_request: Request, { params }: RouteParams) => {
     const { id } = await params;
     const removed = await removeShow(id);
     if (!removed) {
@@ -79,15 +71,5 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    log({
-      source: "trackers",
-      message: "Error deleting tracker:",
-      data: err,
-      level: "error",
-    });
-    const message =
-      err instanceof Error ? err.message : "Failed to delete tracker";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
-}
+  },
+);

@@ -6,8 +6,9 @@ import { JWT_COOKIE_NAME } from "@/src/config";
 import { getCurrentUser } from "@/src/libs/auth/login";
 import { readSession, writeSession } from "@/src/libs/session/storage";
 import { SessionData } from "@/src/providers/session-provider";
+import { withHandler } from "@/src/libs/api/handler";
 
-export async function GET() {
+export const GET = withHandler("session", async () => {
   const cookieStore = await cookies();
   const token = cookieStore.get(JWT_COOKIE_NAME)?.value;
   const username = await getCurrentUser(token);
@@ -21,9 +22,9 @@ export async function GET() {
 
   const session = await readSession(username);
   return NextResponse.json({ ok: true, session: session ?? {} });
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withHandler("session", async (request: NextRequest) => {
   const cookieStore = await cookies();
   const token = cookieStore.get(JWT_COOKIE_NAME)?.value;
   const username = await getCurrentUser(token);
@@ -45,13 +46,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  try {
-    await writeSession(username, body);
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to save session";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
-  }
-
+  await writeSession(username, body);
   return NextResponse.json({ ok: true });
-}
+});

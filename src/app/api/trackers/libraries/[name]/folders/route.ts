@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { log } from "@/src/libs/logger";
 import {
   findLibraryByName,
   listShowFolders,
 } from "@/src/libs/trackers/library";
+import { withHandler } from "@/src/libs/api/handler";
 
 export type LibraryFoldersResponse = {
   ok: boolean;
@@ -13,8 +13,9 @@ export type LibraryFoldersResponse = {
 
 type RouteParams = { params: Promise<{ name: string }> };
 
-export async function GET(_request: Request, { params }: RouteParams) {
-  try {
+export const GET = withHandler(
+  "trackers/libraries/folders",
+  async (_request: Request, { params }: RouteParams) => {
     const { name } = await params;
     const decoded = decodeURIComponent(name);
     const library = findLibraryByName(decoded);
@@ -27,18 +28,5 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     const folders = await listShowFolders(library.path);
     return NextResponse.json({ ok: true, folders });
-  } catch (err) {
-    log({
-      source: "trackers/libraries/folders",
-      message: "Error listing folders:",
-      data: err,
-      level: "error",
-    });
-    const message =
-      err instanceof Error ? err.message : "Failed to list folders";
-    return NextResponse.json(
-      { ok: false, error: message, folders: [] },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAndCreateSession } from "@/src/libs/auth/login";
-import { IS_PROD, JWT_COOKIE_NAME } from "@/src/config";
+import { IS_PROD, JWT_COOKIE_NAME, SESSION_DURATION_MS } from "@/src/config";
 import { validateLoginFormData } from "@/src/libs/validation/auth-validations";
+import { withHandler } from "@/src/libs/api/handler";
 
-export async function POST(request: NextRequest) {
+export const POST = withHandler("auth/login", async (request: NextRequest) => {
   let body: unknown;
   try {
     body = await request.json();
@@ -41,15 +42,13 @@ export async function POST(request: NextRequest) {
   }
 
   const cookieStore = await cookies();
-  const cookieName = JWT_COOKIE_NAME;
-
-  cookieStore.set(cookieName, result.token, {
+  cookieStore.set(JWT_COOKIE_NAME, result.token, {
     httpOnly: true,
     secure: IS_PROD,
     sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    maxAge: SESSION_DURATION_MS / 1000,
     path: "/",
   });
 
   return NextResponse.json({ ok: true });
-}
+});

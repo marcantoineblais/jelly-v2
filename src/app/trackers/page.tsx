@@ -1,6 +1,7 @@
 import { getJackettIndexers } from "@/src/libs/downloads/jackett";
 import { getShowLibraries } from "@/src/libs/trackers/library";
 import { readShows } from "@/src/libs/trackers/storage";
+import { log } from "@/src/libs/logger";
 import TrackersClient from "./TrackersClient";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ async function getIndexers() {
     const result = await getJackettIndexers();
     return result.indexers;
   } catch (err) {
-    console.error("[trackers] Failed to fetch indexers:", err);
+    log({ source: "trackers/page", message: "Failed to fetch indexers", data: err, level: "error" });
     return [];
   }
 }

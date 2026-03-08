@@ -3,6 +3,7 @@
 import { addToast } from "@heroui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useConfig } from "../providers/config-provider-client";
+import { log } from "@/src/libs/logger";
 
 export interface TransferStatus {
   currentFile: string;
@@ -31,7 +32,7 @@ export function useFileTransferWebSocket(
 
   useEffect(() => {
     if (!socketServerUrl) {
-      console.error("SOCKET_SERVER_URL is not set");
+      log({ source: "useFileTransferWebSocket", message: "SOCKET_SERVER_URL is not set", level: "error" });
       return;
     }
 

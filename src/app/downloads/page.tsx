@@ -1,4 +1,5 @@
 import { getJackettIndexers } from "@/src/libs/downloads/jackett";
+import { log } from "@/src/libs/logger";
 import DownloadsClient from "./DownloadsClient";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ async function getIndexers() {
     );
     return indexers;
   } catch (err) {
-    console.error("[downloads] Failed to fetch indexers:", err);
+    log({ source: "downloads/page", message: "Failed to fetch indexers", data: err, level: "error" });
     return [];
   }
 }
