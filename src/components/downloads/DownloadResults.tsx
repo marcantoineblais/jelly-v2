@@ -185,6 +185,8 @@ export default function DownloadResults({
   }
 
   function handleCloseModal() {
+    // Guard: prevent double-execution when both onPress and onOpenChange fire.
+    if (!modalActiveRef.current) return;
     modalActiveRef.current = false;
     stopPolling();
     deletePendingHash();
@@ -252,10 +254,12 @@ export default function DownloadResults({
 
       <Modal
         isOpen={isModalOpen}
-        onOpenChange={onModalOpenChange}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) handleCloseModal();
+          onModalOpenChange(isOpen);
+        }}
         placement="center"
         scrollBehavior="inside"
-        onClose={handleCloseModal}
       >
         {selectedItem && (
           <ModalContent>

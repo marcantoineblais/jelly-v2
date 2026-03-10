@@ -204,7 +204,10 @@ export async function listTorrents(params?: {
   return raw.map(mapQbitTorrent);
 }
 
-export async function addTorrent(url: string): Promise<void> {
+export async function addTorrent(
+  url: string,
+  options?: { paused?: boolean },
+): Promise<void> {
   if (!url) {
     throw new Error("No download URL provided for this torrent");
   }
@@ -212,10 +215,16 @@ export async function addTorrent(url: string): Promise<void> {
   // qBittorrent shares the same network namespace as Jackett (both behind
   // gluetun), so localhost Jackett proxy URLs resolve correctly. Jackett
   // handles the Cloudflare bypass via Byparr before returning the torrent.
+  const params: Record<string, string> = { urls: url };
+  if (options?.paused) {
+    // qBittorrent 4.x uses "paused", 5.x renamed it to "stopped" — send both
+    params.paused = "true";
+    params.stopped = "true";
+  }
   await qbitRequest("/torrents/add", {
     method: "POST",
     contentType: "application/x-www-form-urlencoded",
-    body: new URLSearchParams({ urls: url }).toString(),
+    body: new URLSearchParams(params).toString(),
   });
 }
 
@@ -309,7 +318,13 @@ export async function previewTorrent(url: string): Promise<TorrentPreview> {
     return { hash: magnetHash, files, alreadyExists: true };
   }
 
-  await addTorrent(url);
+  // For .torrent file URLs, metadata is embedded in the file so qBittorrent
+  // can read the file list without ever starting the download. Add paused so
+  // no content files are written to disk during the preview.
+  // Magnet links must be added unpaused: qBittorrent needs an active
+  // connection to peers/DHT to fetch the info-dictionary before files are
+  // known.
+  await addTorrent(url, { paused: !magnetHash });
 
   // Poll until the new entry appears (max ~30 s)
   let hash: string | null = null;
