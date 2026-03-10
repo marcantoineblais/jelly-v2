@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   } catch (err) {
     if (addedHash) {
       try {
-        await deleteTorrent(addedHash, false);
+        await deleteTorrent(addedHash, true);
       } catch {
         /* best-effort cleanup */
       }

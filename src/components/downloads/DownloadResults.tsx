@@ -77,7 +77,7 @@ export default function DownloadResults({
     pendingHashRef.current = null;
     if (!hash) return;
     try {
-      await fetchData(`/api/qbit/torrents/${hash}`, { method: "DELETE" });
+      await fetchData(`/api/qbit/torrents/${hash}?deleteFiles=true`, { method: "DELETE" });
     } catch {
       /* useFetch shows error toast */
     }
