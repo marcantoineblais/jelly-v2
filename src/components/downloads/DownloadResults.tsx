@@ -254,7 +254,7 @@ export default function DownloadResults({
 
       <Modal
         isOpen={isModalOpen}
-        onOpenChange={(isOpen) => {
+        onOpenChange={(isOpen: boolean) => {
           if (!isOpen) handleCloseModal();
           onModalOpenChange(isOpen);
         }}
