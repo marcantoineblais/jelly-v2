@@ -227,7 +227,7 @@ export default function TorrentsClient({
         {selectedItem && (
           <ModalContent>
             <ModalHeader>Details</ModalHeader>
-            <ModalBody className="flex flex-col gao-2">
+            <ModalBody className="flex flex-col gap-2">
               <p className="break-all">{selectedItem?.name}</p>
               {isLoadingFiles ? (
                 <div className="flex justify-center py-4">

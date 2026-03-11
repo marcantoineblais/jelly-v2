@@ -21,6 +21,21 @@ const NON_CAPITALIZED_WORDS = [
   "yet",
 ];
 
+const SERIES_PATTERNS = [
+  // S01E05
+  { regex: /(^|\-+|\s+)s(\d{2})e(\d{2,3})(\-+|\s+|$)/i, seasonGroup: 2, episodeGroup: 3 },
+  // E05, EP05, EP 05
+  { regex: /(^|\-+|\s+)e[p]?\s*(\d{2,3})(\-+|\s+|$)/i, episodeGroup: 2 },
+  // Non-standard: 1-2 digit season + 1-3 digit episode (e.g. "Show Name 2 05")
+  { regex: /(\-+|\s+)(\d{1,2})(\-+|\s+)(\d{1,3})(\-+|\s+|$)/, seasonGroup: 2, episodeGroup: 4 },
+  // Leading digits (episode only)
+  { regex: /^(\d{1,3})/, episodeGroup: 1 },
+  // Trailing digits (episode only)
+  { regex: /(\d{1,3})$/, episodeGroup: 1 },
+];
+
+const SEASON_PATTERN = /(^|\-+|\s+)s(?:eason)?\s*(\d{1,2})(\-+|\s+|$)/i;
+
 function capitalize(str = "") {
   const words = str.split(/(\s|\-)/);
   const capitalizedList = words.map((word, i) => {
@@ -42,32 +57,32 @@ export function extractInfo(
 ): MediaInfo {
   filename = filename.replaceAll(/[_\.\,]/g, " "); // replace spacing symbols with actual space
 
-  let title = extractTitle(filename);
+  const year = extractYear(filename);
+  const [season, episode, seriesPattern] = extractSeries(filename);
+
+  let title = extractTitle(filename, seriesPattern);
 
   // When title from filename is very short, it was likely in the parent folder name
   if (title.length < MIN_TITLE_LENGTH && parentName) {
     parentName = parentName.replaceAll(/[_\.\,]/g, " ").trim();
-    title = extractTitle(parentName);
+    title = extractTitle(parentName, seriesPattern);
   }
-
-  const year = extractYear(filename);
-  const [season, episode] = extractSeries(filename);
 
   return { title, year, season, episode };
 }
 
-function extractTitle(filename: string = "") {
-  let title = filename.replace(
-    /\-?(\-+|\s+)s\d{2}e\d{2}(\-?e\d{2})?(\-+|\s+|$).*$/i,
-    "",
-  ); // remove everything after S00E00
+function extractTitle(filename: string = "", seriesPattern?: RegExp) {
+  let title = filename;
+
+  // Remove series info using the same pattern that matched
+  if (seriesPattern) {
+    title = title.replace(seriesPattern, " ");
+  }
+
   title = title.replaceAll(/\[.*?\]/g, ""); // remove each [...] segment (non-greedy)
   title = title.replaceAll(/\(.*?\)/g, ""); // remove each (...) segment (non-greedy)
   title = title.replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, ""); // remove everything after the resolution
   title = title.replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, ""); // remove everything after the year
-  title = title.replace(/\-?(\-+|\s+)s\d{1,2}(\-+|\s+|$).*$/i, ""); // remove everything after standalone season (e.g. S01 when downloading full season)
-  title = title.replace(/\-?(\-+|\s+)e[p]?\s*\d{1,3}(\-+|\s+|$).*$/i, ""); // remove everything after episode number
-  title = title.replace(/\-?(\-+|\s+)\d{2}$/, ""); // remove trailing 2 digits (usually season or episode)
 
   return capitalize(title.trim());
 }
@@ -80,31 +95,33 @@ function extractYear(filename: string = "") {
   }
 }
 
-function extractSeries(filename: string = "") {
-  const match1 = filename.match(
-    /(^|\-+|\s+)s(\d{2})e(\d{2})(\-?e\d{2})?(\-+|\s+|$)/i,
-  );
-  const match2 = filename.match(/(^|\-+|\s+)e[p]?\s*(\d{1,3})(\-+|\s+|$)/i);
-  const match3 = filename.match(/^(\d{1,3})/);
-  const match4 = filename.match(
-    /(^|\-+|\s+)s(?:eason)?\s*(\d{1,2})(\-+|\s+|$)/i,
-  );
-
+function extractSeries(
+  filename: string = "",
+): [number | undefined, number | undefined, RegExp | undefined] {
   let season;
   let episode;
+  let matchedPattern;
 
-  if (match1) {
-    season = parseInt(match1[2], 10);
-    episode = parseInt(match1[3], 10);
-  } else if (match2) {
-    episode = parseInt(match2[2], 10);
-  } else if (match3) {
-    episode = parseInt(match3[1], 10);
+  for (const pattern of SERIES_PATTERNS) {
+    const match = filename.match(pattern.regex);
+    if (match) {
+      if (pattern.seasonGroup) {
+        season = parseInt(match[pattern.seasonGroup], 10);
+      }
+      if (pattern.episodeGroup) {
+        episode = parseInt(match[pattern.episodeGroup], 10);
+      }
+      matchedPattern = pattern.regex;
+      break;
+    }
   }
 
-  if (season === undefined && match4) {
-    season = parseInt(match4[2], 10);
+  if (season === undefined) {
+    const match = filename.match(SEASON_PATTERN);
+    if (match) {
+      season = parseInt(match[2], 10);
+    }
   }
 
-  return [season, episode];
+  return [season, episode, matchedPattern];
 }

@@ -60,7 +60,7 @@ export const PATCH = withHandler(
         { status: 400 },
       );
     }
-    const body = await request.json().catch(() => ({}));
+    const body = await request.json();
     const action: string = body.action ?? "resume";
 
     if (action === "pause") {
