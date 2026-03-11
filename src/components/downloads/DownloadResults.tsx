@@ -24,6 +24,12 @@ import MediaListEmpty from "@/src/components/media/MediaListEmpty";
 
 type HashFilesResponse = { ok: boolean; files?: QbitTorrentFile[] };
 
+// Tracks what to do with a torrent when its metadata arrives.
+// "resume" — user clicked Download before metadata was ready.
+// "cancel" — user closed the modal (or opened another torrent) before metadata.
+// "ignore" — torrent already existed in qBit; never delete it.
+type TorrentAction = "resume" | "cancel" | "ignore";
+
 type DownloadResultsProps = {
   items: FeedItem[];
   hasSearched: boolean;
@@ -49,12 +55,48 @@ export default function DownloadResults({
   const [files, setFiles] = useState<QbitTorrentFile[]>([]);
   const [isStarting, setIsStarting] = useState(false);
 
+  // Hash of the torrent currently shown in the modal (null when unknown).
   const pendingHashRef = useRef<string | null>(null);
-  const alreadyExistsRef = useRef(false);
-  const modalActiveRef = useRef(false);
+  // Maps torrent hash → deferred action. The preview promise consults this
+  // when it resolves to decide whether to resume, cancel or ignore.
+  const torrentActionsRef = useRef<Record<string, TorrentAction>>({});
   // Polling interval id for the file list.
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const previewPromiseRef = useRef<Promise<void> | null>(null);
+
+  // ── qBit helpers ──────────────────────────────────────────────────────
+
+  async function resumeTorrent(hash: string) {
+    try {
+      await fetchData(`/api/qbit/torrents/${hash}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resume" }),
+        silent: true,
+      });
+    } catch { /* non-critical */ }
+  }
+
+  async function pauseTorrent(hash: string) {
+    try {
+      await fetchData(`/api/qbit/torrents/${hash}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pause" }),
+        silent: true,
+      });
+    } catch { /* non-critical */ }
+  }
+
+  async function deleteTorrent(hash: string) {
+    try {
+      await fetchData(`/api/qbit/torrents/${hash}`, {
+        method: "DELETE",
+        silent: true,
+      });
+    } catch { /* non-critical */ }
+  }
+
+  // ── Polling ───────────────────────────────────────────────────────────
 
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current !== null) {
@@ -62,26 +104,6 @@ export default function DownloadResults({
       pollIntervalRef.current = null;
     }
   }, []);
-
-  function resetModalState() {
-    setSelectedItem(null);
-    setFiles([]);
-    setIsStarting(false);
-    pendingHashRef.current = null;
-    alreadyExistsRef.current = false;
-  }
-
-  async function deletePendingHash() {
-    if (alreadyExistsRef.current) return;
-    const hash = pendingHashRef.current;
-    pendingHashRef.current = null;
-    if (!hash) return;
-    try {
-      await fetchData(`/api/qbit/torrents/${hash}`, { method: "DELETE" });
-    } catch {
-      /* useFetch shows error toast */
-    }
-  }
 
   const startPollingFiles = useCallback(
     (hash: string) => {
@@ -94,16 +116,7 @@ export default function DownloadResults({
           if (data.files && data.files.length > 0) {
             stopPolling();
             setFiles(data.files);
-            try {
-              await fetchData(`/api/qbit/torrents/${hash}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "pause" }),
-                silent: true,
-              });
-            } catch {
-              /* non-critical — torrent stays active until user decides */
-            }
+            await pauseTorrent(hash);
           }
         } catch {
           // Keep retrying — transient errors are expected while metadata loads
@@ -115,100 +128,142 @@ export default function DownloadResults({
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
-  function handleSelectItem(item: FeedItem) {
-    setSelectedItem(item);
+  // ── Modal state ───────────────────────────────────────────────────────
+
+  function resetModalState() {
+    setSelectedItem(null);
     setFiles([]);
-    alreadyExistsRef.current = false;
-    modalActiveRef.current = true;
-
-    // For magnet links the infohash is in the URL — set it immediately so
-    // the Download button works without waiting for the server round-trip.
-    const magnetMatch = item.url.match(/urn:btih:([a-fA-F0-9]{40})/i);
-    pendingHashRef.current = magnetMatch ? magnetMatch[1].toLowerCase() : null;
-
-    onModalOpen();
-
-    const promise = (async () => {
-      try {
-        const { data } = await fetchData<TorrentPreviewResponse>(
-          "/api/qbit/torrents/preview",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: item.url }),
-            silent: true,
-          },
-        );
-
-        if (!modalActiveRef.current) {
-          if (data.hash) {
-            pendingHashRef.current = data.hash;
-            deletePendingHash();
-          }
-          return;
-        }
-
-        pendingHashRef.current = data.hash ?? null;
-        alreadyExistsRef.current = data.alreadyExists ?? false;
-
-        if (data.files && data.files.length > 0) {
-          setFiles(data.files);
-          if (!data.alreadyExists) {
-            try {
-              await fetchData(`/api/qbit/torrents/${data.hash}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "pause" }),
-                silent: true,
-              });
-            } catch {
-              /* non-critical */
-            }
-          }
-        } else if (data.hash) {
-          startPollingFiles(data.hash);
-        }
-      } catch (err) {
-        if (!modalActiveRef.current) return;
-        addToast({
-          title: "Preview failed",
-          description:
-            err instanceof Error ? err.message : "Could not add torrent",
-          severity: "danger",
-        });
-      } finally {
-        previewPromiseRef.current = null;
-      }
-    })();
-
-    previewPromiseRef.current = promise;
+    setIsStarting(false);
+    pendingHashRef.current = null;
   }
 
-  function handleCloseModal() {
-    modalActiveRef.current = false;
-    stopPolling();
-    deletePendingHash();
+  function closeModal() {
+    // Empty string (not null) so stale preview promises for non-magnet links
+    // can distinguish "modal closed" from "waiting for hash".
+    pendingHashRef.current = "";
     onModalClose();
     setTimeout(resetModalState, 200);
   }
 
+  // ── Preview loading ───────────────────────────────────────────────────
+
+  function executeDeferredAction(hash: string, alreadyExists: boolean) {
+    const action = torrentActionsRef.current[hash];
+    if (!action) return false;
+
+    delete torrentActionsRef.current[hash];
+    if (action === "resume") resumeTorrent(hash);
+    else if (action === "cancel" && !alreadyExists) deleteTorrent(hash);
+    return true;
+  }
+
+  function isStalePreview(myHash: string | null, hash: string) {
+    return pendingHashRef.current !== myHash && pendingHashRef.current !== hash;
+  }
+
+  function applyPreview(hash: string, data: TorrentPreviewResponse) {
+    pendingHashRef.current = hash;
+    if (data.alreadyExists) {
+      torrentActionsRef.current[hash] = "ignore";
+    }
+
+    if (data.files && data.files.length > 0) {
+      setFiles(data.files);
+      if (!data.alreadyExists) pauseTorrent(hash);
+    } else {
+      startPollingFiles(hash);
+    }
+  }
+
+  async function loadPreview(item: FeedItem, myHash: string | null) {
+    try {
+      const { data } = await fetchData<TorrentPreviewResponse>(
+        "/api/qbit/torrents/preview",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: item.url }),
+          silent: true,
+        },
+      );
+
+      const hash = data.hash;
+      if (!hash) return;
+
+      if (executeDeferredAction(hash, data.alreadyExists ?? false)) return;
+
+      if (isStalePreview(myHash, hash)) {
+        if (!data.alreadyExists) deleteTorrent(hash);
+        return;
+      }
+
+      applyPreview(hash, data);
+    } catch (err) {
+      if (isStalePreview(myHash, myHash ?? "")) return;
+      addToast({
+        title: "Preview failed",
+        description:
+          err instanceof Error ? err.message : "Could not add torrent",
+        severity: "danger",
+      });
+    }
+  }
+
+  // ── Event handlers ────────────────────────────────────────────────────
+
+  function handleSelectItem(item: FeedItem) {
+    const prevHash = pendingHashRef.current;
+    if (prevHash && torrentActionsRef.current[prevHash] !== "ignore") {
+      torrentActionsRef.current[prevHash] = "cancel";
+    }
+    stopPolling();
+
+    setSelectedItem(item);
+    setFiles([]);
+
+    // For magnet links the infohash is in the URL — set it immediately so
+    // the Download button works without waiting for the server round-trip.
+    const magnetMatch = item.url.match(/urn:btih:([a-fA-F0-9]{40})/i);
+    const myHash = magnetMatch ? magnetMatch[1].toLowerCase() : null;
+    pendingHashRef.current = myHash;
+
+    onModalOpen();
+    loadPreview(item, myHash);
+  }
+
+  function handleCloseModal() {
+    const hash = pendingHashRef.current;
+    stopPolling();
+
+    if (hash) {
+      const action = torrentActionsRef.current[hash];
+      if (action === "ignore") {
+        delete torrentActionsRef.current[hash];
+      } else if (files.length > 0) {
+        delete torrentActionsRef.current[hash];
+        deleteTorrent(hash);
+      } else {
+        torrentActionsRef.current[hash] = "cancel";
+      }
+    }
+
+    closeModal();
+  }
+
   async function handleDownload() {
     const hash = pendingHashRef.current;
-    pendingHashRef.current = null;
-    modalActiveRef.current = false;
     stopPolling();
 
     try {
       setIsStarting(true);
       if (hash) {
-        // We already have the torrent in qBit (paused) — just resume it
+        torrentActionsRef.current[hash] = "resume";
         await fetchData(`/api/qbit/torrents/${hash}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "resume" }),
         });
       } else {
-        // Metadata not ready — add the URL directly and let it download
         await fetchData("/api/qbit/torrents", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -226,9 +281,10 @@ export default function DownloadResults({
       setIsStarting(false);
     }
 
-    onModalClose();
-    setTimeout(resetModalState, 200);
+    closeModal();
   }
+
+  // ── Render ────────────────────────────────────────────────────────────
 
   return (
     <>
