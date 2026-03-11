@@ -33,6 +33,7 @@ export default function DownloadResults({
     selectedItem,
     files,
     isStarting,
+    isLoading,
     isModalOpen,
     onModalOpenChange,
     selectTorrent,
@@ -65,6 +66,8 @@ export default function DownloadResults({
         onOpenChange={onModalOpenChange}
         placement="center"
         scrollBehavior="inside"
+        isDismissable={!isLoading}
+        hideCloseButton={isLoading}
         onClose={cancel}
       >
         {selectedItem && (
@@ -90,6 +93,7 @@ export default function DownloadResults({
                 className="w-32"
                 color="default"
                 variant="ghost"
+                isDisabled={isLoading}
                 onPress={cancel}
               >
                 Cancel
@@ -98,8 +102,9 @@ export default function DownloadResults({
                 className="w-32"
                 color="primary"
                 variant="solid"
-                onPress={download}
+                isDisabled={isLoading}
                 isLoading={isStarting}
+                onPress={download}
               >
                 Download
               </Button>
