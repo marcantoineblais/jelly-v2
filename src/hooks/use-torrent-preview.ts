@@ -8,11 +8,16 @@ import useFetch from "@/src/hooks/use-fetch";
 
 type HashFilesResponse = { ok: boolean; files?: QbitTorrentFile[] };
 
-// Deferred action recorded against a torrent URL while metadata is loading.
-// "ignore" — default; we don't know what the user wants yet.
-// "start"  — user clicked Download before metadata arrived; start when hash resolves.
-// "delete" — user cancelled / switched torrent before metadata arrived; delete when hash resolves.
-type TorrentAction = "ignore" | "start" | "delete";
+// Tracks what to do with a torrent, keyed by URL.
+// action:
+//   "ignore" — default; we don't know what the user wants yet.
+//   "start"  — user clicked Download before metadata arrived; start when hash resolves.
+//   "delete" — user cancelled / switched torrent before metadata arrived; delete when hash resolves.
+// alreadyExists: set to true by loadPreview when the torrent was already in qBit.
+type TorrentEntry = {
+  action: "ignore" | "start" | "delete";
+  alreadyExists: boolean;
+};
 
 export default function useTorrentPreview() {
   const { fetchData } = useFetch();
@@ -31,10 +36,9 @@ export default function useTorrentPreview() {
   const pendingUrlRef = useRef("");
   // Hash of the current torrent ("" until metadata resolves).
   const pendingHashRef = useRef("");
-  // True when the torrent was already in qBit before we added it.
-  const alreadyExistsRef = useRef(false);
-  // URL → deferred action. Only populated while loadPreview is in-flight.
-  const torrentActionsRef = useRef<Record<string, TorrentAction>>({});
+  // URL → entry. Lives for the entire lifecycle of a preview, from selectTorrent
+  // until the user takes a final action (download/cancel) or switches torrents.
+  const torrentEntriesRef = useRef<Record<string, TorrentEntry>>({});
   // Polling interval id for the file list.
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -118,7 +122,6 @@ export default function useTorrentPreview() {
     setIsStarting(false);
     pendingUrlRef.current = "";
     pendingHashRef.current = "";
-    alreadyExistsRef.current = false;
   }, []);
 
   const closeModal = useCallback(() => {
@@ -147,12 +150,12 @@ export default function useTorrentPreview() {
         const hash = data.hash;
         if (!hash) return;
 
-        // Read and clear the deferred action for this URL.
-        const action = torrentActionsRef.current[url] ?? "ignore";
-        delete torrentActionsRef.current[url];
+        const entry = torrentEntriesRef.current[url];
+        const action = entry?.action ?? "ignore";
 
         if (action === "start") {
           // User clicked Download before metadata — start the torrent.
+          delete torrentEntriesRef.current[url];
           try {
             await resumeTorrent(hash);
           } catch {
@@ -163,6 +166,7 @@ export default function useTorrentPreview() {
 
         if (action === "delete") {
           // User cancelled before metadata — delete the torrent.
+          delete torrentEntriesRef.current[url];
           if (!data.alreadyExists) {
             try {
               await deleteTorrent(hash);
@@ -176,6 +180,7 @@ export default function useTorrentPreview() {
         // action === "ignore" — normal flow, show the preview.
         // If user already switched to another torrent, this is stale.
         if (pendingUrlRef.current !== url) {
+          delete torrentEntriesRef.current[url];
           if (!data.alreadyExists) {
             try {
               await deleteTorrent(hash);
@@ -186,9 +191,12 @@ export default function useTorrentPreview() {
           return;
         }
 
-        // Apply the preview.
+        // Update the entry with alreadyExists so cancel can read it later.
+        if (entry) {
+          entry.alreadyExists = data.alreadyExists ?? false;
+        }
+
         pendingHashRef.current = hash;
-        alreadyExistsRef.current = data.alreadyExists ?? false;
 
         if (data.files && data.files.length > 0) {
           setFiles(data.files);
@@ -203,7 +211,7 @@ export default function useTorrentPreview() {
           startPollingFiles(hash);
         }
       } catch (err) {
-        delete torrentActionsRef.current[url];
+        delete torrentEntriesRef.current[url];
         if (pendingUrlRef.current !== url) return;
         addToast({
           title: "Preview failed",
@@ -220,10 +228,11 @@ export default function useTorrentPreview() {
 
   const selectTorrent = useCallback(
     (item: FeedItem) => {
-      // If the previous torrent's preview is still in-flight, mark it for deletion.
+      // If the previous torrent is still pending, mark it for deletion.
       const prevUrl = pendingUrlRef.current;
-      if (prevUrl && torrentActionsRef.current[prevUrl] === "ignore") {
-        torrentActionsRef.current[prevUrl] = "delete";
+      const prevEntry = torrentEntriesRef.current[prevUrl];
+      if (prevEntry && prevEntry.action === "ignore") {
+        prevEntry.action = "delete";
       }
       stopPolling();
 
@@ -233,8 +242,7 @@ export default function useTorrentPreview() {
       pendingUrlRef.current = item.url;
       const magnetMatch = item.url.match(/urn:btih:([a-fA-F0-9]{40})/i);
       pendingHashRef.current = magnetMatch ? magnetMatch[1].toLowerCase() : "";
-      alreadyExistsRef.current = false;
-      torrentActionsRef.current[item.url] = "ignore";
+      torrentEntriesRef.current[item.url] = { action: "ignore", alreadyExists: false };
 
       onModalOpen();
       loadPreview(item);
@@ -250,20 +258,22 @@ export default function useTorrentPreview() {
 
     if (!url) return;
 
+    const entry = torrentEntriesRef.current[url];
+
     if (hash) {
       // Metadata resolved — we have the hash. Delete directly
       // unless the torrent already existed in qBit.
-      delete torrentActionsRef.current[url];
-      if (!alreadyExistsRef.current) {
+      delete torrentEntriesRef.current[url];
+      if (!entry?.alreadyExists) {
         try {
           await deleteTorrent(hash);
         } catch {
           /* best-effort cleanup */
         }
       }
-    } else {
+    } else if (entry) {
       // No hash yet — tell loadPreview to delete when it resolves.
-      torrentActionsRef.current[url] = "delete";
+      entry.action = "delete";
     }
   }, [stopPolling, closeModal, deleteTorrent]);
 
@@ -276,15 +286,16 @@ export default function useTorrentPreview() {
       setIsStarting(true);
       if (hash) {
         // Metadata resolved — resume directly.
-        delete torrentActionsRef.current[url];
+        delete torrentEntriesRef.current[url];
         await fetchData(`/api/qbit/torrents/${hash}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "resume" }),
         });
-      } else if (url) {
+      } else {
         // No hash yet — tell loadPreview to start when it resolves.
-        torrentActionsRef.current[url] = "start";
+        const entry = torrentEntriesRef.current[url];
+        if (entry) entry.action = "start";
       }
       addToast({
         title: "Downloading",
