@@ -144,9 +144,9 @@ export default function useTorrentPreview() {
         if (!hash) return;
 
         const entry = torrentEntriesRef.current[url];
-        const action = entry?.action ?? "ignore";
+        if (!entry) return; // Entry was cleaned up — nothing to do.
 
-        if (action === "start") {
+        if (entry.action === "start") {
           // User clicked Download before metadata — start the torrent.
           delete torrentEntriesRef.current[url];
           try {
@@ -157,7 +157,7 @@ export default function useTorrentPreview() {
           return;
         }
 
-        if (action === "delete") {
+        if (entry.action === "delete") {
           // User cancelled before metadata — delete the torrent.
           delete torrentEntriesRef.current[url];
           if (!data.alreadyExists) {
@@ -172,10 +172,8 @@ export default function useTorrentPreview() {
 
         // action === "ignore" — normal flow, show the preview.
         // Update the entry now that metadata resolved.
-        if (entry) {
-          entry.hash = hash;
-          entry.alreadyExists = data.alreadyExists ?? false;
-        }
+        entry.hash = hash;
+        entry.alreadyExists = data.alreadyExists ?? false;
 
         if (data.files && data.files.length > 0) {
           setFiles(data.files);
