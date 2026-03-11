@@ -23,7 +23,7 @@ export default function useTorrentPreview() {
   const [alreadyExists, setAlreadyExists] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollAbortRef = useRef<AbortController | null>(null);
 
   // ── qBit helpers ──────────────────────────────────────────────────────
 
@@ -52,33 +52,42 @@ export default function useTorrentPreview() {
   // ── Polling ───────────────────────────────────────────────────────────
 
   const stopPolling = useCallback(() => {
-    if (pollIntervalRef.current !== null) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
+    pollAbortRef.current?.abort();
+    pollAbortRef.current = null;
   }, []);
 
   const startPollingFiles = useCallback(
     (h: string) => {
-      pollIntervalRef.current = setInterval(async () => {
-        try {
-          const { data } = await fetchData<HashFilesResponse>(
-            `/api/qbit/torrents/${h}`,
-            { silent: true },
-          );
-          if (data.files && data.files.length > 0) {
-            stopPolling();
-            setFiles(data.files);
-            try {
-              await pauseTorrent(h);
-            } catch {
-              /* non-critical — torrent stays active until user decides */
+      stopPolling();
+      const controller = new AbortController();
+      pollAbortRef.current = controller;
+
+      const poll = async () => {
+        while (!controller.signal.aborted) {
+          await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+          if (controller.signal.aborted) return;
+
+          try {
+            const { data } = await fetchData<HashFilesResponse>(
+              `/api/qbit/torrents/${h}`,
+              { silent: true },
+            );
+            if (data.files && data.files.length > 0) {
+              setFiles(data.files);
+              try {
+                await pauseTorrent(h);
+              } catch {
+                /* non-critical — torrent stays active until user decides */
+              }
+              return;
             }
+          } catch {
+            // Keep retrying — transient errors are expected while metadata loads
           }
-        } catch {
-          // Keep retrying — transient errors are expected while metadata loads
         }
-      }, POLL_INTERVAL_MS);
+      };
+
+      poll();
     },
     [fetchData, stopPolling, pauseTorrent],
   );
