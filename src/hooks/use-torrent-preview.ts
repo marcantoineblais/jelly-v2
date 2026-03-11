@@ -33,8 +33,6 @@ export default function useTorrentPreview() {
   const [files, setFiles] = useState<QbitTorrentFile[]>([]);
   const [isStarting, setIsStarting] = useState(false);
 
-  // URL of the torrent currently shown in the modal ("" when inactive).
-  const pendingUrlRef = useRef("");
   // URL → entry. Lives for the entire lifecycle of a preview, from selectTorrent
   // until the user takes a final action (download/cancel) or switches torrents.
   const torrentEntriesRef = useRef<Record<string, TorrentEntry>>({});
@@ -119,11 +117,9 @@ export default function useTorrentPreview() {
     setSelectedItem(null);
     setFiles([]);
     setIsStarting(false);
-    pendingUrlRef.current = "";
   }, []);
 
   const closeModal = useCallback(() => {
-    pendingUrlRef.current = "";
     onModalClose();
     setTimeout(resetState, 200);
   }, [onModalClose, resetState]);
@@ -175,19 +171,6 @@ export default function useTorrentPreview() {
         }
 
         // action === "ignore" — normal flow, show the preview.
-        // If user already switched to another torrent, this is stale.
-        if (pendingUrlRef.current !== url) {
-          delete torrentEntriesRef.current[url];
-          if (!data.alreadyExists) {
-            try {
-              await deleteTorrent(hash);
-            } catch {
-              /* best-effort cleanup */
-            }
-          }
-          return;
-        }
-
         // Update the entry now that metadata resolved.
         if (entry) {
           entry.hash = hash;
@@ -207,8 +190,10 @@ export default function useTorrentPreview() {
           startPollingFiles(hash);
         }
       } catch (err) {
+        const entry = torrentEntriesRef.current[url];
+        const wasActive = entry?.action === "ignore";
         delete torrentEntriesRef.current[url];
-        if (pendingUrlRef.current !== url) return;
+        if (!wasActive) return;
         addToast({
           title: "Preview failed",
           description:
@@ -225,17 +210,13 @@ export default function useTorrentPreview() {
   const selectTorrent = useCallback(
     (item: FeedItem) => {
       // If the previous torrent is still pending, mark it for deletion.
-      const prevUrl = pendingUrlRef.current;
-      const prevEntry = torrentEntriesRef.current[prevUrl];
-      if (prevEntry && prevEntry.action === "ignore") {
-        prevEntry.action = "delete";
+      for (const entry of Object.values(torrentEntriesRef.current)) {
+        if (entry.action === "ignore") entry.action = "delete";
       }
       stopPolling();
 
       setSelectedItem(item);
       setFiles([]);
-
-      pendingUrlRef.current = item.url;
       // For magnet links the infohash is in the URL — set it immediately so
       // the Download button works without waiting for the server round-trip.
       const magnetMatch = item.url.match(/urn:btih:([a-fA-F0-9]{40})/i);
@@ -249,7 +230,7 @@ export default function useTorrentPreview() {
   );
 
   const cancel = useCallback(async () => {
-    const url = pendingUrlRef.current;
+    const url = selectedItem?.url;
     stopPolling();
     closeModal();
 
@@ -273,17 +254,17 @@ export default function useTorrentPreview() {
       // No hash yet — tell loadPreview to delete when it resolves.
       entry.action = "delete";
     }
-  }, [stopPolling, closeModal, deleteTorrent]);
+  }, [selectedItem, stopPolling, closeModal, deleteTorrent]);
 
   const download = useCallback(async () => {
-    const url = pendingUrlRef.current;
-    const entry = torrentEntriesRef.current[url];
+    const url = selectedItem?.url;
+    const entry = url ? torrentEntriesRef.current[url] : undefined;
     const hash = entry?.hash;
     stopPolling();
 
     try {
       setIsStarting(true);
-      if (hash) {
+      if (url && hash) {
         // Metadata resolved — resume directly.
         delete torrentEntriesRef.current[url];
         await fetchData(`/api/qbit/torrents/${hash}`, {
