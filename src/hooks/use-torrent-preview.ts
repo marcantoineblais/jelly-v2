@@ -32,6 +32,10 @@ export default function useTorrentPreview() {
   // Maps torrent hash → deferred action. The preview promise consults this
   // when it resolves to decide whether to resume, cancel or ignore.
   const torrentActionsRef = useRef<Record<string, TorrentAction>>({});
+  // True when the user clicked Download before the preview resolved and the
+  // hash wasn't available yet. The preview callback picks this up and sets a
+  // "resume" deferred action once the hash is known.
+  const downloadRequestedRef = useRef(false);
   // Polling interval id for the file list.
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -114,6 +118,7 @@ export default function useTorrentPreview() {
     setFiles([]);
     setIsStarting(false);
     pendingHashRef.current = "";
+    downloadRequestedRef.current = false;
   }, []);
 
   const closeModal = useCallback(() => {
@@ -193,6 +198,15 @@ export default function useTorrentPreview() {
         const hash = data.hash;
         if (!hash) return;
 
+        // The user clicked Download before the hash was available — register
+        // the deferred "resume" action now that we know the hash.
+        if (downloadRequestedRef.current) {
+          downloadRequestedRef.current = false;
+          if (!torrentActionsRef.current[hash]) {
+            torrentActionsRef.current[hash] = "resume";
+          }
+        }
+
         if (await executeDeferredAction(hash, data.alreadyExists ?? false))
           return;
 
@@ -209,6 +223,7 @@ export default function useTorrentPreview() {
 
         await applyPreview(hash, data);
       } catch (err) {
+        downloadRequestedRef.current = false;
         if (myHash) delete torrentActionsRef.current[myHash];
         if (isStalePreview(myHash, myHash)) return;
         addToast({
@@ -231,6 +246,7 @@ export default function useTorrentPreview() {
         torrentActionsRef.current[prevHash] = "cancel";
       }
       stopPolling();
+      downloadRequestedRef.current = false;
 
       setSelectedItem(item);
       setFiles([]);
@@ -251,6 +267,7 @@ export default function useTorrentPreview() {
     const hash = pendingHashRef.current;
     const hasFiles = files.length > 0;
     stopPolling();
+    downloadRequestedRef.current = false;
     closeModal();
 
     if (!hash) return;
@@ -286,11 +303,9 @@ export default function useTorrentPreview() {
           body: JSON.stringify({ action: "resume" }),
         });
       } else {
-        await fetchData("/api/qbit/torrents", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: selectedItem?.url }),
-        });
+        // Hash isn't available yet (preview still in-flight). Signal that
+        // the preview callback should resume the torrent once it resolves.
+        downloadRequestedRef.current = true;
       }
       addToast({
         title: "Downloading",
