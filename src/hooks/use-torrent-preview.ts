@@ -8,11 +8,11 @@ import useFetch from "@/src/hooks/use-fetch";
 
 type HashFilesResponse = { ok: boolean; files?: QbitTorrentFile[] };
 
-// Tracks what to do with a torrent when its metadata arrives.
-// "resume" — user clicked Download before metadata was ready.
-// "cancel" — user closed the modal (or opened another torrent) before metadata.
-// "ignore" — torrent already existed in qBit or download already started; leave it alone.
-type TorrentAction = "resume" | "cancel" | "ignore";
+// Deferred action recorded against a torrent URL while metadata is loading.
+// "ignore" — default; we don't know what the user wants yet.
+// "start"  — user clicked Download before metadata arrived; start when hash resolves.
+// "delete" — user cancelled / switched torrent before metadata arrived; delete when hash resolves.
+type TorrentAction = "ignore" | "start" | "delete";
 
 export default function useTorrentPreview() {
   const { fetchData } = useFetch();
@@ -28,13 +28,12 @@ export default function useTorrentPreview() {
   const [isStarting, setIsStarting] = useState(false);
 
   // URL of the torrent currently shown in the modal ("" when inactive).
-  // Used as the stable key for deferred actions since it's available
-  // immediately — before the hash is resolved from metadata.
-  const pendingKeyRef = useRef("");
-  // Hash of the torrent currently shown in the modal ("" until resolved).
+  const pendingUrlRef = useRef("");
+  // Hash of the current torrent ("" until metadata resolves).
   const pendingHashRef = useRef("");
-  // Maps torrent URL → deferred action. The preview promise consults this
-  // when it resolves to decide whether to resume, cancel or ignore.
+  // True when the torrent was already in qBit before we added it.
+  const alreadyExistsRef = useRef(false);
+  // URL → deferred action. Only populated while loadPreview is in-flight.
   const torrentActionsRef = useRef<Record<string, TorrentAction>>({});
   // Polling interval id for the file list.
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -117,12 +116,13 @@ export default function useTorrentPreview() {
     setSelectedItem(null);
     setFiles([]);
     setIsStarting(false);
-    pendingKeyRef.current = "";
+    pendingUrlRef.current = "";
     pendingHashRef.current = "";
+    alreadyExistsRef.current = false;
   }, []);
 
   const closeModal = useCallback(() => {
-    pendingKeyRef.current = "";
+    pendingUrlRef.current = "";
     pendingHashRef.current = "";
     onModalClose();
     setTimeout(resetState, 200);
@@ -130,69 +130,16 @@ export default function useTorrentPreview() {
 
   // ── Preview loading ───────────────────────────────────────────────────
 
-  const executeDeferredAction = useCallback(
-    async (urlKey: string, hash: string, alreadyExists: boolean) => {
-      const action = torrentActionsRef.current[urlKey];
-      if (!action) return false;
-
-      delete torrentActionsRef.current[urlKey];
-      if (action === "ignore") return true;
-
-      try {
-        if (action === "resume") {
-          await resumeTorrent(hash);
-        } else if (action === "cancel" && !alreadyExists) {
-          await deleteTorrent(hash);
-        }
-      } catch {
-        addToast({
-          title: `Failed to ${action} torrent`,
-          severity: "danger",
-        });
-      }
-
-      return true;
-    },
-    [resumeTorrent, deleteTorrent],
-  );
-
-  const isStalePreview = useCallback((urlKey: string) => {
-    return pendingKeyRef.current !== urlKey;
-  }, []);
-
-  const applyPreview = useCallback(
-    async (urlKey: string, hash: string, data: TorrentPreviewResponse) => {
-      pendingHashRef.current = hash;
-      if (data.alreadyExists) {
-        torrentActionsRef.current[urlKey] = "ignore";
-      }
-
-      if (data.files && data.files.length > 0) {
-        setFiles(data.files);
-        if (!data.alreadyExists) {
-          try {
-            await pauseTorrent(hash);
-          } catch {
-            /* non-critical */
-          }
-        }
-      } else {
-        startPollingFiles(hash);
-      }
-    },
-    [pauseTorrent, startPollingFiles],
-  );
-
   const loadPreview = useCallback(
     async (item: FeedItem) => {
-      const urlKey = item.url;
+      const url = item.url;
       try {
         const { data } = await fetchData<TorrentPreviewResponse>(
           "/api/qbit/torrents/preview",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: urlKey }),
+            body: JSON.stringify({ url }),
             silent: true,
           },
         );
@@ -200,28 +147,64 @@ export default function useTorrentPreview() {
         const hash = data.hash;
         if (!hash) return;
 
-        // Now that we have the hash, check if there's a deferred action
-        // recorded against this URL (e.g. user clicked Download or closed
-        // the modal before metadata arrived).
-        if (await executeDeferredAction(urlKey, hash, data.alreadyExists ?? false))
-          return;
+        // Read and clear the deferred action for this URL.
+        const action = torrentActionsRef.current[url] ?? "ignore";
+        delete torrentActionsRef.current[url];
 
-        if (isStalePreview(urlKey)) {
+        if (action === "start") {
+          // User clicked Download before metadata — start the torrent.
+          try {
+            await resumeTorrent(hash);
+          } catch {
+            addToast({ title: "Failed to start torrent", severity: "danger" });
+          }
+          return;
+        }
+
+        if (action === "delete") {
+          // User cancelled before metadata — delete the torrent.
           if (!data.alreadyExists) {
             try {
               await deleteTorrent(hash);
             } catch {
-              /* non-critical — best-effort cleanup */
+              /* best-effort cleanup */
             }
           }
           return;
         }
 
+        // action === "ignore" — normal flow, show the preview.
+        // If user already switched to another torrent, this is stale.
+        if (pendingUrlRef.current !== url) {
+          if (!data.alreadyExists) {
+            try {
+              await deleteTorrent(hash);
+            } catch {
+              /* best-effort cleanup */
+            }
+          }
+          return;
+        }
+
+        // Apply the preview.
         pendingHashRef.current = hash;
-        await applyPreview(urlKey, hash, data);
+        alreadyExistsRef.current = data.alreadyExists ?? false;
+
+        if (data.files && data.files.length > 0) {
+          setFiles(data.files);
+          if (!data.alreadyExists) {
+            try {
+              await pauseTorrent(hash);
+            } catch {
+              /* non-critical */
+            }
+          }
+        } else {
+          startPollingFiles(hash);
+        }
       } catch (err) {
-        delete torrentActionsRef.current[urlKey];
-        if (isStalePreview(urlKey)) return;
+        delete torrentActionsRef.current[url];
+        if (pendingUrlRef.current !== url) return;
         addToast({
           title: "Preview failed",
           description:
@@ -230,28 +213,28 @@ export default function useTorrentPreview() {
         });
       }
     },
-    [fetchData, executeDeferredAction, isStalePreview, deleteTorrent, applyPreview],
+    [fetchData, resumeTorrent, deleteTorrent, pauseTorrent, startPollingFiles],
   );
 
   // ── Public API ────────────────────────────────────────────────────────
 
   const selectTorrent = useCallback(
     (item: FeedItem) => {
-      // Mark the previous torrent for cancellation if it wasn't already handled.
-      const prevKey = pendingKeyRef.current;
-      if (prevKey && torrentActionsRef.current[prevKey] !== "ignore") {
-        torrentActionsRef.current[prevKey] = "cancel";
+      // If the previous torrent's preview is still in-flight, mark it for deletion.
+      const prevUrl = pendingUrlRef.current;
+      if (prevUrl && torrentActionsRef.current[prevUrl] === "ignore") {
+        torrentActionsRef.current[prevUrl] = "delete";
       }
       stopPolling();
 
       setSelectedItem(item);
       setFiles([]);
 
-      pendingKeyRef.current = item.url;
-      // For magnet links the infohash is in the URL — set it immediately so
-      // the Download button works without waiting for the server round-trip.
+      pendingUrlRef.current = item.url;
       const magnetMatch = item.url.match(/urn:btih:([a-fA-F0-9]{40})/i);
       pendingHashRef.current = magnetMatch ? magnetMatch[1].toLowerCase() : "";
+      alreadyExistsRef.current = false;
+      torrentActionsRef.current[item.url] = "ignore";
 
       onModalOpen();
       loadPreview(item);
@@ -260,53 +243,48 @@ export default function useTorrentPreview() {
   );
 
   const cancel = useCallback(async () => {
-    const urlKey = pendingKeyRef.current;
+    const url = pendingUrlRef.current;
     const hash = pendingHashRef.current;
     stopPolling();
     closeModal();
 
-    if (!urlKey) return;
+    if (!url) return;
 
-    const action = torrentActionsRef.current[urlKey];
-    if (action === "ignore") {
-      // Torrent already existed or download already started — leave it alone.
-      delete torrentActionsRef.current[urlKey];
-    } else if (hash) {
-      // Hash is known — delete directly.
-      delete torrentActionsRef.current[urlKey];
-      try {
-        await deleteTorrent(hash);
-      } catch {
-        /* non-critical — best-effort cleanup */
+    if (hash) {
+      // Metadata resolved — we have the hash. Delete directly
+      // unless the torrent already existed in qBit.
+      delete torrentActionsRef.current[url];
+      if (!alreadyExistsRef.current) {
+        try {
+          await deleteTorrent(hash);
+        } catch {
+          /* best-effort cleanup */
+        }
       }
     } else {
-      // Hash not yet available — defer cancellation so loadPreview can
-      // delete the torrent once it resolves with the hash.
-      torrentActionsRef.current[urlKey] = "cancel";
+      // No hash yet — tell loadPreview to delete when it resolves.
+      torrentActionsRef.current[url] = "delete";
     }
   }, [stopPolling, closeModal, deleteTorrent]);
 
   const download = useCallback(async () => {
-    const urlKey = pendingKeyRef.current;
+    const url = pendingUrlRef.current;
     const hash = pendingHashRef.current;
     stopPolling();
 
     try {
       setIsStarting(true);
       if (hash) {
-        // Hash is known — resume directly and mark "ignore" so the preview
-        // callback leaves this torrent alone.
-        if (urlKey) torrentActionsRef.current[urlKey] = "ignore";
+        // Metadata resolved — resume directly.
+        delete torrentActionsRef.current[url];
         await fetchData(`/api/qbit/torrents/${hash}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "resume" }),
         });
-      } else if (urlKey) {
-        // Hash isn't available yet (preview still in-flight). Record a
-        // "resume" action against the URL so loadPreview starts the torrent
-        // once it resolves.
-        torrentActionsRef.current[urlKey] = "resume";
+      } else if (url) {
+        // No hash yet — tell loadPreview to start when it resolves.
+        torrentActionsRef.current[url] = "start";
       }
       addToast({
         title: "Downloading",
