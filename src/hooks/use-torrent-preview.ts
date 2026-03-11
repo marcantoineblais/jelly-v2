@@ -210,7 +210,8 @@ export default function useTorrentPreview() {
   const selectTorrent = useCallback(
     (item: FeedItem) => {
       // If the previous torrent is still pending, mark it for deletion.
-      for (const entry of Object.values(torrentEntriesRef.current)) {
+      for (const key of Object.keys(torrentEntriesRef.current)) {
+        const entry = torrentEntriesRef.current[key];
         if (entry.action === "ignore") entry.action = "delete";
       }
       stopPolling();
