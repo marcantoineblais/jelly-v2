@@ -126,7 +126,11 @@ export default function useTorrentPreview() {
         );
 
         const h = data.hash;
-        if (!h) return;
+        if (!h) {
+          addToast({ title: "Preview failed", description: "No hash returned", severity: "danger" });
+          closeModal();
+          return;
+        }
 
         setHash(h);
         setAlreadyExists(data.alreadyExists ?? false);
@@ -150,9 +154,10 @@ export default function useTorrentPreview() {
             err instanceof Error ? err.message : "Could not add torrent",
           severity: "danger",
         });
+        closeModal();
       }
     },
-    [fetchData, pauseTorrent, startPollingFiles],
+    [fetchData, pauseTorrent, startPollingFiles, closeModal],
   );
 
   // ── Public API ────────────────────────────────────────────────────────
