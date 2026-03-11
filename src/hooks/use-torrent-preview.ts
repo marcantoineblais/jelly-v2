@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { addToast, useDisclosure } from "@heroui/react";
 import type { FeedItem } from "@/src/libs/downloads/feed-format";
 import type { TorrentPreviewResponse } from "@/src/app/api/qbit/torrents/preview/route";
@@ -23,8 +23,6 @@ export default function useTorrentPreview() {
   const [alreadyExists, setAlreadyExists] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
-  // Tracks the URL currently being previewed, for stale-response detection.
-  const currentUrlRef = useRef("");
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── qBit helpers ──────────────────────────────────────────────────────
@@ -95,7 +93,6 @@ export default function useTorrentPreview() {
     setHash("");
     setAlreadyExists(false);
     setIsStarting(false);
-    currentUrlRef.current = "";
   }, []);
 
   const closeModal = useCallback(() => {
@@ -122,18 +119,6 @@ export default function useTorrentPreview() {
         const h = data.hash;
         if (!h) return;
 
-        // Stale response — user switched to a different torrent.
-        if (currentUrlRef.current !== url) {
-          if (!data.alreadyExists) {
-            try {
-              await deleteTorrent(h);
-            } catch {
-              /* best-effort cleanup */
-            }
-          }
-          return;
-        }
-
         setHash(h);
         setAlreadyExists(data.alreadyExists ?? false);
 
@@ -150,7 +135,6 @@ export default function useTorrentPreview() {
           startPollingFiles(h);
         }
       } catch (err) {
-        if (currentUrlRef.current !== url) return;
         addToast({
           title: "Preview failed",
           description:
@@ -159,7 +143,7 @@ export default function useTorrentPreview() {
         });
       }
     },
-    [fetchData, deleteTorrent, pauseTorrent, startPollingFiles],
+    [fetchData, pauseTorrent, startPollingFiles],
   );
 
   // ── Public API ────────────────────────────────────────────────────────
@@ -171,7 +155,6 @@ export default function useTorrentPreview() {
       setFiles([]);
       setHash("");
       setAlreadyExists(false);
-      currentUrlRef.current = item.url;
       onModalOpen();
       loadPreview(item);
     },
