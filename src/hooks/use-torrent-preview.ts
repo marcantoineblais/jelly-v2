@@ -16,6 +16,7 @@ type HashFilesResponse = { ok: boolean; files?: QbitTorrentFile[] };
 // alreadyExists: set to true by loadPreview when the torrent was already in qBit.
 type TorrentEntry = {
   action: "ignore" | "start" | "delete";
+  hash: string;
   alreadyExists: boolean;
 };
 
@@ -34,8 +35,6 @@ export default function useTorrentPreview() {
 
   // URL of the torrent currently shown in the modal ("" when inactive).
   const pendingUrlRef = useRef("");
-  // Hash of the current torrent ("" until metadata resolves).
-  const pendingHashRef = useRef("");
   // URL → entry. Lives for the entire lifecycle of a preview, from selectTorrent
   // until the user takes a final action (download/cancel) or switches torrents.
   const torrentEntriesRef = useRef<Record<string, TorrentEntry>>({});
@@ -121,12 +120,10 @@ export default function useTorrentPreview() {
     setFiles([]);
     setIsStarting(false);
     pendingUrlRef.current = "";
-    pendingHashRef.current = "";
   }, []);
 
   const closeModal = useCallback(() => {
     pendingUrlRef.current = "";
-    pendingHashRef.current = "";
     onModalClose();
     setTimeout(resetState, 200);
   }, [onModalClose, resetState]);
@@ -191,12 +188,11 @@ export default function useTorrentPreview() {
           return;
         }
 
-        // Update the entry with alreadyExists so cancel can read it later.
+        // Update the entry now that metadata resolved.
         if (entry) {
+          entry.hash = hash;
           entry.alreadyExists = data.alreadyExists ?? false;
         }
-
-        pendingHashRef.current = hash;
 
         if (data.files && data.files.length > 0) {
           setFiles(data.files);
@@ -240,9 +236,11 @@ export default function useTorrentPreview() {
       setFiles([]);
 
       pendingUrlRef.current = item.url;
+      // For magnet links the infohash is in the URL — set it immediately so
+      // the Download button works without waiting for the server round-trip.
       const magnetMatch = item.url.match(/urn:btih:([a-fA-F0-9]{40})/i);
-      pendingHashRef.current = magnetMatch ? magnetMatch[1].toLowerCase() : "";
-      torrentEntriesRef.current[item.url] = { action: "ignore", alreadyExists: false };
+      const hash = magnetMatch ? magnetMatch[1].toLowerCase() : "";
+      torrentEntriesRef.current[item.url] = { action: "ignore", hash, alreadyExists: false };
 
       onModalOpen();
       loadPreview(item);
@@ -252,13 +250,13 @@ export default function useTorrentPreview() {
 
   const cancel = useCallback(async () => {
     const url = pendingUrlRef.current;
-    const hash = pendingHashRef.current;
     stopPolling();
     closeModal();
 
     if (!url) return;
 
     const entry = torrentEntriesRef.current[url];
+    const hash = entry?.hash;
 
     if (hash) {
       // Metadata resolved — we have the hash. Delete directly
@@ -279,7 +277,8 @@ export default function useTorrentPreview() {
 
   const download = useCallback(async () => {
     const url = pendingUrlRef.current;
-    const hash = pendingHashRef.current;
+    const entry = torrentEntriesRef.current[url];
+    const hash = entry?.hash;
     stopPolling();
 
     try {
@@ -292,10 +291,9 @@ export default function useTorrentPreview() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "resume" }),
         });
-      } else {
+      } else if (entry) {
         // No hash yet — tell loadPreview to start when it resolves.
-        const entry = torrentEntriesRef.current[url];
-        if (entry) entry.action = "start";
+        entry.action = "start";
       }
       addToast({
         title: "Downloading",
