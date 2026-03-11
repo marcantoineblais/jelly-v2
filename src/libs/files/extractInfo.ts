@@ -84,6 +84,8 @@ function extractTitle(filename: string = "", seriesPattern?: RegExp) {
   title = title.replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, ""); // remove everything after the resolution
   title = title.replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, ""); // remove everything after the year
 
+  title = title.replace(/[\s\-]+$/, ""); // remove trailing spaces and dashes
+
   return capitalize(title.trim());
 }
 
