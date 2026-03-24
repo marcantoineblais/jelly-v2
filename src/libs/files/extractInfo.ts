@@ -74,13 +74,17 @@ export function extractInfo(
 function extractTitle(filename: string = "", seriesPattern?: RegExp) {
   let title = filename;
 
-  // Remove series info using the same pattern that matched
-  if (seriesPattern) {
-    title = title.replace(seriesPattern, " ");
-  }
-
   title = title.replaceAll(/\[.*?\]/g, ""); // remove each [...] segment (non-greedy)
   title = title.replaceAll(/\(.*?\)/g, ""); // remove each (...) segment (non-greedy)
+
+  // Remove series pattern and everything after it (episode name, codec, etc.)
+  if (seriesPattern) {
+    const match = title.match(seriesPattern);
+    if (match) {
+      title = title.slice(0, match.index);
+    }
+  }
+
   title = title.replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, ""); // remove everything after the resolution
   title = title.replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, ""); // remove everything after the year
 
