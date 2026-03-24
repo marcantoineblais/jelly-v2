@@ -36,6 +36,50 @@ export function readFolders(
   files.forEach((file) => {
     const parentName = path.basename(path.dirname(file.path));
     file.mediaInfo = extractInfo(file.name, parentName);
+  });
+
+  // Files in the same folder are usually episodes of the same show,
+  // so use the most common title among siblings as the shared title
+  const folderGroups = new Map<string, MediaFile[]>();
+  files.forEach((file) => {
+    const dir = path.dirname(file.path);
+    if (!folderGroups.has(dir)) {
+      folderGroups.set(dir, []);
+    }
+    folderGroups.get(dir)!.push(file);
+  });
+
+  folderGroups.forEach((group) => {
+    if (group.length < 2) return;
+
+    // Count occurrences of each title
+    const titleCounts = new Map<string, number>();
+    group.forEach((file) => {
+      const title = file.mediaInfo?.title || "";
+      titleCounts.set(title, (titleCounts.get(title) || 0) + 1);
+    });
+
+    // Find the most common title
+    let mostCommonTitle = "";
+    let maxCount = 0;
+    titleCounts.forEach((count, title) => {
+      if (title && count > maxCount) {
+        mostCommonTitle = title;
+        maxCount = count;
+      }
+    });
+
+    // Apply the most common title to all files in the group
+    if (mostCommonTitle && maxCount > 1) {
+      group.forEach((file) => {
+        if (file.mediaInfo) {
+          file.mediaInfo.title = mostCommonTitle;
+        }
+      });
+    }
+  });
+
+  files.forEach((file) => {
     file.library = assignDefaultLibrary(file, librariesData, libraries);
   });
 
