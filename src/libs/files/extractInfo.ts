@@ -23,7 +23,7 @@ const NON_CAPITALIZED_WORDS = [
 
 const SERIES_PATTERNS = [
   // S01E05
-  { regex: /(^|\-+|\s+)s(\d{2})e(\d{2,3})(\-+|\s+|$)/i, seasonGroup: 2, episodeGroup: 3 },
+  { regex: /(^|\-+|\s+)s(\d{2})e(\d{2,3})(?=\D|$)/i, seasonGroup: 2, episodeGroup: 3 },
   // E05, EP05, EP 05
   { regex: /(^|\-+|\s+)e[p]?\s*(\d{2,3})(\-+|\s+|$)/i, episodeGroup: 2 },
   // Non-standard: 1-2 digit season + 1-3 digit episode (e.g. "Show Name 2 05")
@@ -58,6 +58,12 @@ export function extractInfo(
   filename = filename.replaceAll(/[_\.\,]/g, " "); // replace spacing symbols with actual space
 
   const year = extractYear(filename);
+
+  // Strip date-like patterns (3 groups of 2-or-4 digits, e.g., 01 15 2000, 01-15-00, 2000 01 15)
+  // to prevent date digits from being matched as season/episode numbers
+  filename = filename.replace(/(?<!\d)(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})(?!\d)/g, "");
+  filename = filename.trim();
+
   const [season, episode, seriesPattern] = extractSeries(filename);
 
   let title = extractTitle(filename, seriesPattern);
