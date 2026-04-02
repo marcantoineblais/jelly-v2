@@ -17,6 +17,7 @@ import type { FileProgress } from "@/src/libs/socket/transferProgress";
 import type { MediaFile } from "@/src/types/MediaFile";
 
 const PROGRESS_THROTTLE_MS = 150;
+const STREAM_HIGH_WATER_MARK = 16 * 1024 * 1024; // 16MB chunks for SMB/SMR performance
 const CONFIG = readConfig();
 
 export interface TransferError {
@@ -60,8 +61,12 @@ async function copyFileWithProgress({
     });
 
     await new Promise<void>((resolve, reject) => {
-      const readStream = fsSync.createReadStream(file.path);
-      const writeStream = fsSync.createWriteStream(updatedPath);
+      const readStream = fsSync.createReadStream(file.path, {
+        highWaterMark: STREAM_HIGH_WATER_MARK,
+      });
+      const writeStream = fsSync.createWriteStream(updatedPath, {
+        highWaterMark: STREAM_HIGH_WATER_MARK,
+      });
       let bytesTransferred = 0;
       let lastSend = 0;
       let settled = false;
@@ -76,6 +81,8 @@ async function copyFileWithProgress({
       };
 
       const progressTransform = new Transform({
+        readableHighWaterMark: STREAM_HIGH_WATER_MARK,
+        writableHighWaterMark: STREAM_HIGH_WATER_MARK,
         transform(chunk, _encoding, callback) {
           bytesTransferred += chunk.length;
           const now = Date.now();
