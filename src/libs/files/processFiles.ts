@@ -18,7 +18,8 @@ import type { FileProgress } from "@/src/libs/socket/transferProgress";
 import type { MediaFile } from "@/src/types/MediaFile";
 
 const PROGRESS_THROTTLE_MS = 150;
-const STREAM_HIGH_WATER_MARK = 16 * 1024 * 1024; // 16MB chunks for SMB/SMR performance
+const STREAM_HIGH_WATER_MARK = 16 * 1024 * 1024;
+const FLUSH_SIZE = 4 * 1024 * 1024; // 4MB — minimum write size to reduce I/O on SMR drives over SMB
 const CONFIG = readConfig();
 
 export interface TransferError {
@@ -71,6 +72,8 @@ async function copyFileWithProgress({
       highWaterMark: STREAM_HIGH_WATER_MARK,
     });
 
+    let pendingBuffer: Buffer | null = null;
+
     const progressTransform = new Transform({
       readableHighWaterMark: STREAM_HIGH_WATER_MARK,
       writableHighWaterMark: STREAM_HIGH_WATER_MARK,
@@ -91,7 +94,23 @@ async function copyFileWithProgress({
             },
           });
         }
-        callback(null, chunk);
+
+        pendingBuffer = pendingBuffer
+          ? Buffer.concat([pendingBuffer, chunk])
+          : chunk;
+
+        if (pendingBuffer.length >= FLUSH_SIZE) {
+          this.push(pendingBuffer);
+          pendingBuffer = null;
+        }
+        callback();
+      },
+      flush(callback) {
+        if (pendingBuffer) {
+          this.push(pendingBuffer);
+          pendingBuffer = null;
+        }
+        callback();
       },
     });
 
