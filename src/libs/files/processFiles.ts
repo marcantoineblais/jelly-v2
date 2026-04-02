@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
 import { Transform } from "stream";
+import { pipeline } from "stream/promises";
 import { WebSocket } from "ws";
 import { formatNumber } from "@/src/libs/files/formatNumber";
 import { createFilename } from "@/src/libs/files/createFilename";
@@ -60,69 +61,51 @@ async function copyFileWithProgress({
       },
     });
 
-    await new Promise<void>((resolve, reject) => {
-      const readStream = fsSync.createReadStream(file.path, {
-        highWaterMark: STREAM_HIGH_WATER_MARK,
-      });
-      const writeStream = fsSync.createWriteStream(updatedPath, {
-        highWaterMark: STREAM_HIGH_WATER_MARK,
-      });
-      let bytesTransferred = 0;
-      let lastSend = 0;
-      let settled = false;
+    let bytesTransferred = 0;
+    let lastSend = 0;
 
-      const done = (err?: Error) => {
-        if (settled) return;
-        settled = true;
-        readStream.destroy();
-        writeStream.destroy();
-        if (err) reject(err);
-        else resolve();
-      };
+    const readStream = fsSync.createReadStream(file.path, {
+      highWaterMark: STREAM_HIGH_WATER_MARK,
+    });
+    const writeStream = fsSync.createWriteStream(updatedPath, {
+      highWaterMark: STREAM_HIGH_WATER_MARK,
+    });
 
-      const progressTransform = new Transform({
-        readableHighWaterMark: STREAM_HIGH_WATER_MARK,
-        writableHighWaterMark: STREAM_HIGH_WATER_MARK,
-        transform(chunk, _encoding, callback) {
-          bytesTransferred += chunk.length;
-          const now = Date.now();
-          if (now - lastSend >= PROGRESS_THROTTLE_MS) {
-            lastSend = now;
-            sendProgress({
-              ws,
-              payload: {
-                ...progress,
-                currentFileBytesTransferred: bytesTransferred,
-                currentFileSize: fileSize,
-                totalBytesTransferred:
-                  progress.totalBytesTransferred + bytesTransferred,
-                errors,
-              },
-            });
-          }
-          callback(null, chunk);
-        },
-      });
+    const progressTransform = new Transform({
+      readableHighWaterMark: STREAM_HIGH_WATER_MARK,
+      writableHighWaterMark: STREAM_HIGH_WATER_MARK,
+      transform(chunk, _encoding, callback) {
+        bytesTransferred += chunk.length;
+        const now = Date.now();
+        if (now - lastSend >= PROGRESS_THROTTLE_MS) {
+          lastSend = now;
+          sendProgress({
+            ws,
+            payload: {
+              ...progress,
+              currentFileBytesTransferred: bytesTransferred,
+              currentFileSize: fileSize,
+              totalBytesTransferred:
+                progress.totalBytesTransferred + bytesTransferred,
+              errors,
+            },
+          });
+        }
+        callback(null, chunk);
+      },
+    });
 
-      readStream.on("error", (err) => done(err));
-      writeStream.on("error", (err) => done(err));
-      progressTransform.on("error", (err) => done(err));
+    await pipeline(readStream, progressTransform, writeStream);
 
-      writeStream.on("finish", () => {
-        sendProgress({
-          ws,
-          payload: {
-            ...progress,
-            currentFileBytesTransferred: fileSize,
-            currentFileSize: fileSize,
-            totalBytesTransferred: progress.totalBytesTransferred + fileSize,
-            errors,
-          },
-        });
-        done();
-      });
-
-      readStream.pipe(progressTransform).pipe(writeStream);
+    sendProgress({
+      ws,
+      payload: {
+        ...progress,
+        currentFileBytesTransferred: fileSize,
+        currentFileSize: fileSize,
+        totalBytesTransferred: progress.totalBytesTransferred + fileSize,
+        errors,
+      },
     });
 
     await removeTorrentsForFile(file.path, CONFIG.downloadPaths);
