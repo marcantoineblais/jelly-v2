@@ -22,33 +22,28 @@ app.post(
     if (!Array.isArray(files)) {
       return res.status(400).json({ error: "Invalid files array" });
     }
-
-    const socketUrl = process.env.SOCKET_SERVER_URL || "ws://localhost:3001";
-
+    
     isTransferActive = true;
-    let ws: WebSocket | undefined;
-
-    try {
-      ws = new WebSocket(socketUrl.replace(/\/$/, ""));
-      await new Promise<void>((resolve, reject) => {
-        ws!.on("open", resolve);
-        ws!.on("error", reject);
-      });
-
-      await processFilesJob(files, ws);
-      ws.close();
-      res.json({ ok: true });
-    } catch (error) {
-      console.error("Error during file transfer", error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: "Error processing files" });
+    const socketUrl = process.env.SOCKET_SERVER_URL || "ws://localhost:3001";
+    
+    // Run the transfer in the background so the HTTP response is not blocked.
+    const ws = new WebSocket(socketUrl.replace(/\/$/, ""));
+    ws.on("open", async () => {
+      try {
+        res.json({ ok: true });
+        await processFilesJob(files, ws);
+      } catch (error) {
+        console.error("Error during file transfer", error);
+      } finally {
+        isTransferActive = false;
+        if (ws.readyState === WebSocket.OPEN) ws.close();
       }
-    } finally {
+    });
+    ws.on("error", (error) => {
+      console.error("WebSocket connection failed", error);
+      res.json({ error: "The websocket connection could not be established."})
       isTransferActive = false;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    }
+    });
   },
 );
 
