@@ -1,7 +1,6 @@
 import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
-import { Transform } from "stream";
 import { pipeline } from "stream/promises";
 import { WebSocket } from "ws";
 import { formatNumber } from "@/src/libs/files/formatNumber";
@@ -19,7 +18,6 @@ import type { MediaFile } from "@/src/types/MediaFile";
 
 const PROGRESS_THROTTLE_MS = 150;
 const STREAM_HIGH_WATER_MARK = 16 * 1024 * 1024;
-const FLUSH_SIZE = 4 * 1024 * 1024;
 const CONFIG = readConfig();
 
 export interface TransferError {
@@ -69,33 +67,6 @@ async function copyFileWithProgress({
       highWaterMark: STREAM_HIGH_WATER_MARK,
     });
 
-    const chunks: Buffer[] = [];
-    let pendingSize = 0;
-
-    const accumulator = new Transform({
-      readableHighWaterMark: STREAM_HIGH_WATER_MARK,
-      writableHighWaterMark: STREAM_HIGH_WATER_MARK,
-      transform(chunk: Buffer, _encoding, callback) {
-        chunks.push(chunk);
-        pendingSize += chunk.length;
-
-        if (pendingSize >= FLUSH_SIZE) {
-          this.push(Buffer.concat(chunks));
-          chunks.length = 0;
-          pendingSize = 0;
-        }
-        callback();
-      },
-      flush(callback) {
-        if (chunks.length > 0) {
-          this.push(Buffer.concat(chunks));
-          chunks.length = 0;
-          pendingSize = 0;
-        }
-        callback();
-      },
-    });
-
     const progressInterval = setInterval(() => {
       sendProgress({
         ws,
@@ -111,7 +82,7 @@ async function copyFileWithProgress({
     }, PROGRESS_THROTTLE_MS);
 
     try {
-      await pipeline(readStream, accumulator, writeStream);
+      await pipeline(readStream, writeStream);
     } finally {
       clearInterval(progressInterval);
     }
