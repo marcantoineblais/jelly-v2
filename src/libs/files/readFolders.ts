@@ -34,7 +34,8 @@ export function readFolders(
   });
 
   files.forEach((file) => {
-    file.mediaInfo = extractInfo(file.name);
+    const parentName = path.basename(path.dirname(file.path));
+    file.mediaInfo = extractInfo(file.name, parentName);
   });
 
   // Files in the same folder are usually episodes of the same show,
@@ -75,16 +76,6 @@ export function readFolders(
           file.mediaInfo.title = mostCommonTitle;
         }
       });
-    }
-  });
-
-  // Fallback to parent folder name for files with very short or missing titles
-  // (done after consensus so folder names like "video" don't pollute the vote)
-  files.forEach((file) => {
-    const title = file.mediaInfo?.title || "";
-    if (title.length < 4) {
-      const parentName = path.basename(path.dirname(file.path));
-      file.mediaInfo = extractInfo(file.name, parentName);
     }
   });
 

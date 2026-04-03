@@ -64,7 +64,18 @@ export function extractInfo(
   filename = filename.replace(/(?<!\d)(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})(?!\d)/g, "");
   filename = filename.trim();
 
-  const [season, episode, seriesPattern] = extractSeries(filename);
+  let [season, episode, seriesPattern] = extractSeries(filename);
+
+  // If filename has no series info, the real info is likely in the parent folder name
+  if (season === undefined && episode === undefined && parentName) {
+    parentName = parentName.replaceAll(/[_\.\,]/g, " ").trim();
+    const [pSeason, pEpisode, pPattern] = extractSeries(parentName);
+    if (pSeason !== undefined || pEpisode !== undefined) {
+      const pYear = extractYear(parentName);
+      const pTitle = extractTitle(parentName, pPattern);
+      return { title: pTitle, year: pYear || year, season: pSeason, episode: pEpisode };
+    }
+  }
 
   let title = extractTitle(filename, seriesPattern);
 

@@ -1,7 +1,5 @@
 import fs from "fs/promises";
-import fsSync from "fs";
 import path from "path";
-import { pipeline } from "stream/promises";
 import { WebSocket } from "ws";
 import { formatNumber } from "@/src/libs/files/formatNumber";
 import { createFilename } from "@/src/libs/files/createFilename";
@@ -16,8 +14,7 @@ import {
 import type { FileProgress } from "@/src/libs/socket/transferProgress";
 import type { MediaFile } from "@/src/types/MediaFile";
 
-const PROGRESS_THROTTLE_MS = 150;
-const STREAM_HIGH_WATER_MARK = 16 * 1024 * 1024;
+const PROGRESS_POLL_MS = 500;
 const CONFIG = readConfig();
 
 export interface TransferError {
@@ -60,32 +57,35 @@ async function copyFileWithProgress({
       },
     });
 
-    const readStream = fsSync.createReadStream(file.path, {
-      highWaterMark: STREAM_HIGH_WATER_MARK,
-    });
-    const writeStream = fsSync.createWriteStream(updatedPath, {
-      highWaterMark: STREAM_HIGH_WATER_MARK,
-    });
-
-    const progressInterval = setInterval(() => {
-      sendProgress({
-        ws,
-        payload: {
-          ...progress,
-          currentFileBytesTransferred: writeStream.bytesWritten,
-          currentFileSize: fileSize,
-          totalBytesTransferred:
-            progress.totalBytesTransferred + writeStream.bytesWritten,
-          errors,
-        },
-      });
-    }, PROGRESS_THROTTLE_MS);
+    // Use fs.copyFile which delegates to the OS native copy
+    // (CopyFileW on Windows, copy_file_range on Linux). This avoids the
+    // userspace read→write streaming loop that saturates SMB.
+    const progressInterval = setInterval(async () => {
+      try {
+        const destStat = await fs.stat(updatedPath);
+        sendProgress({
+          ws,
+          payload: {
+            ...progress,
+            currentFileBytesTransferred: destStat.size,
+            currentFileSize: fileSize,
+            totalBytesTransferred:
+              progress.totalBytesTransferred + destStat.size,
+            errors,
+          },
+        });
+      } catch {
+        // dest file may not exist yet — ignore
+      }
+    }, PROGRESS_POLL_MS);
 
     try {
-      await pipeline(readStream, writeStream);
+      await fs.copyFile(file.path, updatedPath);
     } finally {
       clearInterval(progressInterval);
     }
+
+    await fs.unlink(file.path);
 
     sendProgress({
       ws,
@@ -99,7 +99,6 @@ async function copyFileWithProgress({
     });
 
     await removeTorrentsForFile(file.path, CONFIG.downloadPaths);
-    await fs.unlink(file.path);
   } catch (error: unknown) {
     let message = "Unknown error";
     if (error instanceof Error) {
