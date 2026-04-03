@@ -16,9 +16,8 @@ import {
 import type { FileProgress } from "@/src/libs/socket/transferProgress";
 import type { MediaFile } from "@/src/types/MediaFile";
 
-const PROGRESS_THROTTLE_MS = 500;
-const STREAM_HIGH_WATER_MARK = 1 * 1024 * 1024;
-const TRANSFER_DELAY_MS = 250;
+const PROGRESS_THROTTLE_MS = 150;
+const STREAM_HIGH_WATER_MARK = 16 * 1024 * 1024;
 const CONFIG = readConfig();
 
 export interface TransferError {
@@ -215,11 +214,6 @@ export async function processFilesJob(
     }
 
     totalBytesTransferred += fileSize;
-
-    // Add delay between transfers to prevent SMB saturation
-    if (i < filesToProcess.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, TRANSFER_DELAY_MS));
-    }
   }
 
   await cleanupTransferredFolders({
