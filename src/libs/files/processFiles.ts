@@ -19,7 +19,7 @@ import type { MediaFile } from "@/src/types/MediaFile";
 
 const PROGRESS_THROTTLE_MS = 150;
 const STREAM_HIGH_WATER_MARK = 16 * 1024 * 1024;
-const FLUSH_SIZE = 4 * 1024 * 1024; // 4MB — minimum write size to reduce I/O on SMR drives over SMB
+const FLUSH_SIZE = 4 * 1024 * 1024;
 const CONFIG = readConfig();
 
 export interface TransferError {
@@ -62,9 +62,6 @@ async function copyFileWithProgress({
       },
     });
 
-    let bytesTransferred = 0;
-    let lastSend = 0;
-
     const readStream = fsSync.createReadStream(file.path, {
       highWaterMark: STREAM_HIGH_WATER_MARK,
     });
@@ -72,49 +69,52 @@ async function copyFileWithProgress({
       highWaterMark: STREAM_HIGH_WATER_MARK,
     });
 
-    let pendingBuffer: Buffer | null = null;
+    const chunks: Buffer[] = [];
+    let pendingSize = 0;
 
-    const progressTransform = new Transform({
+    const accumulator = new Transform({
       readableHighWaterMark: STREAM_HIGH_WATER_MARK,
       writableHighWaterMark: STREAM_HIGH_WATER_MARK,
-      transform(chunk, _encoding, callback) {
-        bytesTransferred += chunk.length;
-        const now = Date.now();
-        if (now - lastSend >= PROGRESS_THROTTLE_MS) {
-          lastSend = now;
-          sendProgress({
-            ws,
-            payload: {
-              ...progress,
-              currentFileBytesTransferred: bytesTransferred,
-              currentFileSize: fileSize,
-              totalBytesTransferred:
-                progress.totalBytesTransferred + bytesTransferred,
-              errors,
-            },
-          });
-        }
+      transform(chunk: Buffer, _encoding, callback) {
+        chunks.push(chunk);
+        pendingSize += chunk.length;
 
-        pendingBuffer = pendingBuffer
-          ? Buffer.concat([pendingBuffer, chunk])
-          : chunk;
-
-        if (pendingBuffer && pendingBuffer.length >= FLUSH_SIZE) {
-          this.push(pendingBuffer);
-          pendingBuffer = null;
+        if (pendingSize >= FLUSH_SIZE) {
+          this.push(Buffer.concat(chunks));
+          chunks.length = 0;
+          pendingSize = 0;
         }
         callback();
       },
       flush(callback) {
-        if (pendingBuffer) {
-          this.push(pendingBuffer);
-          pendingBuffer = null;
+        if (chunks.length > 0) {
+          this.push(Buffer.concat(chunks));
+          chunks.length = 0;
+          pendingSize = 0;
         }
         callback();
       },
     });
 
-    await pipeline(readStream, progressTransform, writeStream);
+    const progressInterval = setInterval(() => {
+      sendProgress({
+        ws,
+        payload: {
+          ...progress,
+          currentFileBytesTransferred: writeStream.bytesWritten,
+          currentFileSize: fileSize,
+          totalBytesTransferred:
+            progress.totalBytesTransferred + writeStream.bytesWritten,
+          errors,
+        },
+      });
+    }, PROGRESS_THROTTLE_MS);
+
+    try {
+      await pipeline(readStream, accumulator, writeStream);
+    } finally {
+      clearInterval(progressInterval);
+    }
 
     sendProgress({
       ws,
