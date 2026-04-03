@@ -25,11 +25,13 @@ app.post(
     
     isTransferActive = true;
     const socketUrl = process.env.SOCKET_SERVER_URL || "ws://localhost:3001";
+    let responseSent = false;
     
     // Run the transfer in the background so the HTTP response is not blocked.
     const ws = new WebSocket(socketUrl.replace(/\/$/, ""));
     ws.on("open", async () => {
       try {
+        responseSent = true;
         res.json({ ok: true });
         await processFilesJob(files, ws);
       } catch (error) {
@@ -41,7 +43,14 @@ app.post(
     });
     ws.on("error", (error) => {
       console.error("WebSocket connection failed", error);
-      res.json({ error: "The websocket connection could not be established."})
+      if (!responseSent) {
+        responseSent = true;
+        res.status(500).json({ error: "The websocket connection could not be established."});
+      }
+      isTransferActive = false;
+    });
+    ws.on("close", () => {
+      console.error("WebSocket connection closed unexpectedly");
       isTransferActive = false;
     });
   },
