@@ -99,7 +99,7 @@ async function copyFileWithProgress({
           ? Buffer.concat([pendingBuffer, chunk])
           : chunk;
 
-        if (pendingBuffer.length >= FLUSH_SIZE) {
+        if (pendingBuffer && pendingBuffer.length >= FLUSH_SIZE) {
           this.push(pendingBuffer);
           pendingBuffer = null;
         }
