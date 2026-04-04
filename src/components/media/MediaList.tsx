@@ -196,6 +196,7 @@ export default function MediaList({
     isYearEnabled?: boolean;
     year?: number;
     library?: string | Set<string>;
+    useOriginalName?: boolean;
     incrementEpisodes?: boolean;
   }) {
     const selectedIds = new Set(selectedFiles.map((f) => f.id));
@@ -206,7 +207,8 @@ export default function MediaList({
         if (!selectedIds.has(file.id)) return file;
 
         const newMediaInfo = { ...file.mediaInfo };
-        if (form.title) newMediaInfo.title = form.title.trim();
+        if (form.useOriginalName) newMediaInfo.title = file.name;
+        else if (form.title) newMediaInfo.title = form.title.trim();
         if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
         else if (!isNaN(form.season as number))
           newMediaInfo.season = form.season;

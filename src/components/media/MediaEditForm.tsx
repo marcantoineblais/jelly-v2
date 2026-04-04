@@ -37,6 +37,7 @@ export default function MediaEditForm({
     isYearEnabled?: boolean;
     year?: number;
     library?: string | Set<string> | undefined;
+    useOriginalName?: boolean;
     incrementEpisodes?: boolean;
   }) => void;
 }) {
@@ -49,6 +50,7 @@ export default function MediaEditForm({
     isYearEnabled?: boolean;
     year?: number;
     library?: string | Set<string> | undefined;
+    useOriginalName?: boolean;
     incrementEpisodes?: boolean;
   }>({
     title: "",
@@ -56,6 +58,7 @@ export default function MediaEditForm({
     episode: NaN,
     year: NaN,
     library: undefined,
+    useOriginalName: false,
     incrementEpisodes: false,
     isSeasonEnabled: false,
     isEpisodeEnabled: false,
@@ -95,6 +98,7 @@ export default function MediaEditForm({
           firstFile.library.name
             ? new Set([firstFile.library.name])
             : undefined,
+        useOriginalName: false,
         incrementEpisodes: false,
         isSeasonEnabled: files.some(
           (file) => file.mediaInfo.season !== undefined,
@@ -154,6 +158,15 @@ export default function MediaEditForm({
               onValueChange={(v) => handleChange("title", v)}
               radius="sm"
             />
+
+            <Checkbox
+              isSelected={form.useOriginalName}
+              onValueChange={(v) => handleChange("useOriginalName", v)}
+              size="sm"
+              classNames={{ wrapper: "after:bg-primary", label: "text-sm" }}
+            >
+              Use original filename
+            </Checkbox>
 
             <NumberInput
               label="Season"
