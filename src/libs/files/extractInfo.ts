@@ -93,7 +93,7 @@ export function extractInfo(
 
   if (!season && hasSeasonFolder) {
     const match = seasonFolder.match(SEASON_PATTERN);
-    if (match) season = parseInt(match[3]);
+    if (match) season = parseInt(match[2]);
   }
 
   if (!year && hasMainFolder) {
