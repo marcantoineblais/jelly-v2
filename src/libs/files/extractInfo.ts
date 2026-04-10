@@ -1,4 +1,5 @@
 import { MediaInfo } from "@/src/types/MediaInfo";
+import path from "path";
 
 const MIN_TITLE_LENGTH = 4;
 const NON_CAPITALIZED_WORDS = [
@@ -43,6 +44,7 @@ const SERIES_PATTERNS = [
 ];
 
 const SEASON_PATTERN = /(^|\-+|\s+)s(?:eason)?\s*(\d{1,2})(\-+|\s+|$)/i;
+const WHITE_SPACE_PATTERN = /[._]/g;
 
 function capitalize(str = "") {
   const words = str.split(/(\s|\-)/);
@@ -60,68 +62,47 @@ function capitalize(str = "") {
 }
 
 export function extractInfo(
-  filename: string = "",
-  parentName: string = "",
+  filePath: string = "",
+  rootDir: string = "",
 ): MediaInfo {
-  filename = filename.replaceAll(/[_\.\,]/g, " "); // replace spacing symbols with actual space
-
-  const year = extractYear(filename);
-
-  // Strip date-like patterns (3 groups of 2-or-4 digits, e.g., 01 15 2000, 01-15-00, 2000 01 15)
-  // to prevent date digits from being matched as season/episode numbers
-  filename = filename.replace(
-    /(?<!\d)(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})(?!\d)/g,
-    "",
+  const normalizedPath = path.normalize(filePath);
+  const foldersArray = normalizedPath.replace(rootDir, "").split("\\");
+  const mainFolder = foldersArray[0].replaceAll(WHITE_SPACE_PATTERN, " ");
+  const seasonFolder = foldersArray[foldersArray.length - 2]?.replaceAll(
+    WHITE_SPACE_PATTERN,
+    " ",
   );
-  filename = filename.trim();
+  const filenameWithExt = foldersArray[foldersArray.length - 1];
+  const ext = path.extname(filenameWithExt);
+  const filename = path.basename(filenameWithExt, ext).replaceAll(WHITE_SPACE_PATTERN, " ");
 
-  const [season, episode, seriesPattern] = extractSeries(filename);
+  const hasMainFolder = foldersArray.length > 1;
+  const hasSeasonFolder = foldersArray.length > 1;
 
-  // If filename has no series info, the real info is likely in the parent folder name
-  if (season === undefined && episode === undefined && parentName) {
-    parentName = parentName.replaceAll(/[_\.\,]/g, " ").trim();
-    const [pSeason, pEpisode, pPattern] = extractSeries(parentName);
-    if (pSeason !== undefined || pEpisode !== undefined) {
-      const pYear = extractYear(parentName);
-      const pTitle = extractTitle(parentName, pPattern);
-      return {
-        title: pTitle,
-        year: pYear || year,
-        season: pSeason,
-        episode: pEpisode,
-      };
-    }
+  let [season, episode, matcher] = extractSeries(filename);
+  let title = extractTitle(hasMainFolder ? mainFolder : filename, matcher);
+  let year = extractYear(mainFolder);
+
+  if (title.length < MIN_TITLE_LENGTH && hasMainFolder) {
+    title = extractTitle(filename, matcher);
   }
 
-  let title = extractTitle(filename, seriesPattern);
-
-  // When title from filename is very short, it was likely in the parent folder name
-  if (title.length < MIN_TITLE_LENGTH && parentName) {
-    parentName = parentName.replaceAll(/[_\.\,]/g, " ").trim();
-    title = extractTitle(parentName, seriesPattern);
+  if (!season && hasSeasonFolder) {
+    const match = seasonFolder.match(SEASON_PATTERN);
+    if (match) season = parseInt(match[3]);
   }
 
   return { title, year, season, episode };
 }
 
-function extractTitle(filename: string = "", seriesPattern?: RegExp) {
-  let title = filename;
-
-  title = title.replaceAll(/\[.*?\]/g, ""); // remove each [...] segment (non-greedy)
-  title = title.replaceAll(/\(.*?\)/g, ""); // remove each (...) segment (non-greedy)
-
-  // Remove series pattern and everything after it (episode name, codec, etc.)
-  if (seriesPattern) {
-    const match = title.match(seriesPattern);
-    if (match) {
-      title = title.slice(0, match.index);
-    }
-  }
-
-  title = title.replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, ""); // remove everything after the resolution
-  title = title.replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, ""); // remove everything after the year
-
-  title = title.replace(/[\s\-]+$/, ""); // remove trailing spaces and dashes
+function extractTitle(filename: string = "", matcher: RegExp = new RegExp("")) {
+  const title = filename
+    .replaceAll(/\[.*?\]/g, "") // remove each [...] segment (non-greedy)
+    .replaceAll(/\(.*?\)/g, "") // remove each (...) segment (non-greedy)
+    .replace(new RegExp(matcher.source + ".*", "i"), "") // remove the season and episode infos using the matcher
+    .replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, "") // remove everything after the resolution
+    .replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, "") // remove everything after the year
+    .replace(/[\s\-]+$/, ""); // remove trailing spaces and dashes
 
   return capitalize(title.trim());
 }
@@ -152,13 +133,6 @@ function extractSeries(
       }
       matchedPattern = pattern.regex;
       break;
-    }
-  }
-
-  if (season === undefined) {
-    const match = filename.match(SEASON_PATTERN);
-    if (match) {
-      season = parseInt(match[2], 10);
     }
   }
 

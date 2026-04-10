@@ -11,90 +11,31 @@ export function readFolders(
   videoExt: string[],
   libraries: MediaLibrary[],
 ) {
-  const files: MediaFile[] = [];
   let idCounter = 1;
-  const librariesData: { title: string; library: MediaLibrary }[] = [];
-  libraries.forEach((library) => {
-    if (library.type === "show" && library.path) {
-      const files = readLibraryFiles(library.path);
-      files.forEach((file) =>
-        librariesData.push({ title: file, library: library }),
-      );
-    }
-  });
+  const librariesData = readLibrariesFiles(libraries);
 
-  folders.forEach((folder) => {
-    extractFilesFromFolder(
-      folder,
-      files,
-      videoExt,
-      () => idCounter++,
-      path.normalize(folder),
-    );
-  });
-
-  files.forEach((file) => {
-    const parentDir = path.dirname(file.path);
-    const parentName = parentDir === file.root ? "" : path.basename(parentDir);
-    file.mediaInfo = extractInfo(file.name, parentName);
-  });
-
-  // Files in the same folder are usually episodes of the same show,
-  // so use the most common title among siblings as the shared title
-  const folderGroups = new Map<string, MediaFile[]>();
-  files.forEach((file) => {
-    const dir = path.dirname(file.path);
-    if (!folderGroups.has(dir)) {
-      folderGroups.set(dir, []);
-    }
-    folderGroups.get(dir)!.push(file);
-  });
-
-  folderGroups.forEach((group) => {
-    if (group.length < 2) return;
-
-    // Count occurrences of each title
-    const titleCounts = new Map<string, number>();
-    group.forEach((file) => {
-      const title = file.mediaInfo?.title || "";
-      titleCounts.set(title, (titleCounts.get(title) || 0) + 1);
+  const files = folders.map((folder) => {
+    const list = extractFilesFromFolder(folder, videoExt, () => idCounter++);
+    const rootDir = path.normalize(path.dirname(folder));
+    list.forEach((file) => {
+      file.mediaInfo = extractInfo(file.path, rootDir);
+      file.library = assignDefaultLibrary(file, librariesData, libraries);
     });
 
-    // Find the most common title
-    let mostCommonTitle = "";
-    let maxCount = 0;
-    titleCounts.forEach((count, title) => {
-      if (title && count > maxCount) {
-        mostCommonTitle = title;
-        maxCount = count;
-      }
-    });
-
-    // Apply the most common title to all files in the group
-    if (mostCommonTitle && maxCount > 1) {
-      group.forEach((file) => {
-        if (file.mediaInfo) {
-          file.mediaInfo.title = mostCommonTitle;
-        }
-      });
-    }
+    return list;
   });
 
-  files.forEach((file) => {
-    file.library = assignDefaultLibrary(file, librariesData, libraries);
-  });
 
-  return files;
+  return files.flat();
 }
 
 // Recursively scan all folders and subfolders for files
 function extractFilesFromFolder(
   folderPath: string,
-  filesList: MediaFile[],
   videoExt: string[],
   getId: () => number,
-  root: string,
-) {
+  depth: number = 0,
+): MediaFile[] {
   const exists = fs.existsSync(folderPath);
   if (!exists) {
     log({
@@ -102,16 +43,16 @@ function extractFilesFromFolder(
       message: `Folder does not exist: ${folderPath}`,
       level: "error",
     });
-    return filesList;
+    return [];
   }
   let entries: string[];
   try {
     entries = fs.readdirSync(folderPath);
   } catch {
-    return filesList;
+    return [];
   }
 
-  entries.forEach((entry) => {
+  return entries.map((entry) => {
     const entryPath = path.join(folderPath, entry);
     let stats: fs.Stats;
     try {
@@ -123,13 +64,13 @@ function extractFilesFromFolder(
 
     if (stats.isDirectory()) {
       if (entry !== "temp") {
-        extractFilesFromFolder(entryPath, filesList, videoExt, getId, root);
+        return extractFilesFromFolder(entryPath, videoExt, getId, depth + 1);
       }
     } else {
       const ext = path.extname(entry);
 
       if (videoExt.includes(ext)) {
-        const file: MediaFile = {
+        return {
           id: getId(),
           path: entryPath,
           name: path.basename(entry, ext),
@@ -137,15 +78,10 @@ function extractFilesFromFolder(
           size: stats.size,
           mediaInfo: {},
           library: {},
-          root: root,
         };
-
-        filesList.push(file);
       }
     }
-  });
-
-  return filesList;
+  }).filter(el => el).flat() as MediaFile[];
 }
 
 function readLibraryFiles(libraryPath: string) {
@@ -156,4 +92,18 @@ function readLibraryFiles(libraryPath: string) {
   } catch {
     return [];
   }
+}
+
+function readLibrariesFiles(libraries: MediaLibrary[]) {
+  const data: { title: string; library: MediaLibrary }[] = [];
+  libraries.forEach((library) => {
+    if (library.type === "show" && library.path) {
+      const files = readLibraryFiles(library.path);
+      files.forEach((file) =>
+        data.push({ title: file, library: library }),
+      );
+    }
+  });
+
+  return data;
 }
