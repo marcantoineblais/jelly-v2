@@ -34,7 +34,9 @@
   }
 }
 
-p, span, article {
+p,
+span,
+article {
   user-select: text;
 }
 

@@ -296,7 +296,12 @@ export default function MediaList({
         return;
       }
     } catch (error) {
-      log({ source: "MediaList", message: "Unexpected save error", data: error, level: "error" });
+      log({
+        source: "MediaList",
+        message: "Unexpected save error",
+        data: error,
+        level: "error",
+      });
       addToast({
         title: "Unexpected error",
         description:

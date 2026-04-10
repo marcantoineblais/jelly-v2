@@ -23,11 +23,19 @@ const NON_CAPITALIZED_WORDS = [
 
 const SERIES_PATTERNS = [
   // S01E05
-  { regex: /(^|\-+|\s+)s(\d{2})e(\d{2,3})(?=\D|$)/i, seasonGroup: 2, episodeGroup: 3 },
+  {
+    regex: /(^|\-+|\s+)s(\d{2})e(\d{2,3})(?=\D|$)/i,
+    seasonGroup: 2,
+    episodeGroup: 3,
+  },
   // E05, EP05, EP 05
   { regex: /(^|\-+|\s+)e[p]?\s*(\d{2,3})(\-+|\s+|$)/i, episodeGroup: 2 },
   // Non-standard: 1-2 digit season + 1-3 digit episode (e.g. "Show Name 2 05")
-  { regex: /(\-+|\s+)(\d{1,2})(\-+|\s+)(\d{1,3})(\-+|\s+|$)/, seasonGroup: 2, episodeGroup: 4 },
+  {
+    regex: /(\-+|\s+)(\d{1,2})(\-+|\s+)(\d{1,3})(\-+|\s+|$)/,
+    seasonGroup: 2,
+    episodeGroup: 4,
+  },
   // Leading digits (episode only)
   { regex: /^(\d{1,3})/, episodeGroup: 1 },
   // Trailing digits (episode only)
@@ -61,10 +69,13 @@ export function extractInfo(
 
   // Strip date-like patterns (3 groups of 2-or-4 digits, e.g., 01 15 2000, 01-15-00, 2000 01 15)
   // to prevent date digits from being matched as season/episode numbers
-  filename = filename.replace(/(?<!\d)(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})(?!\d)/g, "");
+  filename = filename.replace(
+    /(?<!\d)(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})[\s\-]+(?:\d{4}|\d{2})(?!\d)/g,
+    "",
+  );
   filename = filename.trim();
 
-  let [season, episode, seriesPattern] = extractSeries(filename);
+  const [season, episode, seriesPattern] = extractSeries(filename);
 
   // If filename has no series info, the real info is likely in the parent folder name
   if (season === undefined && episode === undefined && parentName) {
@@ -73,7 +84,12 @@ export function extractInfo(
     if (pSeason !== undefined || pEpisode !== undefined) {
       const pYear = extractYear(parentName);
       const pTitle = extractTitle(parentName, pPattern);
-      return { title: pTitle, year: pYear || year, season: pSeason, episode: pEpisode };
+      return {
+        title: pTitle,
+        year: pYear || year,
+        season: pSeason,
+        episode: pEpisode,
+      };
     }
   }
 

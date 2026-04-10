@@ -12,7 +12,12 @@ async function getIndexers() {
     );
     return indexers;
   } catch (err) {
-    log({ source: "downloads/page", message: "Failed to fetch indexers", data: err, level: "error" });
+    log({
+      source: "downloads/page",
+      message: "Failed to fetch indexers",
+      data: err,
+      level: "error",
+    });
     return [];
   }
 }

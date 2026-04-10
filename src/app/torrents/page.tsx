@@ -9,7 +9,12 @@ async function getTorrents() {
     const torrents = await listTorrents();
     return torrents;
   } catch (err) {
-    log({ source: "torrents/page", message: "Failed to fetch torrents", data: err, level: "error" });
+    log({
+      source: "torrents/page",
+      message: "Failed to fetch torrents",
+      data: err,
+      level: "error",
+    });
     return [];
   }
 }

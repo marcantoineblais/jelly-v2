@@ -11,7 +11,12 @@ async function getIndexers() {
     const result = await getJackettIndexers();
     return result.indexers;
   } catch (err) {
-    log({ source: "trackers/page", message: "Failed to fetch indexers", data: err, level: "error" });
+    log({
+      source: "trackers/page",
+      message: "Failed to fetch indexers",
+      data: err,
+      level: "error",
+    });
     return [];
   }
 }

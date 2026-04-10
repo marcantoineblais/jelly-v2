@@ -22,11 +22,11 @@ app.post(
     if (!Array.isArray(files)) {
       return res.status(400).json({ error: "Invalid files array" });
     }
-    
+
     isTransferActive = true;
     const socketUrl = process.env.SOCKET_SERVER_URL || "ws://localhost:3001";
     let responseSent = false;
-    
+
     // Run the transfer in the background so the HTTP response is not blocked.
     const ws = new WebSocket(socketUrl.replace(/\/$/, ""));
     ws.on("open", async () => {
@@ -45,7 +45,11 @@ app.post(
       console.error("WebSocket connection failed", error);
       if (!responseSent) {
         responseSent = true;
-        res.status(500).json({ error: "The websocket connection could not be established."});
+        res
+          .status(500)
+          .json({
+            error: "The websocket connection could not be established.",
+          });
       }
       isTransferActive = false;
     });

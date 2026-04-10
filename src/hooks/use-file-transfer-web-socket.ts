@@ -32,7 +32,11 @@ export function useFileTransferWebSocket(
 
   useEffect(() => {
     if (!socketServerUrl) {
-      log({ source: "useFileTransferWebSocket", message: "SOCKET_SERVER_URL is not set", level: "error" });
+      log({
+        source: "useFileTransferWebSocket",
+        message: "SOCKET_SERVER_URL is not set",
+        level: "error",
+      });
       return;
     }
 

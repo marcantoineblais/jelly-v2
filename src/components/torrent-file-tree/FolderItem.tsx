@@ -38,10 +38,20 @@ export default function FolderItem({ node, depth, maxSize }: FolderItemProps) {
         <div>
           {node.children.map((child, i) =>
             child.type === "folder" ? (
-              <FolderItem key={i} node={child} depth={depth + 1} maxSize={maxSize} />
+              <FolderItem
+                key={i}
+                node={child}
+                depth={depth + 1}
+                maxSize={maxSize}
+              />
             ) : (
-              <FileItem key={i} node={child} depth={depth + 1} maxSize={maxSize} />
-            )
+              <FileItem
+                key={i}
+                node={child}
+                depth={depth + 1}
+                maxSize={maxSize}
+              />
+            ),
           )}
         </div>
       )}

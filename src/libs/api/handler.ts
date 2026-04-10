@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/src/libs/logger";
 
-type RouteContext<P extends Record<string, string | string[]> = Record<string, string | string[]>> = {
+type RouteContext<
+  P extends Record<string, string | string[]> = Record<
+    string,
+    string | string[]
+  >,
+> = {
   params: Promise<P>;
 };
 
-type AnyHandler<P extends Record<string, string | string[]> = Record<string, string | string[]>> = (
-  req: NextRequest,
-  ctx: RouteContext<P>,
-) => Promise<NextResponse>;
+type AnyHandler<
+  P extends Record<string, string | string[]> = Record<
+    string,
+    string | string[]
+  >,
+> = (req: NextRequest, ctx: RouteContext<P>) => Promise<NextResponse>;
 
 /**
  * Wraps a Next.js route handler with consistent error handling and logging.

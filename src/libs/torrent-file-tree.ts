@@ -24,7 +24,7 @@ export function buildTree(files: QbitTorrentFile[]): TreeNode[] {
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
       let folder = current.children.find(
-        (n): n is FolderNode => n.type === "folder" && n.name === part
+        (n): n is FolderNode => n.type === "folder" && n.name === part,
       );
       if (!folder) {
         folder = { type: "folder", name: part, children: [] };

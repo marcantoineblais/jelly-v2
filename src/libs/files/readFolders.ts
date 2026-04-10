@@ -34,7 +34,8 @@ export function readFolders(
   });
 
   files.forEach((file) => {
-    const parentName = path.basename(path.dirname(file.path));
+    const parentDir = path.dirname(file.path);
+    const parentName = parentDir === file.root ? "" : path.basename(parentDir);
     file.mediaInfo = extractInfo(file.name, parentName);
   });
 
@@ -96,7 +97,11 @@ function extractFilesFromFolder(
 ) {
   const exists = fs.existsSync(folderPath);
   if (!exists) {
-    log({ source: "readFolders", message: `Folder does not exist: ${folderPath}`, level: "error" });
+    log({
+      source: "readFolders",
+      message: `Folder does not exist: ${folderPath}`,
+      level: "error",
+    });
     return filesList;
   }
   let entries: string[];

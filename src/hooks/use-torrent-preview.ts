@@ -127,7 +127,11 @@ export default function useTorrentPreview() {
 
         const h = data.hash;
         if (!h) {
-          addToast({ title: "Preview failed", description: "No hash returned", severity: "danger" });
+          addToast({
+            title: "Preview failed",
+            description: "No hash returned",
+            severity: "danger",
+          });
           closeModal();
           return;
         }

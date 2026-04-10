@@ -41,9 +41,7 @@ export async function updateShow(
   return shows[index];
 }
 
-export async function readShowById(
-  id: string,
-): Promise<TrackedShow | null> {
+export async function readShowById(id: string): Promise<TrackedShow | null> {
   const shows = await readShows();
   return shows.find((s) => s.id === id) ?? null;
 }

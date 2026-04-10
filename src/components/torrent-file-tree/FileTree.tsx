@@ -8,7 +8,10 @@ type TorrentFileTreeProps = {
   maxSize?: number;
 };
 
-export default function TorrentFileTree({ files, maxSize }: TorrentFileTreeProps) {
+export default function TorrentFileTree({
+  files,
+  maxSize,
+}: TorrentFileTreeProps) {
   const tree = buildTree(files);
   return (
     <div className="rounded-lg border border-stone-200 px-3 py-2 overflow-x-hidden">
@@ -17,7 +20,7 @@ export default function TorrentFileTree({ files, maxSize }: TorrentFileTreeProps
           <FolderItem key={i} node={node} depth={0} maxSize={maxSize} />
         ) : (
           <FileItem key={i} node={node} depth={0} maxSize={maxSize} />
-        )
+        ),
       )}
     </div>
   );
