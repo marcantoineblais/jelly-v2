@@ -66,7 +66,7 @@ export function extractInfo(
   rootDir: string = "",
 ): MediaInfo {
   const normalizedPath = path.normalize(filePath);
-  const foldersArray = normalizedPath.replace(rootDir, "").split("\\");
+  const foldersArray = normalizedPath.replace(rootDir, "").split(path.sep);
   const mainFolder = foldersArray[0].replaceAll(WHITE_SPACE_PATTERN, " ");
   const seasonFolder = foldersArray[foldersArray.length - 2]?.replaceAll(
     WHITE_SPACE_PATTERN,
@@ -103,11 +103,12 @@ export function extractInfo(
   return { title, year, season, episode };
 }
 
-function extractTitle(filename: string = "", matcher: RegExp = new RegExp("")) {
+function extractTitle(filename: string = "", matcher?: RegExp) {
+  const regex = matcher ? new RegExp(matcher.source + ".*", "i") : "";
   const title = filename
     .replaceAll(/\[.*?\]/g, "") // remove each [...] segment (non-greedy)
     .replaceAll(/\(.*?\)/g, "") // remove each (...) segment (non-greedy)
-    .replace(new RegExp(matcher.source + ".*", "i"), "") // remove the season and episode infos using the matcher
+    .replace(regex, "") // remove the season and episode infos using the matcher
     .replace(/\-?(^|\-+|\s+)\d{3,4}p(\-+|\s+|$).*$/, "") // remove everything after the resolution
     .replace(/\-?(\-+|\s+)(19|20)\d{2}(\-+|\s+|$).*$/, "") // remove everything after the year
     .replace(/[\s\-]+$/, ""); // remove trailing spaces and dashes
