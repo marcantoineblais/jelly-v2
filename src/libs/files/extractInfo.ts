@@ -80,16 +80,24 @@ export function extractInfo(
   const hasSeasonFolder = foldersArray.length > 1;
 
   let [season, episode, matcher] = extractSeries(filename);
-  let title = extractTitle(hasMainFolder ? mainFolder : filename, matcher);
-  let year = extractYear(mainFolder);
+  let title = extractTitle(filename, matcher);
+  let year = extractYear(filename);
+
+  if (!episode && hasMainFolder) {
+    [season, episode, matcher] = extractSeries(mainFolder);
+  }
 
   if (title.length < MIN_TITLE_LENGTH && hasMainFolder) {
-    title = extractTitle(filename, matcher);
+    title = extractTitle(mainFolder, matcher);
   }
 
   if (!season && hasSeasonFolder) {
     const match = seasonFolder.match(SEASON_PATTERN);
     if (match) season = parseInt(match[3]);
+  }
+
+  if (!year && hasMainFolder) {
+    year = extractYear(mainFolder)
   }
 
   return { title, year, season, episode };
