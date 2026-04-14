@@ -16,7 +16,7 @@ export function readFolders(
 
   const files = folders.map((folder) => {
     const list = extractFilesFromFolder(folder, videoExt, () => idCounter++);
-    const rootDir = path.normalize(path.dirname(folder));
+    const rootDir = path.normalize(folder);
     list.forEach((file) => {
       file.mediaInfo = extractInfo(file.path, rootDir);
       file.library = assignDefaultLibrary(file, librariesData, libraries);
@@ -70,10 +70,11 @@ function extractFilesFromFolder(
       const ext = path.extname(entry);
 
       if (videoExt.includes(ext)) {
+        const baseName = path.basename(entry, ext);
         return {
           id: getId(),
           path: entryPath,
-          name: path.basename(entry, ext),
+          name: baseName || path.basename(entry) || entry,
           ext: ext,
           size: stats.size,
           mediaInfo: {},

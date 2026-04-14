@@ -66,15 +66,24 @@ export function extractInfo(
   rootDir: string = "",
 ): MediaInfo {
   const normalizedPath = path.normalize(filePath);
-  const foldersArray = normalizedPath.replace(rootDir, "").split(path.sep);
-  const mainFolder = foldersArray[0].replaceAll(WHITE_SPACE_PATTERN, " ");
+  const normalizedRoot = path.normalize(rootDir || "");
+  const relativePath = normalizedRoot
+    ? path.relative(normalizedRoot, normalizedPath)
+    : normalizedPath;
+  const safePath = relativePath || path.basename(normalizedPath);
+  const foldersArray = safePath.split(path.sep).filter(Boolean);
+  const mainFolder = (foldersArray[0] ?? "").replaceAll(WHITE_SPACE_PATTERN, " ");
   const seasonFolder = foldersArray[foldersArray.length - 2]?.replaceAll(
     WHITE_SPACE_PATTERN,
     " ",
   );
-  const filenameWithExt = foldersArray[foldersArray.length - 1];
+  const filenameWithExt =
+    foldersArray[foldersArray.length - 1] ?? path.basename(normalizedPath);
   const ext = path.extname(filenameWithExt);
-  const filename = path.basename(filenameWithExt, ext).replaceAll(WHITE_SPACE_PATTERN, " ");
+  const basename = path.basename(filenameWithExt, ext);
+  const filename = (basename || path.basename(filenameWithExt))
+    .replaceAll(WHITE_SPACE_PATTERN, " ")
+    .trim();
 
   const hasMainFolder = foldersArray.length > 1;
   const hasSeasonFolder = foldersArray.length > 1;
