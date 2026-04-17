@@ -6,6 +6,38 @@ import { formatSeasonPath, LastEpisode } from "./library-utils";
 
 const EPISODE_RE = /S(\d{2})E(\d{2})/i;
 
+function normalizeShowTitleForMatch(title: string): string {
+  return title
+    .trim()
+    .replace(/\s*\((19|20)\d{2}\)\s*$/, "")
+    .trim()
+    .toLocaleLowerCase();
+}
+
+function resolveShowFolderName(
+  libraryPath: string,
+  title: string,
+): string | undefined {
+  try {
+    const directories = readdirSync(libraryPath, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+
+    const exactMatch = directories.find(
+      (directory) => directory.toLocaleLowerCase() === title.trim().toLocaleLowerCase(),
+    );
+    if (exactMatch) return exactMatch;
+
+    const normalizedTitle = normalizeShowTitleForMatch(title);
+    return directories.find(
+      (directory) =>
+        normalizeShowTitleForMatch(directory) === normalizedTitle,
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 export function getShowLibraries(): MediaLibrary[] {
   const config = readConfig();
   return config.libraries.filter((lib) => lib.type === "show");
@@ -32,7 +64,8 @@ export async function getLastEpisode(
   libraryPath: string,
   season: number,
 ): Promise<LastEpisode> {
-  const showDir = join(libraryPath, title);
+  const resolvedShowFolder = resolveShowFolderName(libraryPath, title);
+  const showDir = join(libraryPath, resolvedShowFolder ?? title);
   const seasonPath = join(showDir, formatSeasonPath(season));
   const lastEpisode = await findHighestEpisode(seasonPath);
   return {
