@@ -37,10 +37,10 @@ const SERIES_PATTERNS = [
     seasonGroup: 2,
     episodeGroup: 4,
   },
-  // Leading digits (episode only)
-  { regex: /^(\d{1,3})/, episodeGroup: 1 },
   // Trailing digits (episode only)
   { regex: /(\d{1,3})$/, episodeGroup: 1 },
+  // First digit group
+  { regex: /(\d{1,3})/, episodeGroup: 1 },
 ];
 
 const SEASON_PATTERN = /(^|\-+|\s+)s(?:eason)?\s*(\d{1,2})(\-+|\s+|$)/i;
