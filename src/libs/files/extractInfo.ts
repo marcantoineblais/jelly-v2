@@ -40,7 +40,7 @@ const SERIES_PATTERNS = [
   // Trailing digits (episode only)
   { regex: /(\d{1,3})$/, episodeGroup: 1 },
   // First digit group
-  { regex: /(\d{1,3})/, episodeGroup: 1 },
+  { regex: /(?<!\d)\d{1,3}(?!\d)/, episodeGroup: 1 },
 ];
 
 const SEASON_PATTERN = /(^|\-+|\s+)s(?:eason)?\s*(\d{1,2})(\-+|\s+|$)/i;
@@ -72,7 +72,10 @@ export function extractInfo(
     : normalizedPath;
   const safePath = relativePath || path.basename(normalizedPath);
   const foldersArray = safePath.split(path.sep).filter(Boolean);
-  const mainFolder = (foldersArray[0] ?? "").replaceAll(WHITE_SPACE_PATTERN, " ");
+  const mainFolder = (foldersArray[0] ?? "").replaceAll(
+    WHITE_SPACE_PATTERN,
+    " ",
+  );
   const seasonFolder = foldersArray[foldersArray.length - 2]?.replaceAll(
     WHITE_SPACE_PATTERN,
     " ",
@@ -106,7 +109,7 @@ export function extractInfo(
   }
 
   if (!year && hasMainFolder) {
-    year = extractYear(mainFolder)
+    year = extractYear(mainFolder);
   }
 
   return { title, year, season, episode };
@@ -140,8 +143,12 @@ function extractSeries(
   let episode;
   let matchedPattern;
 
+  const formatedTitle = filename
+    .replaceAll(/\[.*?\]/g, "") // remove each [...] segment (non-greedy)
+    .replaceAll(/\(.*?\)/g, ""); // remove each (...) segment (non-greedy)
+
   for (const pattern of SERIES_PATTERNS) {
-    const match = filename.match(pattern.regex);
+    const match = formatedTitle.match(pattern.regex);
     if (match) {
       if (pattern.seasonGroup) {
         season = parseInt(match[pattern.seasonGroup], 10);
