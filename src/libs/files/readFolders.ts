@@ -19,7 +19,10 @@ export function readFolders(
     const rootDir = path.normalize(folder);
     list.forEach((file) => {
       file.mediaInfo = extractInfo(file.path, rootDir);
-      file.library = assignDefaultLibrary(file, librariesData, libraries);
+      const assignment = assignDefaultLibrary(file, librariesData, libraries);
+      file.library = assignment.library;
+      if (assignment.title !== undefined) file.mediaInfo.title = assignment.title;
+      if (assignment.year !== undefined) file.mediaInfo.year = assignment.year;
     });
 
     return list;
