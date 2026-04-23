@@ -45,11 +45,9 @@ app.post(
       console.error("WebSocket connection failed", error);
       if (!responseSent) {
         responseSent = true;
-        res
-          .status(500)
-          .json({
-            error: "The websocket connection could not be established.",
-          });
+        res.status(500).json({
+          error: "The websocket connection could not be established.",
+        });
       }
       isTransferActive = false;
     });

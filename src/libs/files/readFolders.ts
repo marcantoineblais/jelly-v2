@@ -25,7 +25,6 @@ export function readFolders(
     return list;
   });
 
-
   return files.flat();
 }
 
@@ -52,37 +51,40 @@ function extractFilesFromFolder(
     return [];
   }
 
-  return entries.map((entry) => {
-    const entryPath = path.join(folderPath, entry);
-    let stats: fs.Stats;
-    try {
-      stats = fs.statSync(entryPath);
-    } catch {
-      // File may have been deleted, moved, or is inaccessible during scan
-      return;
-    }
-
-    if (stats.isDirectory()) {
-      if (entry !== "temp") {
-        return extractFilesFromFolder(entryPath, videoExt, getId, depth + 1);
+  return entries
+    .map((entry) => {
+      const entryPath = path.join(folderPath, entry);
+      let stats: fs.Stats;
+      try {
+        stats = fs.statSync(entryPath);
+      } catch {
+        // File may have been deleted, moved, or is inaccessible during scan
+        return;
       }
-    } else {
-      const ext = path.extname(entry);
 
-      if (videoExt.includes(ext)) {
-        const baseName = path.basename(entry, ext);
-        return {
-          id: getId(),
-          path: entryPath,
-          name: baseName || path.basename(entry) || entry,
-          ext: ext,
-          size: stats.size,
-          mediaInfo: {},
-          library: {},
-        };
+      if (stats.isDirectory()) {
+        if (entry !== "temp") {
+          return extractFilesFromFolder(entryPath, videoExt, getId, depth + 1);
+        }
+      } else {
+        const ext = path.extname(entry);
+
+        if (videoExt.includes(ext)) {
+          const baseName = path.basename(entry, ext);
+          return {
+            id: getId(),
+            path: entryPath,
+            name: baseName || path.basename(entry) || entry,
+            ext: ext,
+            size: stats.size,
+            mediaInfo: {},
+            library: {},
+          };
+        }
       }
-    }
-  }).filter(el => el).flat() as MediaFile[];
+    })
+    .filter((el) => el)
+    .flat() as MediaFile[];
 }
 
 function readLibraryFiles(libraryPath: string) {
@@ -100,9 +102,7 @@ function readLibrariesFiles(libraries: MediaLibrary[]) {
   libraries.forEach((library) => {
     if (library.type === "show" && library.path) {
       const files = readLibraryFiles(library.path);
-      files.forEach((file) =>
-        data.push({ title: file, library: library }),
-      );
+      files.forEach((file) => data.push({ title: file, library: library }));
     }
   });
 

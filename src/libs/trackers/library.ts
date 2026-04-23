@@ -24,14 +24,14 @@ function resolveShowFolderName(
       .map((entry) => entry.name);
 
     const exactMatch = directories.find(
-      (directory) => directory.toLocaleLowerCase() === title.trim().toLocaleLowerCase(),
+      (directory) =>
+        directory.toLocaleLowerCase() === title.trim().toLocaleLowerCase(),
     );
     if (exactMatch) return exactMatch;
 
     const normalizedTitle = normalizeShowTitleForMatch(title);
     return directories.find(
-      (directory) =>
-        normalizeShowTitleForMatch(directory) === normalizedTitle,
+      (directory) => normalizeShowTitleForMatch(directory) === normalizedTitle,
     );
   } catch {
     return undefined;
