@@ -16,43 +16,25 @@ function parseFolderTitle(folderName: string): string {
   return folderName.replace(FOLDER_YEAR_RE, "").trim();
 }
 
-export interface LibraryAssignment {
-  library: MediaLibrary;
-  title?: string;
-  year?: number;
-}
-
-export function assignDefaultLibrary(
+export function assignDefaultMediaInfo(
   file: MediaFile,
   librariesData: { title: string; library: MediaLibrary }[] = [],
   libraries: MediaLibrary[] = [],
-): LibraryAssignment {
+) {
   const normalizedFileTitle = normalizeTitle(file.mediaInfo.title ?? "");
   const existingMedia = librariesData.find(
     (data) => normalizeTitle(data.title) === normalizedFileTitle,
   );
 
-  let defaultLibrary: MediaLibrary | undefined;
-  let matchedTitle: string | undefined;
-  let matchedYear: number | undefined;
-
   if (existingMedia) {
-    defaultLibrary = existingMedia.library;
-    matchedTitle = parseFolderTitle(existingMedia.title);
-    matchedYear = parseFolderYear(existingMedia.title);
+    file.library = existingMedia.library;
+    file.mediaInfo.title = parseFolderTitle(existingMedia.title);
+    file.mediaInfo.year = parseFolderYear(existingMedia.title);
   } else if (file.mediaInfo.episode !== undefined) {
     const library = libraries.find((library) => library.type === "show");
-    defaultLibrary = library;
+    file.library = library ?? libraries[0];
   } else {
     const library = libraries.find((library) => library.type === "movie");
-    defaultLibrary = library;
+    file.library = library ?? libraries[0];
   }
-
-  if (!defaultLibrary && libraries.length > 0) defaultLibrary = libraries[0];
-
-  return {
-    library: defaultLibrary ?? ({} as MediaLibrary),
-    title: matchedTitle,
-    year: matchedYear,
-  };
 }

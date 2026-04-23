@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { MediaFile } from "../../types/MediaFile";
 import { extractInfo } from "./extractInfo";
-import { assignDefaultLibrary } from "./assignDefaultLibrary";
+import { assignDefaultMediaInfo } from "./assignDefaultMediaInfo";
 import { MediaLibrary } from "@/src/types/MediaLibrary";
 import { log } from "@/src/libs/logger";
 
@@ -19,10 +19,7 @@ export function readFolders(
     const rootDir = path.normalize(folder);
     list.forEach((file) => {
       file.mediaInfo = extractInfo(file.path, rootDir);
-      const assignment = assignDefaultLibrary(file, librariesData, libraries);
-      file.library = assignment.library;
-      if (assignment.title !== undefined) file.mediaInfo.title = assignment.title;
-      if (assignment.year !== undefined) file.mediaInfo.year = assignment.year;
+      assignDefaultMediaInfo(file, librariesData, libraries);
     });
 
     return list;

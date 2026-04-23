@@ -85,6 +85,7 @@ async function copyFileWithProgress({
       clearInterval(progressInterval);
     }
 
+    await removeTorrentsForFile(file.path, CONFIG.downloadPaths);
     await fs.unlink(file.path);
 
     sendProgress({
@@ -97,8 +98,6 @@ async function copyFileWithProgress({
         errors,
       },
     });
-
-    await removeTorrentsForFile(file.path, CONFIG.downloadPaths);
   } catch (error: unknown) {
     let message = "Unknown error";
     if (error instanceof Error) {
