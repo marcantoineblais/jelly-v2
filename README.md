@@ -1,57 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jelly - Production Deployment Guide
 
-## Getting Started
+Jelly is a media management application built with Next.js, designed for handling torrents, downloads, and media libraries. This guide focuses on deploying the application in a production environment.
 
-Run the full dev stack (Next.js, Jackett, qBittorrent, socket-server, files-server):
+## Prerequisites
 
-```bash
-cp .env.example .env
-# Edit .env: set JWT_SIGN_TOKEN, JACKETT_API_KEY (from Jackett UI after first start)
-docker compose -f docker-compose.dev.yml up --build
-```
+- Docker and Docker Compose installed on your server.
+- A reverse proxy (e.g., Caddy, Nginx, or Traefik) for handling HTTPS and routing.
+- SSL certificates for secure access.
+- Sufficient storage for downloads and media libraries.
+- Optional: VPN setup for torrenting (Gluetun is included in the provided docker-compose.yml).
 
-- **App:** http://localhost:3000 (Next.js dev with hot reload)
-- **Jackett:** http://localhost:9117 — add indexers, copy API key into `.env`
-- **qBittorrent:** http://localhost:8080 — set Default save path to `/downloads` in Options
+## Configuration
 
-The app uses `config.dev.json` for download/library paths (dev volumes: `downloads-dev`, `encodes-dev`, `media-dev`).
+### Environment Variables
 
-### Authentication
+Create a `.env` file in the project root with the following variables:
 
-On first visit, the app redirects to `/setup` to create your account (username + password). Credentials are stored in `AUTH_DATA_PATH` (default: `/data/auth/credentials.json`) with a bcrypt-hashed password.
+- `WIREGUARD_PRIVATE_KEY`: Your ProtonVPN WireGuard private key (for VPN).
+- `SERVER_COUNTRIES`: VPN server countries (default: Canada).
+- `QBITTORRENT_WEBUI_PORT`: Port for qBittorrent Web UI (default: 8080).
+- `JACKETT_PORT`: Port for Jackett (default: 9117).
+- `FLARESOLVERR_PORT`: Port for FlareSolverr (default: 8191).
+- `PUID` and `PGID`: User and group IDs for file permissions (default: 1000).
+- Other app-specific variables as needed.
 
-`JWT_SIGN_TOKEN` (or `COOKIE_SIGN_TOKEN`) is required for session cookies. Download filters and other session data are stored in `SESSION_DATA_PATH` (default: `/data/sessions`).
+### App Configuration
 
-### qBittorrent (Docker)
+Copy `example.config.json` to `config.json` and customize:
 
-When using the optional qBittorrent service, completed downloads are written to the same path the app uses for transfers (`/mnt/downloads` on the host). Incomplete torrents use the default `downloads/temp` subfolder. After first start:
+- `download_paths`: Array of paths where downloads are stored.
+- `libraries`: Array of media libraries with name, path, and type (show or movie).
+- `videos_ext`: Supported video file extensions.
 
-1. Open the qBittorrent Web UI (port 8080).
-2. Go to **Tools → Options → Downloads** and set **Default Save Path** to `/downloads`.
+Ensure paths are accessible within the Docker containers or mounted volumes.
 
-Completed files will then appear under `/mnt/downloads` and show up in the app.
+## Building and Running
 
-### Jackett (Docker)
+1. **Clone the repository** (if not already done):
+   ```bash
+   git clone <repository-url>
+   cd jelly
+   ```
 
-The optional Jackett service provides torrent search via the Torrents page. It proxies multiple indexers (1337x, Torlock, etc.) through one API. After first start:
+2. **Configure environment and config files** as described above.
 
-1. Open the Jackett Web UI (port 9117).
-2. Add indexers (e.g. **Add indexer** → choose one, configure if needed).
-3. Copy your **API key** from the top-right of the Jackett UI and set `JACKETT_API_KEY` in your env (and `JACKETT_URL=http://jackett:9117` when using Docker).
+3. **Build the Docker image** (if using a custom build):
+   ```bash
+   docker build -t jelly:latest .
+   ```
+   Or pull the pre-built image: `ghcr.io/marcantoineblais/jelly:latest`
 
-Then use the **Torrents** page: enter a title and click Search to query all configured indexers.
+4. **Run the services**:
+   ```bash
+   docker-compose up -d
+   ```
 
-## Learn More
+   This starts:
+   - Gluetun (VPN)
+   - FlareSolverr (anti-bot service)
+   - Jackett (torrent indexer)
+   - qBittorrent (torrent client)
+   - Jelly app (via the image)
 
-To learn more about Next.js, take a look at the following resources:
+   Note: The Jelly app container is not explicitly in docker-compose.yml; ensure it's included or run separately.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Networking and Security
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Ports**: Expose necessary ports through your reverse proxy or firewall.
+  - Jelly app: Typically port 3000 (internal).
+  - qBittorrent: 8080
+  - Jackett: 9117
+  - FlareSolverr: 8191
 
-## Deploy on Vercel
+- **Reverse Proxy**: Configure your reverse proxy to route traffic to the containers. Enable HTTPS with SSL certificates.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **VPN**: Gluetun provides VPN connectivity for torrenting. Ensure `WIREGUARD_PRIVATE_KEY` is set securely.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Firewall**: Configure firewall rules to allow only necessary inbound traffic.
+
+- **Secrets**: Store sensitive data (keys, passwords) securely, e.g., using Docker secrets or environment variable managers.
+
+## Post-Deployment Setup
+
+1. **Access the app**: Navigate to your domain/IP and set up authentication via `/setup`.
+
+2. **Configure qBittorrent**:
+   - Access Web UI at configured port.
+   - Set Default Save Path to `/downloads`.
+
+3. **Configure Jackett**:
+   - Access Web UI.
+   - Add indexers and note the API key.
+
+4. **Mount Volumes**: Ensure download and media paths are properly mounted and accessible.
+
+## Monitoring and Maintenance
+
+- **Logs**: Monitor container logs with `docker-compose logs`.
+- **Updates**: Regularly update images and dependencies.
+- **Backups**: Backup configuration, databases, and media data.
+
+## Troubleshooting
+
+- **Common Issues**:
+  - VPN connection fails: Verify `WIREGUARD_PRIVATE_KEY`.
+  - Permission errors: Check PUID/PGID and volume permissions.
+  - Service unreachable: Ensure ports are correctly exposed and firewall rules are set.
+
+- **Support**: Refer to the project's issue tracker for bugs or feature requests.
+
