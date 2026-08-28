@@ -1,29 +1,28 @@
-FROM node:20-bookworm-slim AS builder
+FROM node:24-bookworm-slim AS builder
+
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-# npm ci fails when package-lock.json doesn't match package.json. Use npm install
-# so the build succeeds. Run `npm install` locally and commit to re-enable npm ci.
-RUN npm install
-
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN mkdir -p public
-RUN npm run build
-RUN npm prune --omit=dev
+RUN pnpm build
+RUN pnpm build:servers
 
-FROM node:20-bookworm-slim AS runner
+
+FROM node:24-bookworm-slim AS runner
+
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 
-COPY package.json package-lock.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/next.config.mjs ./
-COPY --from=builder /app/servers ./servers
-COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/dist-servers ./dist-servers
 
-CMD ["npm", "start"]
+# Install dependencies for the server
+RUN corepack enable
+RUN pnpm add --prod dotenv
+
+CMD ["node", "server.js"]
