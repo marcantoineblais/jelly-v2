@@ -20,9 +20,10 @@ ENV HOSTNAME=0.0.0.0
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/dist-servers ./dist-servers
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
 
 # Install dependencies for the server
 RUN corepack enable
-RUN pnpm add --prod dotenv
+RUN pnpm install --prod --frozen-lockfile
 
 CMD ["node", "server.js"]
