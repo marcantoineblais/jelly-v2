@@ -182,7 +182,7 @@ export default function FloatingOptions<T>({
           ref={setOptionsElement}
           role="listbox"
           aria-multiselectable={isMultiple || undefined}
-          className="max-h-60 overflow-y-auto p-1 custom-scroll space-y-1"
+          className="max-h-60 overflow-y-auto p-1 custom-scroll space-y-1 overflow-x-hidden"
         >
           {options.map((opt, i) => {
             const isSelected = value?.has(opt.value);
@@ -203,14 +203,14 @@ export default function FloatingOptions<T>({
                 }
                 style={opt.style}
                 className={twJoin(
-                  "px-3 py-1 h-max min-h-9 flex items-center text-sm cursor-pointer rounded-md",
+                  "min-w-0 px-3 py-1 h-max min-h-9 flex items-center text-sm cursor-pointer rounded-md",
                   "hover:bg-surface transition-colors duration-200",
                   "focus:bg-surface focus:ring-1 focus:ring-primary-ring focus:outline-none",
                   "data-disabled:cursor-default data-disabled:hover:bg-transparent data-disabled:text-text-muted",
                   "data-selected:bg-primary/5 data-selected:hover:bg-primary/5",
                 )}
               >
-                <div className="flex items-center gap-2">
+                <div className="min-w-0 w-full flex items-center gap-2">
                   {isMultiple && (
                     <input
                       type="checkbox"
