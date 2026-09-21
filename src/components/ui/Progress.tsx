@@ -12,7 +12,6 @@ export default function Progress({ value = 0, className, ...props }: Props) {
   return (
     <div
       className="w-full bg-gray-300 rounded-full h-2 overflow-hidden"
-      {...props}
     >
       <div
         className={twMerge(
@@ -20,6 +19,7 @@ export default function Progress({ value = 0, className, ...props }: Props) {
           className,
         )}
         style={{ width: `${progress * 100}%` }}
+        {...props}
       ></div>
     </div>
   );
