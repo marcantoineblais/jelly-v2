@@ -220,7 +220,7 @@ export default function FloatingOptions<T>({
                       className="size-3 shrink-0 rounded border-border text-primary focus:ring-0 pointer-events-none"
                     />
                   )}
-                  <div className="grow flex flex-col gap-1">
+                  <div className="min-w-0 grow flex flex-col gap-1 overflow-hidden">
                     <span className="pt-0.5 w-full truncate leading-none">
                       {opt.label}
                     </span>

@@ -130,7 +130,7 @@ export default function Modal({
       <div
         onPointerDown={(e) => e.stopPropagation()}
         data-loading={isLoading || undefined}
-        className="max-md:min-w-[calc(100dvw-1rem)] min-w-md w-max max-w-[calc(100dvw-1rem)] max-h-[calc(100dvh-1rem)] flex flex-col bg-surface-card border border-border rounded-lg shadow-lg overflow-hidden data-loading:opacity-0"
+        className="max-md:w-[calc(100dvw-1rem)] md:min-w-md w-max max-w-2xl max-h-[calc(100dvh-1rem)] flex flex-col bg-surface-card border border-border rounded-lg shadow-lg overflow-hidden data-loading:opacity-0"
         style={{ transitionDuration: `${FADE_DURATION}ms` }}
       >
         <div className="w-full flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
