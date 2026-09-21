@@ -55,9 +55,9 @@ export default function Button({
 
   const sizeClasses: Record<ButtonSize, string> = useMemo(
     () => ({
-      small: "h-6 py-1 px-3 text-sm",
-      medium: "h-8 py-2 px-4 text-base",
-      large: "h-10 py-3 px-5 text-base",
+      small: "py-1 px-2 text-sm",
+      medium: "py-2 px-4 text-base",
+      large: "py-3 px-6 text-base",
     }),
     [],
   );
