@@ -59,6 +59,7 @@ export default function Autocomplete({
   function handleClear() {
     if (error) validate("");
     onChange("");
+    setSuggestions(options);
   }
 
   function handleSelect(value: string) {
