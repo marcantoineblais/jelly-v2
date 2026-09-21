@@ -231,7 +231,6 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
               type="submit"
               color="primary"
               isLoading={isSearchLoading}
-              size="large"
             >
               Search
             </Button>

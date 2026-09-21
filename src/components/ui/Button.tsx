@@ -57,7 +57,7 @@ export default function Button({
     () => ({
       small: "py-1 px-2 text-sm",
       medium: "py-2 px-4 text-base",
-      large: "py-3 px-6 text-base",
+      large: "py-4 px-8 text-lg",
     }),
     [],
   );
@@ -75,7 +75,7 @@ export default function Button({
       {...props}
       disabled={isDisabled || isLoading || undefined}
       className={twMerge(
-        "relative h-8 py-1 px-4 rounded-lg min-w-16 cursor-pointer flex items-center justify-center font-semibold overflow-hidden duration-200",
+        "relative rounded-lg min-w-16 cursor-pointer flex items-center justify-center font-semibold overflow-hidden duration-200",
         colorClasses[color],
         sizeClasses[size],
         "disabled:opacity-50 disabled:cursor-default",

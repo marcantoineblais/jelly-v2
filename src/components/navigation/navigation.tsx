@@ -65,7 +65,7 @@ export default function Navigation() {
             ariaLabel="Open navigation menu"
             icon={faBars}
             size="2x"
-            onClick={() => setIsOpen(true)}
+            onClick={() => setIsOpen(!isOpen)}
           />
 
           <div

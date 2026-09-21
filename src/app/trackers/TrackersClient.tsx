@@ -375,7 +375,6 @@ export default function TrackersClient({
         return (
           <Button
             className="w-44 shadow-btn"
-            size="large"
             isLoading={isFormSubmitting}
             onClick={handleUpdate}
           >
@@ -386,7 +385,6 @@ export default function TrackersClient({
       return (
         <Button
           className="w-44 shadow-btn"
-          size="large"
           isLoading={isFormSubmitting}
           onClick={handleAdd}
         >
@@ -397,7 +395,6 @@ export default function TrackersClient({
     return (
       <Button
         className="w-44 shadow-btn"
-        size="large"
         isLoading={isSearchLoading}
         isDisabled={!selectedShow || isSearchDisabled}
         onClick={handleSearch}
