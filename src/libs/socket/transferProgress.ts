@@ -61,10 +61,12 @@ export function sendTransferStarted({
 export function sendTransferCompleted({
   ws,
   totalFiles,
+  totalSize,
   errors,
 }: {
   ws: WebSocket;
   totalFiles: number;
+  totalSize: number;
   errors: TransferError[];
 }): void {
   try {
@@ -73,6 +75,9 @@ export function sendTransferCompleted({
         currentFile: "Files transfer completed",
         processedFiles: totalFiles,
         totalFiles,
+        currentFileBytesTransferred: 0,
+        totalBytesTransferred: totalSize,
+        totalSize,
         isCompleted: true,
         errors,
       }),

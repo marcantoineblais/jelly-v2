@@ -223,6 +223,7 @@ export async function processFilesJob(
   sendTransferCompleted({
     ws,
     totalFiles: filesToProcess.length,
+    totalSize,
     errors,
   });
 }
