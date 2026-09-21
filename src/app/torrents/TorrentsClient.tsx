@@ -1,18 +1,5 @@
 "use client";
 
-import {
-  Button,
-  Checkbox,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Select,
-  SelectItem,
-  Spinner,
-  useDisclosure,
-} from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
 import useFetch from "@/src/hooks/use-fetch";
 import { QbittorrentResponse } from "../api/qbit/torrents/route";
@@ -27,6 +14,12 @@ import TorrentTableItem from "@/src/components/table/torrent-table-item";
 import TorrentFileTree from "@/src/components/torrent-file-tree/FileTree";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
 import { useSession } from "@/src/providers/session-provider-client";
+import useModal from "@/src/hooks/useModal";
+import SelectInput from "@/src/components/ui/SelectInput";
+import Modal from "@/src/components/Modal";
+import CheckboxInput from "@/src/components/ui/CheckboxInput";
+import Button from "@/src/components/ui/Button";
+import Spinner from "@/src/components/ui/Spinner";
 
 export type SortBy = "name" | "size" | "progress" | "status" | "eta";
 
@@ -46,8 +39,7 @@ export default function TorrentsClient({
     isOpen: isModalOpen,
     onOpen: onModalOpen,
     onClose: onModalClose,
-    onOpenChange: onModalOpenChange,
-  } = useDisclosure();
+  } = useModal();
 
   const [torrents, setTorrents] = useState<QbitTorrent[]>(initialTorrents);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -59,6 +51,24 @@ export default function TorrentsClient({
   const sortBy = (session.torrents?.sortBy as SortBy) ?? DEFAULT_SORT_BY;
   const sortOrder =
     (session.torrents?.sortOrder as "asc" | "desc") ?? DEFAULT_SORT_ORDER;
+
+  const sortByOptions = useMemo(
+    () =>
+      TORRENT_SORT_BY.map((option) => ({
+        label: option,
+        value: option,
+      })),
+    [],
+  );
+
+  const sortOrderOptions = useMemo(
+    () =>
+      TORRENT_SORT_ORDER.map((option) => ({
+        label: option,
+        value: option,
+      })),
+    [],
+  );
 
   function setSortBy(value: SortBy) {
     updateSession({ torrents: { sortBy: value, sortOrder } });
@@ -116,11 +126,6 @@ export default function TorrentsClient({
     }, 200);
   }
 
-  function handleOpenChange(open: boolean) {
-    if (!open) handleCloseModal();
-    onModalOpenChange();
-  }
-
   useEffect(() => {
     const pollTorrents = async () => {
       try {
@@ -168,33 +173,23 @@ export default function TorrentsClient({
     <main className="container-main w-full h-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
       {/* Sorting controls */}
       <div className="flex gap-2 bg-white/80 rounded-lg border border-stone-200 p-3">
-        <Select
+        <SelectInput
+          id="sort-by"
           className="basis-2/3"
           label="Sort by"
-          selectedKeys={[sortBy]}
-          onSelectionChange={(selection) => {
-            const key = Array.from(selection)[0] as SortBy;
-            if (key) setSortBy(key);
-          }}
-        >
-          {TORRENT_SORT_BY.map((sortBy) => (
-            <SelectItem key={sortBy}>{sortBy}</SelectItem>
-          ))}
-        </Select>
+          value={new Set([sortBy])}
+          onChange={(value) => setSortBy([...value][0] as SortBy)}
+          options={sortByOptions}
+        />
 
-        <Select
+        <SelectInput
+          id="sort-order"
           className="basis-1/3"
           label="Order"
-          selectedKeys={[sortOrder]}
-          onSelectionChange={(selection) => {
-            const key = Array.from(selection)[0] as "asc" | "desc";
-            if (key) setSortOrder(key);
-          }}
-        >
-          {TORRENT_SORT_ORDER.map((sortOrder) => (
-            <SelectItem key={sortOrder}>{sortOrder}</SelectItem>
-          ))}
-        </Select>
+          value={new Set([sortOrder])}
+          onChange={(value) => setSortOrder([...value][0] as "asc" | "desc")}
+          options={sortOrderOptions}
+        />
       </div>
 
       {/* Torrents table */}
@@ -218,50 +213,49 @@ export default function TorrentsClient({
       )}
 
       <Modal
+        title="Torrent Details"
         isOpen={isModalOpen}
-        onOpenChange={handleOpenChange}
-        placement="center"
-        scrollBehavior="inside"
-        onClose={handleCloseModal}
+        onClose={onModalClose}
+        footer={
+          <div className="w-full flex flex-col gap-4">
+            <CheckboxInput
+              id="delete-files"
+              label="Delete files"
+              className="self-start"
+              checked={deleteFiles}
+              onChange={setDeleteFiles}
+            />
+            <div className="w-full flex gap-2 justify-end">
+              <Button
+                className="w-32"
+                color="default"
+                onClick={handleCloseModal}
+              >
+                Close
+              </Button>
+              <Button
+                className="w-32"
+                color="danger"
+                onClick={handleConfirmDelete}
+                isLoading={isDeleting}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        }
       >
         {selectedItem && (
-          <ModalContent>
-            <ModalHeader>Details</ModalHeader>
-            <ModalBody className="flex flex-col gap-2">
-              <p className="break-all">{selectedItem?.name}</p>
-              {isLoadingFiles ? (
-                <div className="flex justify-center py-4">
-                  <Spinner size="sm" />
-                </div>
-              ) : torrentFiles.length > 0 ? (
-                <TorrentFileTree files={torrentFiles} />
-              ) : null}
-            </ModalBody>
-            <ModalFooter className="flex flex-col gap-2">
-              <Checkbox isSelected={deleteFiles} onValueChange={setDeleteFiles}>
-                Delete files
-              </Checkbox>
-              <div className="flex gap-2 justify-center">
-                <Button
-                  className="w-32"
-                  color="default"
-                  variant="ghost"
-                  onPress={handleCloseModal}
-                >
-                  Close
-                </Button>
-                <Button
-                  className="w-32"
-                  color="danger"
-                  variant="solid"
-                  onPress={handleConfirmDelete}
-                  isLoading={isDeleting}
-                >
-                  Delete
-                </Button>
+          <div className="flex flex-col gap-2">
+            <p className="break-all">{selectedItem?.name}</p>
+            {isLoadingFiles ? (
+              <div className="flex justify-center py-4">
+                <Spinner size="sm" />
               </div>
-            </ModalFooter>
-          </ModalContent>
+            ) : torrentFiles.length > 0 ? (
+              <TorrentFileTree files={torrentFiles} />
+            ) : null}
+          </div>
         )}
       </Modal>
     </main>

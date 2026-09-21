@@ -6,7 +6,8 @@ import {
   formatState,
   getStatusCategory,
 } from "@/src/libs/qbit/format";
-import { Progress } from "@heroui/react";
+import Progress from "../ui/Progress";
+import { twJoin } from "tailwind-merge";
 
 export type TorrentTableItemProps = {
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
@@ -40,19 +41,15 @@ export default function TorrentTableItem({
         <div className="w-full">
           <Progress
             data-status={status}
-            className="group"
-            classNames={{
-              indicator: [
-                "group-data-[status=downloading]:bg-status-downloading",
-                "group-data-[status=stalled]:bg-status-stalled",
-                "group-data-[status=completed]:bg-status-completed",
-                "group-data-[status=seeding]:bg-status-completed",
-                "group-data-[status=paused]:bg-status-paused",
-                "group-data-[status=error]:bg-status-error",
-              ].join(" "),
-            }}
-            value={item.progress * 100}
-            aria-label="Progress"
+            className={twJoin(
+              "data-[status=downloading]:bg-status-downloading",
+              "data-[status=stalled]:bg-status-stalled",
+              "data-[status=completed]:bg-status-completed",
+              "data-[status=seeding]:bg-status-completed",
+              "data-[status=paused]:bg-status-paused",
+              "data-[status=error]:bg-status-error",
+            )}
+            value={item.progress}
           />
           <div className="flex justify-between content-between text-xs">
             <span className="truncate">{formatDataSize(item.completed)}</span>

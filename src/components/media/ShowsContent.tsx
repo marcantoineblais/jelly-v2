@@ -1,10 +1,11 @@
 "use client";
 
 import { MediaFile } from "@/src/types/MediaFile";
-import { Accordion, AccordionItem } from "@heroui/react";
 import { useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";
 import MediaShow from "./MediaShow";
+import Accordion from "../ui/accordion/Accordion";
+import AccordionItem from "../ui/accordion/AccordionItem";
 
 interface ShowsContentProps {
   sectionKey: string;
@@ -17,9 +18,7 @@ export default function ShowsContent({
   files,
   onSelect,
 }: ShowsContentProps) {
-  const [selectedKeys, setSelectedKeys] = useState<
-    Set<string | number> | "all"
-  >(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const uniqueTitles = Array.from(
     new Set(files.map((file) => file.mediaInfo.title || "")),
@@ -28,10 +27,9 @@ export default function ShowsContent({
   return (
     <Accordion
       key={sectionKey}
-      isCompact
-      selectionMode="multiple"
-      selectedKeys={selectedKeys}
-      onSelectionChange={setSelectedKeys}
+      selectedItems={selectedKeys}
+      setSelectedItems={setSelectedKeys}
+      multiple
     >
       {uniqueTitles.map((title, index) => {
         const showFiles = files.filter(
@@ -41,13 +39,12 @@ export default function ShowsContent({
 
         return (
           <AccordionItem
+            id={itemKey}
             key={itemKey}
-            textValue={title}
-            classNames={{ titleWrapper: "overflow-hidden" }}
-            title={
+            header={
               <MediaCheckbox
                 files={showFiles}
-                label={title}
+                label={title || "Not set"}
                 isSelected={showFiles.every((file) => file.isSelected)}
                 isIndeterminate={showFiles.some((file) => file.isSelected)}
                 onSelect={onSelect}

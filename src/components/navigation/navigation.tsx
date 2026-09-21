@@ -1,27 +1,22 @@
 "use client";
 
-import {
-  Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerHeader,
-  Link,
-  useDisclosure,
-} from "@heroui/react";
 import H1 from "../elements/H1";
 import Logo from "@/src/assets/img/logo.png";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useFetch from "@/src/hooks/use-fetch";
+import Link from "next/link";
+import Button from "../ui/Button";
+import IconButton from "../ui/IconButton";
 
 const HIDDEN_PATHS = ["/login", "/setup"];
 
 export default function Navigation() {
   const { fetchData } = useFetch();
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -29,7 +24,7 @@ export default function Navigation() {
     try {
       await fetchData("/api/auth/logout", { method: "POST" });
     } finally {
-      onClose();
+      setIsOpen(false);
       router.push("/login");
       router.refresh();
     }
@@ -37,7 +32,7 @@ export default function Navigation() {
 
   function handleNavigation(path: string) {
     router.push(path);
-    onClose();
+    setIsOpen(false);
   }
 
   if (HIDDEN_PATHS.includes(pathname)) {
@@ -66,96 +61,81 @@ export default function Navigation() {
         </div>
 
         <div className="basis-1/3 flex items-center justify-end">
-          <Button
-            isIconOnly
-            variant="flat"
-            className="bg-transparent"
-            onPress={onOpen}
-          >
-            <FontAwesomeIcon icon={faBars} className="text-4xl" />
-          </Button>
+          <IconButton
+            ariaLabel="Open navigation menu"
+            icon={faBars}
+            size="2x"
+            onClick={() => setIsOpen(true)}
+          />
 
-          <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement="right">
-            <DrawerContent className="bg-white backdrop-blur-3xl">
-              <DrawerHeader className="w-full flex justify-center text-xl">
-                Navigation
-              </DrawerHeader>
-              <DrawerBody className="py-10 flex flex-col justify-between">
-                <div className="grow flex flex-col justify-center items-center gap-4">
+          <div
+            className="z-40 p-8 fixed inset-y-0 right-0 max-sm:w-full w-sm translate-x-full data-open:translate-x-0 transition-transform duration-300 bg-surface-card"
+            data-open={isOpen || undefined}
+          >
+            <h2 className="py-4 w-full flex justify-center text-xl">
+              Navigation
+            </h2>
+            <div className="h-full flex flex-col">
+              <div className="py-10 grow flex flex-col justify-between gap-12">
+                <div className="flex flex-col justify-center items-center gap-4">
                   <Button
-                    href="/"
-                    onPress={() => handleNavigation("/")}
-                    variant="solid"
+                    onClick={() => handleNavigation("/")}
                     color="primary"
                     className="w-full text-lg shadow-btn"
-                    size="md"
                     isDisabled={pathname === "/"}
                   >
                     Transfers
                   </Button>
 
                   <Button
-                    href="/downloads"
-                    onPress={() => handleNavigation("/downloads")}
-                    variant="solid"
+                    onClick={() => handleNavigation("/downloads")}
                     color="primary"
                     className="w-full text-lg shadow-btn"
-                    size="md"
                     isDisabled={pathname === "/downloads"}
                   >
                     Downloads
                   </Button>
 
                   <Button
-                    href="/trackers"
-                    onPress={() => handleNavigation("/trackers")}
-                    variant="solid"
+                    onClick={() => handleNavigation("/trackers")}
                     color="primary"
                     className="w-full text-lg shadow-btn"
-                    size="md"
                     isDisabled={pathname === "/trackers"}
                   >
                     Trackers
                   </Button>
 
                   <Button
-                    href="/torrents"
-                    onPress={() => handleNavigation("/torrents")}
-                    variant="solid"
+                    onClick={() => handleNavigation("/torrents")}
                     color="primary"
                     className="w-full text-lg shadow-btn"
-                    size="md"
                     isDisabled={pathname === "/torrents"}
                   >
                     Torrents
                   </Button>
                 </div>
-                <div className="grow flex justify-center">
+                <div className="grow flex items-center justify-center">
                   <Button
-                    onPress={onClose}
+                    onClick={() => setIsOpen(false)}
                     color="default"
-                    variant="bordered"
                     className="w-full border-default-foreground shadow-btn"
-                    size="md"
                   >
                     Close
                   </Button>
                 </div>
-                <div className="flex justify-center">
+
+                <div className="mb-16 flex justify-center">
                   <Button
-                    onPress={handleLogout}
+                    onClick={handleLogout}
                     color="warning"
-                    variant="solid"
                     className="w-full text-white shadow-btn"
-                    startContent={<FontAwesomeIcon icon={faRightFromBracket} />}
-                    size="md"
                   >
-                    Logout
+                    <FontAwesomeIcon icon={faRightFromBracket} /> Logout
                   </Button>
                 </div>
-              </DrawerBody>
-            </DrawerContent>
-          </Drawer>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

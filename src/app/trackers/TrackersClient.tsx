@@ -7,23 +7,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import {
-  Autocomplete,
-  AutocompleteItem,
-  Button,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  NumberInput,
-  Select,
-  SelectItem,
-  addToast,
-  useDisclosure,
-} from "@heroui/react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import type { TrackedShow } from "@/src/types/TrackedShow";
 import type { JackettIndexer } from "@/src/libs/downloads/jackett";
@@ -43,11 +26,20 @@ import { formatSearchQuery, pad2 } from "@/src/libs/trackers/library-utils";
 import { FetchError } from "@/src/libs/fetch-error";
 import useValidation from "@/src/hooks/use-validation";
 import { validateFormData } from "@/src/libs/validation/tracker-validations";
+import useModal from "@/src/hooks/useModal";
+import { useToast } from "@/src/providers/ToastProvider";
+import Button from "@/src/components/ui/Button";
+import SelectInput from "@/src/components/ui/SelectInput";
+import IconButton from "@/src/components/ui/IconButton";
+import NumberInput from "@/src/components/ui/NumberInput";
+import Autocomplete from "@/src/components/ui/Autocomplete";
+import Input from "@/src/components/ui/Input";
+import Modal from "@/src/components/Modal";
 
 type TrackerFormData = {
   title: string;
-  season: number;
-  minEpisode: number;
+  season: number | null;
+  minEpisode: number | null;
   library: string;
   additionalQuery: string;
   indexer: string;
@@ -88,7 +80,8 @@ export default function TrackersClient({
   indexers,
 }: TrackersClientProps) {
   const { fetchData } = useFetch();
-  const { validate, isInvalid, errorMessage, setErrors, revalidateOnError } =
+  const toast = useToast();
+  const { validate, errorMessage, setErrors, revalidateOnError } =
     useValidation(validateFormData);
   const { isOpen: isAccordionOpen, toggle: toggleAccordion } = useAccordion();
 
@@ -102,33 +95,60 @@ export default function TrackersClient({
     season: number;
     episode: number;
   } | null>(null);
-  const [nextEpisode, setNextEpisode] = useState<number>(1);
+  const [nextEpisode, setNextEpisode] = useState<number | null>(1);
   const [items, setItems] = useState<FeedItem[]>([]);
 
   const [formData, setFormData] = useState<TrackerFormData>(EMPTY_FORM);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
-  const [libraryFolders, setLibraryFolders] = useState<string[]>([]);
+  const [libraryContent, setLibraryContent] = useState<string[]>([]);
 
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
     onClose: onDeleteClose,
-    onOpenChange: onDeleteOpenChange,
-  } = useDisclosure();
+  } = useModal();
   const [deletingShow, setDeletingShow] = useState<TrackedShow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const selectedShow = shows.find((s) => s.id === selectedShowId);
 
-  const sortedShows = useMemo(
-    () => [...shows].sort((a, b) => a.title.localeCompare(b.title)),
+  const sortedShowOptions = useMemo(
+    () =>
+      [...shows]
+        .sort((a, b) => a.title.localeCompare(b.title))
+        .map((show) => ({ label: show.title, value: show.id })),
     [shows],
   );
 
-  const categories = useMemo(() => {
+  const indexerOptions = useMemo(
+    () =>
+      indexers.map((indexer) => ({ label: indexer.name, value: indexer.id })),
+    [indexers],
+  );
+
+  const categoryOptions = useMemo(() => {
+    let categories = DOWNLOAD_DEFAULT_CATEGORIES;
     const indexer = indexers.find((i) => i.id === formData.indexer);
-    return indexer ? indexer.categories : DOWNLOAD_DEFAULT_CATEGORIES;
+    if (indexer) categories = indexer.categories;
+    return categories.map((category) => ({
+      label: category.name,
+      value: category.id,
+    }));
   }, [formData.indexer, indexers]);
+
+  const libraryOptions = useMemo(
+    () =>
+      libraries.map((library) => ({
+        label: library.name,
+        value: library.name,
+      })),
+    [libraries],
+  );
+
+  const libraryMediaOptions = useMemo(
+    () => libraryContent.map((content) => ({ label: content, value: content })),
+    [libraryContent],
+  );
 
   const isOpen = useMemo(() => {
     if (isAccordionOpen && selectedShow) return true;
@@ -138,16 +158,16 @@ export default function TrackersClient({
   const fetchFolders = useCallback(
     async (libraryName: string) => {
       if (!libraryName) {
-        setLibraryFolders([]);
+        setLibraryContent([]);
         return;
       }
       try {
         const { data } = await fetchData<LibraryFoldersResponse>(
           `/api/trackers/libraries/${encodeURIComponent(libraryName)}/folders`,
         );
-        setLibraryFolders(data.folders);
+        setLibraryContent(data.folders);
       } catch {
-        setLibraryFolders([]);
+        setLibraryContent([]);
       }
     },
     [fetchData],
@@ -191,7 +211,7 @@ export default function TrackersClient({
         });
       } else {
         setFormData(EMPTY_FORM);
-        setLibraryFolders([]);
+        setLibraryContent([]);
       }
     });
   }, [selectedShow, isAccordionOpen]);
@@ -210,7 +230,7 @@ export default function TrackersClient({
   useEffect(() => {
     startTransition(() => {
       if (!formData.library) {
-        setLibraryFolders([]);
+        setLibraryContent([]);
         return;
       }
       fetchFolders(formData.library);
@@ -230,10 +250,16 @@ export default function TrackersClient({
     const episode = nextEpisode;
     const additionalQuery = formData.additionalQuery.trim();
 
-    const payload = { title, season, episode, additionalQuery };
-    const hasErrors = validate({ ...payload, ...additionalValidation });
-    if (hasErrors) return;
+    const hasErrors = validate({
+      title,
+      season,
+      episode,
+      additionalQuery,
+      ...additionalValidation,
+    });
+    if (hasErrors || episode == null) return;
 
+    const payload = { title, season, episode, additionalQuery };
     const query = formatSearchQuery(payload);
     const params = new URLSearchParams({
       name: query,
@@ -272,9 +298,9 @@ export default function TrackersClient({
       );
       setShows((prev) => [...prev, data.show]);
       setFormData(EMPTY_FORM);
-      setLibraryFolders([]);
+      setLibraryContent([]);
       toggleAccordion();
-      addToast({ title: "Tracker added", severity: "success" });
+      toast.success("Tracker added");
     } catch (err) {
       if (err instanceof FetchError) {
         const serverErrors = (err.data as { errors?: Record<string, string> })
@@ -305,7 +331,7 @@ export default function TrackersClient({
       );
       toggleAccordion();
       fetchEpisode(selectedShow.id);
-      addToast({ title: "Tracker updated", severity: "success" });
+      toast.success("Tracker updated");
     } catch (err) {
       if (err instanceof FetchError) {
         const serverErrors = (err.data as { errors?: Record<string, string> })
@@ -335,7 +361,7 @@ export default function TrackersClient({
         setItems([]);
         setLastEpisode(null);
       }
-      addToast({ title: "Tracker removed", severity: "success" });
+      toast.success("Tracker removed");
     } catch {
       /* useFetch shows error toast */
     }
@@ -348,10 +374,10 @@ export default function TrackersClient({
       if (selectedShow) {
         return (
           <Button
-            className="w-32 shadow-btn"
-            color="primary"
+            className="w-44 shadow-btn"
+            size="large"
             isLoading={isFormSubmitting}
-            onPress={handleUpdate}
+            onClick={handleUpdate}
           >
             Update
           </Button>
@@ -359,10 +385,10 @@ export default function TrackersClient({
       }
       return (
         <Button
-          className="w-32 shadow-btn"
-          color="primary"
+          className="w-44 shadow-btn"
+          size="large"
           isLoading={isFormSubmitting}
-          onPress={handleAdd}
+          onClick={handleAdd}
         >
           Add
         </Button>
@@ -370,11 +396,11 @@ export default function TrackersClient({
     }
     return (
       <Button
-        className="w-32 shadow-btn"
-        color="primary"
+        className="w-44 shadow-btn"
+        size="large"
         isLoading={isSearchLoading}
         isDisabled={!selectedShow || isSearchDisabled}
-        onPress={handleSearch}
+        onClick={handleSearch}
       >
         Search
       </Button>
@@ -386,176 +412,158 @@ export default function TrackersClient({
       <main className="container-main h-full w-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
         <div className="flex flex-col gap-2 p-3 bg-white/80 rounded-lg border border-stone-200">
           <div className="flex gap-2">
-            <Select
-              className="min-w-0"
+            <SelectInput
+              id="show"
+              className="grow min-w-0"
               data-open={isOpen}
               label="Show"
-              isInvalid={isInvalid("show")}
-              errorMessage={errorMessage("show")}
+              error={errorMessage("show")}
+              validate={(value) => revalidateOnError("show", value)}
               placeholder="Select a show"
-              selectedKeys={selectedShowId ? [selectedShowId] : []}
-              selectionMode="single"
-              onSelectionChange={(selection) => {
-                const value = [...selection][0]?.toString();
-                setSelectedShowId(value ?? "");
-                revalidateOnError("show", value);
-              }}
-            >
-              {sortedShows.map((show) => (
-                <SelectItem key={show.id}>{show.title}</SelectItem>
-              ))}
-            </Select>
+              options={sortedShowOptions}
+              value={new Set([selectedShowId])}
+              onChange={(value) =>
+                setSelectedShowId(([...value][0] as string) ?? "")
+              }
+            />
 
             {selectedShow && isAccordionOpen && (
-              <Button
-                isIconOnly
-                variant="ghost"
+              <IconButton
                 color="danger"
-                onPress={handleDeleteClick}
-                aria-label="Delete tracker"
-                className="self-center"
-              >
-                <FontAwesomeIcon icon={faTrash} />
-              </Button>
+                onClick={handleDeleteClick}
+                ariaLabel="Delete tracker"
+                className="size-9 rounded border border-border flex justify-center items-center self-end"
+                icon={faTrash}
+              />
             )}
 
             {selectedShow && !isAccordionOpen && (
               <NumberInput
+                id="nextEpisode"
                 className="w-24"
                 min={0}
                 label="Ep."
                 value={nextEpisode}
-                onValueChange={(value) => {
-                  setNextEpisode(Math.max(value, 0));
-                  revalidateOnError("nextEpisode", value);
-                }}
-                isInvalid={isInvalid("nextEpisode")}
-                errorMessage={errorMessage("nextEpisode")}
+                onChange={setNextEpisode}
+                error={errorMessage("nextEpisode")}
+                validate={(value) => revalidateOnError("nextEpisode", value)}
               />
             )}
           </div>
 
           <Accordion isOpen={isAccordionOpen}>
             <div className="flex flex-col gap-2">
-              <Select
+              <SelectInput
+                id="library"
                 label="Library"
-                selectedKeys={formData.library ? [formData.library] : []}
-                selectionMode="single"
-                isInvalid={isInvalid("library")}
-                errorMessage={errorMessage("library")}
-                onSelectionChange={(selection) => {
-                  const name = [...selection][0]?.toString() ?? "";
+                options={libraryOptions}
+                value={new Set([formData.library])}
+                onChange={(value) =>
                   setFormData((prev) => ({
                     ...prev,
-                    library: name,
+                    library: [...value][0] ?? "",
                     title: "",
-                  }));
-                  revalidateOnError("library", name);
-                }}
-              >
-                {libraries.map((lib) => (
-                  <SelectItem key={lib.name}>{lib.name}</SelectItem>
-                ))}
-              </Select>
+                  }))
+                }
+                error={errorMessage("library")}
+                validate={(value) =>
+                  revalidateOnError("library", [...value][0] ?? "")
+                }
+              />
 
               <Autocomplete
+                id="title"
                 label="Title"
-                allowsCustomValue
-                inputValue={formData.title}
-                isInvalid={isInvalid("title")}
-                errorMessage={errorMessage("title")}
-                onClear={() => setFormData((prev) => ({ ...prev, title: "" }))}
-                onValueChange={(value) => {
-                  setFormData((prev) => ({ ...prev, title: value }));
-                  revalidateOnError("title", value);
-                }}
-                onSelectionChange={(key) => {
-                  const title = key ? key.toString() : "";
-                  setFormData((prev) => ({ ...prev, title }));
-                  revalidateOnError("title", title);
-                }}
-              >
-                {libraryFolders.map((folder) => (
-                  <AutocompleteItem key={folder}>{folder}</AutocompleteItem>
-                ))}
-              </Autocomplete>
+                value={formData.title}
+                error={errorMessage("title")}
+                validate={(value) => revalidateOnError("title", value)}
+                options={libraryMediaOptions}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    title: value,
+                  }))
+                }
+                isClearable
+              />
 
               <Input
+                id="additionalQuery"
                 label="Additional query"
                 value={formData.additionalQuery}
-                onValueChange={(value) =>
+                error={errorMessage("additionalQuery")}
+                validate={(value) =>
+                  revalidateOnError("additionalQuery", value)
+                }
+                onChange={(value) =>
                   setFormData((prev) => ({ ...prev, additionalQuery: value }))
                 }
+                isClearable
               />
 
               <div className="flex gap-2">
                 <NumberInput
+                  id="season"
                   label="Season"
                   min={0}
                   value={formData.season}
-                  isInvalid={isInvalid("season")}
-                  errorMessage={errorMessage("season")}
-                  onValueChange={(value) => {
+                  error={errorMessage("season")}
+                  validate={(value) => revalidateOnError("season", value)}
+                  onChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      season: Math.max(value, 0),
-                    }));
-                    revalidateOnError("season", value);
-                  }}
+                      season: value,
+                    }))
+                  }
                 />
 
                 <NumberInput
+                  id="minEpisode"
                   label="Min episode"
                   min={0}
                   value={formData.minEpisode}
-                  isInvalid={isInvalid("minEpisode")}
-                  errorMessage={errorMessage("minEpisode")}
-                  onValueChange={(value) => {
+                  error={errorMessage("minEpisode")}
+                  onChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      minEpisode: Math.max(value, 0),
-                    }));
-                    revalidateOnError("minEpisode", value);
-                  }}
+                      minEpisode: value,
+                    }))
+                  }
                 />
               </div>
 
-              <Select
+              <SelectInput
+                id="indexer"
                 label="Indexer"
-                selectedKeys={formData.indexer ? [formData.indexer] : []}
-                selectionMode="single"
+                value={new Set([formData.indexer])}
                 placeholder="All indexers"
-                isInvalid={isInvalid("indexer")}
-                errorMessage={errorMessage("indexer")}
-                onSelectionChange={(selection) => {
-                  const id = [...selection][0]?.toString() ?? "";
-                  setFormData((prev) => ({ ...prev, indexer: id }));
-                  revalidateOnError("indexer", id);
-                }}
-              >
-                {indexers.map((indexer) => (
-                  <SelectItem key={indexer.id}>{indexer.name}</SelectItem>
-                ))}
-              </Select>
+                options={indexerOptions}
+                error={errorMessage("indexer")}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    indexer: ([...value][0] as string) ?? "",
+                  }))
+                }
+                isClearable
+              />
 
-              {categories.length > 0 && (
-                <Select
+              {categoryOptions.length > 0 && (
+                <SelectInput
+                  id="category"
                   label="Category"
-                  selectedKeys={formData.category ? [formData.category] : []}
-                  selectionMode="single"
+                  value={new Set([formData.category])}
+                  options={categoryOptions}
                   placeholder="Category"
-                  isInvalid={isInvalid("category")}
-                  errorMessage={errorMessage("category")}
-                  onSelectionChange={(selection) => {
-                    const id = [...selection][0]?.toString() ?? "";
-                    setFormData((prev) => ({ ...prev, category: id }));
-                    revalidateOnError("category", id);
-                  }}
-                >
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </Select>
+                  error={errorMessage("category")}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      category: [...value][0] ?? "",
+                    }))
+                  }
+                  isClearable
+                />
               )}
             </div>
           </Accordion>
@@ -578,51 +586,46 @@ export default function TrackersClient({
       </main>
 
       <Modal
+        title="Remove tracker"
         isOpen={isDeleteOpen}
-        onOpenChange={onDeleteOpenChange}
-        placement="center"
-        onClose={() => {
-          onDeleteClose();
-          setTimeout(() => setDeletingShow(null), 200);
-        }}
+        onClose={onDeleteClose}
+        onUnmount={() => setDeletingShow(null)}
+        footer={
+          <>
+            <Button
+              className="w-32"
+              color="default"
+              onClick={() => {
+                onDeleteClose();
+                setTimeout(() => setDeletingShow(null), 200);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-32"
+              color="danger"
+              onClick={handleDeleteConfirm}
+              isLoading={isDeleting}
+            >
+              Remove
+            </Button>
+          </>
+        }
       >
         {deletingShow && (
-          <ModalContent>
-            <ModalHeader>Remove tracker</ModalHeader>
-            <ModalBody>
-              <p>
-                Do you really want to stop tracking{" "}
-                <strong>{deletingShow.title}</strong>.
-              </p>
+          <div>
+            <p>
+              Do you really want to stop tracking{" "}
+              <strong>{deletingShow.title}</strong>?
+            </p>
 
-              <p className="text-sm text-neutral-500">
-                {lastEpisode?.episode
-                  ? `Last downloaded episode was: S${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
-                  : "No episodes downloaded yet."}
-              </p>
-            </ModalBody>
-            <ModalFooter className="flex justify-center gap-2">
-              <Button
-                className="w-32"
-                color="default"
-                variant="ghost"
-                onPress={() => {
-                  onDeleteClose();
-                  setTimeout(() => setDeletingShow(null), 200);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="w-32"
-                color="danger"
-                onPress={handleDeleteConfirm}
-                isLoading={isDeleting}
-              >
-                Remove
-              </Button>
-            </ModalFooter>
-          </ModalContent>
+            <p className="mt-4 text-sm text-neutral-500">
+              {lastEpisode?.episode
+                ? `Last downloaded episode was: S${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
+                : "No episodes downloaded yet."}
+            </p>
+          </div>
         )}
       </Modal>
     </>

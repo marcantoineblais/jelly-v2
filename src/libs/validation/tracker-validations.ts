@@ -5,10 +5,9 @@ const validateShow = (show: unknown) => {
 };
 
 const validateNextEpisode = (nextEpisode: unknown) => {
-  if (nextEpisode === undefined) return "Next episode is required";
+  if (nextEpisode == null) return "Next episode is required";
   if (typeof nextEpisode !== "number") return "Next episode must be a number";
-  if (isNaN(nextEpisode) || nextEpisode < 1)
-    return "Next episode must be a positive number";
+  if (nextEpisode < 1) return "Next episode must be a positive number";
   if (!Number.isInteger(nextEpisode)) return "Next episode must be an integer";
   return null;
 };
@@ -20,9 +19,9 @@ const validateTitle = (title: unknown) => {
 };
 
 const validateSeason = (season: unknown) => {
-  if (season === undefined) return "Season is required";
+  if (season == null) return "Season is required";
   if (typeof season !== "number") return "Season must be a number";
-  if (isNaN(season) || season < 0) return "Season must be a positive number";
+  if (season < 0) return "Season must be a positive number";
   if (!Number.isInteger(season)) return "Season must be an integer";
   return null;
 };
@@ -31,8 +30,7 @@ const validateMinEpisode = (minEpisode: unknown) => {
   if (!minEpisode) return null;
 
   if (typeof minEpisode !== "number") return "Min episode must be a number";
-  if (isNaN(minEpisode) || minEpisode < 0)
-    return "Min episode must be a positive number";
+  if (minEpisode < 0) return "Min episode must be a positive number";
   if (!Number.isInteger(minEpisode)) return "Min episode must be an integer";
   return null;
 };

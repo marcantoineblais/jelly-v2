@@ -2,20 +2,13 @@
 
 import { MediaFile } from "@/src/types/MediaFile";
 import { MediaLibrary } from "@/src/types/MediaLibrary";
-import {
-  Button,
-  Checkbox,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  NumberInput,
-  Select,
-  SelectItem,
-} from "@heroui/react";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
+import Modal from "../Modal";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import CheckboxInput from "../ui/CheckboxInput";
+import NumberInput from "../ui/NumberInput";
+import SelectInput from "../ui/SelectInput";
 
 export default function MediaEditForm({
   files = [],
@@ -31,12 +24,12 @@ export default function MediaEditForm({
   onSaveMediaInfo?: (form: {
     title?: string;
     isSeasonEnabled?: boolean;
-    season?: number;
+    season?: number | null;
     isEpisodeEnabled?: boolean;
-    episode?: number;
+    episode?: number | null;
     isYearEnabled?: boolean;
-    year?: number;
-    library?: string | Set<string> | undefined;
+    year?: number | null;
+    library?: string | undefined;
     useOriginalName?: boolean;
     incrementEpisodes?: boolean;
   }) => void;
@@ -44,19 +37,19 @@ export default function MediaEditForm({
   const [form, setForm] = useState<{
     title?: string;
     isSeasonEnabled?: boolean;
-    season?: number;
+    season?: number | null;
     isEpisodeEnabled?: boolean;
-    episode?: number;
+    episode?: number | null;
     isYearEnabled?: boolean;
-    year?: number;
-    library?: string | Set<string> | undefined;
+    year?: number | null;
+    library?: string;
     useOriginalName?: boolean;
     incrementEpisodes?: boolean;
   }>({
     title: "",
-    season: NaN,
-    episode: NaN,
-    year: NaN,
+    season: null,
+    episode: null,
+    year: null,
     library: undefined,
     useOriginalName: false,
     incrementEpisodes: false,
@@ -65,7 +58,16 @@ export default function MediaEditForm({
     isYearEnabled: false,
   });
 
-  const numberFormat: Intl.NumberFormatOptions = { useGrouping: false };
+  const options = useMemo(
+    () =>
+      libraries
+        .filter((lab) => lab.name)
+        .map((lab) => ({ label: lab.name, value: lab.name })) as {
+        label: string;
+        value: string;
+      }[],
+    [libraries],
+  );
 
   // Initialize/reset form state when files or libraries change
   useEffect(() => {
@@ -81,22 +83,22 @@ export default function MediaEditForm({
         season: files.every(
           (file) => file.mediaInfo.season === firstFile?.mediaInfo.season,
         )
-          ? (firstFile.mediaInfo.season ?? NaN)
-          : NaN,
+          ? (firstFile.mediaInfo.season ?? null)
+          : null,
         episode: files.every(
           (file) => file.mediaInfo.episode === firstFile?.mediaInfo.episode,
         )
-          ? (firstFile.mediaInfo.episode ?? NaN)
-          : NaN,
+          ? (firstFile.mediaInfo.episode ?? null)
+          : null,
         year: files.every(
           (file) => file.mediaInfo.year === firstFile?.mediaInfo.year,
         )
-          ? (firstFile.mediaInfo.year ?? NaN)
-          : NaN,
+          ? (firstFile.mediaInfo.year ?? null)
+          : null,
         library:
           files.every((file) => file.library === firstFile?.library) &&
           firstFile.library.name
-            ? new Set([firstFile.library.name])
+            ? firstFile.library.name
             : undefined,
         useOriginalName: false,
         incrementEpisodes: false,
@@ -114,29 +116,32 @@ export default function MediaEditForm({
   // Handlers for form fields
   function handleChange(
     field: string,
-    value: string | number | boolean | Set<string>,
+    value: string | number | boolean | null,
   ) {
     setForm((prev) => {
       // Auto-enable checkboxes when a value is set for season, episode, or year
-      if (field === "season" && typeof value === "number") {
+      if (field === "season" && (value === null || typeof value === "number")) {
         return {
           ...prev,
           [field]: value,
-          isSeasonEnabled: !isNaN(value),
+          isSeasonEnabled: value != null,
         };
       }
-      if (field === "episode" && typeof value === "number") {
+      if (
+        field === "episode" &&
+        (value === null || typeof value === "number")
+      ) {
         return {
           ...prev,
           [field]: value,
-          isEpisodeEnabled: !isNaN(value),
+          isEpisodeEnabled: value != null,
         };
       }
-      if (field === "year" && typeof value === "number") {
+      if (field === "year" && (value === null || typeof value === "number")) {
         return {
           ...prev,
           [field]: value,
-          isYearEnabled: !isNaN(value),
+          isYearEnabled: value != null,
         };
       }
 
@@ -145,117 +150,116 @@ export default function MediaEditForm({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose()} placement="center">
-      <ModalContent>
+    <Modal
+      title="Edit selected files"
+      isOpen={isOpen}
+      onClose={() => onClose()}
+      footer={
         <>
-          <ModalHeader>Edit selected files</ModalHeader>
-          <ModalBody>
-            <Input
-              label="Title"
-              placeholder="(Unchanged)"
-              value={form.title}
-              type="text"
-              onValueChange={(v) => handleChange("title", v)}
-              radius="sm"
+          <Button color="default" className="w-32" onClick={() => onClose()}>
+            Cancel
+          </Button>
+          <Button className="w-32" onClick={() => onSaveMediaInfo(form)}>
+            Save
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Input
+            id="title"
+            label="Title"
+            placeholder="(Unchanged)"
+            value={form.title}
+            type="text"
+            onChange={(v) => handleChange("title", v)}
+          />
+
+          <CheckboxInput
+            id="useOriginalName"
+            checked={form.useOriginalName}
+            label="Use original filename"
+            onChange={(v) => handleChange("useOriginalName", v)}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <NumberInput
+            id="season"
+            label="Season"
+            placeholder={form.isSeasonEnabled ? "(Unchanged)" : ""}
+            className="grow"
+            value={form.season}
+            onChange={(v) => handleChange("season", v)}
+            min={0}
+          />
+          <div className="self-end flex items-center h-9">
+            <CheckboxInput
+              id="isSeasonEnabled"
+              checked={form.isSeasonEnabled}
+              onChange={(v) => handleChange("isSeasonEnabled", v)}
             />
+          </div>
+        </div>
 
-            <Checkbox
-              isSelected={form.useOriginalName}
-              onValueChange={(v) => handleChange("useOriginalName", v)}
-              size="sm"
-              classNames={{ wrapper: "after:bg-primary", label: "text-sm" }}
-            >
-              Use original filename
-            </Checkbox>
-
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
             <NumberInput
-              label="Season"
-              placeholder={form.isSeasonEnabled ? "(Unchanged)" : ""}
-              value={form.season}
-              onValueChange={(v) => handleChange("season", v)}
-              radius="sm"
-              minValue={0}
-              formatOptions={numberFormat}
-              endContent={
-                <Checkbox
-                  isSelected={form.isSeasonEnabled}
-                  onValueChange={(v) => handleChange("isSeasonEnabled", v)}
-                  classNames={{ wrapper: "after:bg-primary" }}
-                />
-              }
-            />
-
-            <NumberInput
+              id="episode"
               label="Episode"
+              className="grow"
               placeholder={form.isEpisodeEnabled ? "(Unchanged)" : ""}
               value={form.episode}
-              onValueChange={(v) => handleChange("episode", v)}
-              radius="sm"
-              minValue={0}
-              formatOptions={numberFormat}
-              endContent={
-                <Checkbox
-                  isSelected={form.isEpisodeEnabled}
-                  onValueChange={(v) => handleChange("isEpisodeEnabled", v)}
-                  classNames={{ wrapper: "after:bg-primary" }}
-                />
-              }
+              onChange={(v) => handleChange("episode", v)}
+              min={0}
             />
+            <div className="self-end flex items-center h-9">
+              <CheckboxInput
+                id="isEpisodeEnabled"
+                checked={form.isEpisodeEnabled}
+                onChange={(v) => handleChange("isEpisodeEnabled", v)}
+              />
+            </div>
+          </div>
 
-            <Checkbox
-              isSelected={form.incrementEpisodes}
-              onValueChange={(v) => handleChange("incrementEpisodes", v)}
-              size="sm"
-              classNames={{ wrapper: "after:bg-primary", label: "text-sm" }}
-            >
-              Increment episodes
-            </Checkbox>
+          <CheckboxInput
+            id="incrementEpisodes"
+            label="Increment episodes"
+            checked={form.incrementEpisodes}
+            onChange={(v) => handleChange("incrementEpisodes", v)}
+          />
+        </div>
 
-            <NumberInput
-              label="Year"
-              placeholder={form.isYearEnabled ? "(Unchanged)" : ""}
-              value={form.year}
-              onValueChange={(v) => handleChange("year", v)}
-              radius="sm"
-              minValue={0}
-              maxValue={9999}
-              formatOptions={numberFormat}
-              endContent={
-                <Checkbox
-                  isSelected={form.isYearEnabled}
-                  onValueChange={(v) => handleChange("isYearEnabled", v)}
-                  classNames={{ wrapper: "after:bg-primary" }}
-                />
-              }
+        <div className="flex items-center gap-2">
+          <NumberInput
+            id="year"
+            label="Year"
+            className="grow"
+            placeholder={form.isYearEnabled ? "(Unchanged)" : ""}
+            value={form.year}
+            onChange={(v) => handleChange("year", v)}
+            min={0}
+            max={9999}
+          />
+          <div className="self-end flex items-center h-9">
+            <CheckboxInput
+              id="isYearEnabled"
+              checked={form.isYearEnabled}
+              onChange={(v) => handleChange("isYearEnabled", v)}
             />
+          </div>
+        </div>
 
-            <Select
-              label="Media library"
-              placeholder="(Unchanged)"
-              items={libraries}
-              selectedKeys={form.library}
-              onSelectionChange={(v) =>
-                handleChange("library", v as string | Set<string>)
-              }
-              radius="sm"
-            >
-              {(library) => (
-                <SelectItem key={library.name}>{library.name}</SelectItem>
-              )}
-            </Select>
-          </ModalBody>
-
-          <ModalFooter>
-            <Button onPress={() => onClose()}>Cancel</Button>
-            <Button
-              className="bg-primary text-white"
-              onPress={() => onSaveMediaInfo(form)}
-            >
-              Save
-            </Button>
-          </ModalFooter>
-        </>
-      </ModalContent>
+        <SelectInput
+          id="library"
+          label="Media library"
+          placeholder="(Unchanged)"
+          options={options}
+          value={new Set([form.library])}
+          onChange={(v) => handleChange("library", [...v][0] ?? "")}
+        />
+      </div>
     </Modal>
   );
 }

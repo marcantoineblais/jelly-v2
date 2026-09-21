@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { jetbrainsMono } from "@/src/fonts";
-import ToastMessagesProvider from "@/src/hooks/use-toast-messages";
 import ConfigProvider from "@/src/providers/config-provider";
 import SessionProvider from "@/src/providers/session-provider";
-import Navigation from "../components/ui/navigation";
+import Navigation from "../components/navigation/navigation";
+import { ToastProvider } from "../providers/ToastProvider";
+import { ModalProvider } from "../providers/ModalProvider";
 
 export const metadata: Metadata = {
   title: "Jelly",
@@ -19,16 +20,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`h-lvh w-lvh ${jetbrainsMono.className}`}>
-        <ConfigProvider>
-          <SessionProvider>
-            <ToastMessagesProvider>
-              <div className="h-dvh w-dvw flex flex-col overflow-hidden bg-stone-100">
-                <Navigation />
-                {children}
-              </div>
-            </ToastMessagesProvider>
-          </SessionProvider>
-        </ConfigProvider>
+        <ModalProvider>
+          <ToastProvider>
+            <ConfigProvider>
+              <SessionProvider>
+                <div className="h-dvh w-dvw flex flex-col overflow-hidden bg-stone-100">
+                  <Navigation />
+                  {children}
+                </div>
+              </SessionProvider>
+            </ConfigProvider>
+          </ToastProvider>
+        </ModalProvider>
       </body>
     </html>
   );

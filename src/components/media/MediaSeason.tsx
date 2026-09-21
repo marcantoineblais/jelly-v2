@@ -1,11 +1,12 @@
 "use client";
 
 import { MediaFile } from "@/src/types/MediaFile";
-import { Accordion, AccordionItem } from "@heroui/react";
 import { useMemo, useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";
 import SingleMedia from "./SingleMedia";
 import { createEpisodeLabel } from "@/src/libs/files/createFilename";
+import AccordionItem from "../ui/accordion/AccordionItem";
+import Accordion from "../ui/accordion/Accordion";
 
 export default function MediaSeason({
   files = [],
@@ -14,9 +15,7 @@ export default function MediaSeason({
   files?: MediaFile[];
   handleSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }) {
-  const [selectedKeys, setSelectedKeys] = useState<
-    Set<string | number> | "all"
-  >(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const accordionKey = useMemo(
     () =>
@@ -30,19 +29,16 @@ export default function MediaSeason({
   return (
     <Accordion
       key={accordionKey}
-      isCompact
-      selectionMode="multiple"
-      selectedKeys={selectedKeys}
-      onSelectionChange={setSelectedKeys}
+      selectedItems={selectedKeys}
+      setSelectedItems={setSelectedKeys}
     >
       {files.map((file) => {
         const label = file.mediaInfo.title ?? "No title";
         return (
           <AccordionItem
             key={file.id}
-            textValue={label}
-            classNames={{ titleWrapper: "overflow-hidden" }}
-            title={
+            id={file.id.toString()}
+            header={
               <MediaCheckbox
                 files={file}
                 label={label}

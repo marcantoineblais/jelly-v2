@@ -1,10 +1,11 @@
 import { useCallback } from "react";
 import { log } from "../libs/logger";
 import { FetchError } from "../libs/fetch-error";
-import { addToast } from "@heroui/react";
 import { useRouter } from "next/navigation";
+import { useToast } from "../providers/ToastProvider";
 
 export default function useFetch() {
+  const toast = useToast();
   const router = useRouter();
   const fetchData = useCallback(
     async <T,>(
@@ -81,14 +82,9 @@ export default function useFetch() {
           level: "error",
         });
         if (!silent) {
-          addToast({
-            title: "Error",
-            description:
-              error instanceof Error
-                ? error.message
-                : "An unexpected error occurred",
-            severity: "danger",
-          });
+          const message =
+            (error as Error).message ?? "An unexpected error occurred";
+          toast.error(message);
         }
 
         if (error instanceof FetchError) {
@@ -105,7 +101,7 @@ export default function useFetch() {
         setIsDisabled(false);
       }
     },
-    [router],
+    [router, toast],
   );
 
   return { fetchData };

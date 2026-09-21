@@ -1,21 +1,22 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { addToast, useDisclosure } from "@heroui/react";
 import type { FeedItem } from "@/src/libs/downloads/feed-format";
 import type { TorrentPreviewResponse } from "@/src/app/api/qbit/torrents/preview/route";
 import type { QbitTorrentFile } from "@/src/libs/qbit/client";
 import { POLL_INTERVAL_MS } from "@/src/config";
 import useFetch from "@/src/hooks/use-fetch";
+import useModal from "./useModal";
+import { useToast } from "../providers/ToastProvider";
 
 type HashFilesResponse = { ok: boolean; files?: QbitTorrentFile[] };
 
 export default function useTorrentPreview() {
   const { fetchData } = useFetch();
+  const toast = useToast();
   const {
     isOpen: isModalOpen,
     onOpen: onModalOpen,
     onClose: onModalClose,
-    onOpenChange: onModalOpenChange,
-  } = useDisclosure();
+  } = useModal();
 
   const [selectedItem, setSelectedItem] = useState<FeedItem | null>(null);
   const [files, setFiles] = useState<QbitTorrentFile[]>([]);
@@ -106,8 +107,7 @@ export default function useTorrentPreview() {
 
   const closeModal = useCallback(() => {
     onModalClose();
-    setTimeout(resetState, 200);
-  }, [onModalClose, resetState]);
+  }, [onModalClose]);
 
   // ── Preview loading ───────────────────────────────────────────────────
 
@@ -127,11 +127,7 @@ export default function useTorrentPreview() {
 
         const h = data.hash;
         if (!h) {
-          addToast({
-            title: "Preview failed",
-            description: "No hash returned",
-            severity: "danger",
-          });
+          toast.error("Preview failed, no hash returned");
           closeModal();
           return;
         }
@@ -152,16 +148,14 @@ export default function useTorrentPreview() {
           startPollingFiles(h);
         }
       } catch (err) {
-        addToast({
-          title: "Preview failed",
-          description:
-            err instanceof Error ? err.message : "Could not add torrent",
-          severity: "danger",
-        });
+        toast.error(
+          "Preview failed, " + (err as Error).message ||
+            "Could not add torrent",
+        );
         closeModal();
       }
     },
-    [fetchData, pauseTorrent, startPollingFiles, closeModal],
+    [fetchData, toast, closeModal, pauseTorrent, startPollingFiles],
   );
 
   // ── Public API ────────────────────────────────────────────────────────
@@ -180,14 +174,15 @@ export default function useTorrentPreview() {
   );
 
   const cancel = useCallback(async () => {
-    const h = hash;
+    if (!hash) return;
+
     const existed = alreadyExists;
     stopPolling();
     closeModal();
 
-    if (!h || existed) return;
+    if (existed) return;
     try {
-      await deleteTorrent(h);
+      await deleteTorrent(hash);
     } catch {
       /* best-effort cleanup */
     }
@@ -202,18 +197,14 @@ export default function useTorrentPreview() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "resume" }),
       });
-      addToast({
-        title: "Downloading",
-        description: selectedItem?.title,
-        severity: "success",
-      });
+      toast.success("Downloading " + selectedItem?.title);
     } catch {
       /* useFetch shows error toast */
     } finally {
       setIsStarting(false);
     }
     closeModal();
-  }, [fetchData, hash, selectedItem, stopPolling, closeModal]);
+  }, [stopPolling, closeModal, fetchData, hash, toast, selectedItem]);
 
   return {
     selectedItem,
@@ -221,9 +212,9 @@ export default function useTorrentPreview() {
     isStarting,
     isLoading: !hash,
     isModalOpen,
-    onModalOpenChange,
     selectTorrent,
     download,
     cancel,
+    resetState,
   };
 }

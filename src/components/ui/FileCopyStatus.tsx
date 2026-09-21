@@ -1,15 +1,14 @@
 "use client";
 
-import { Progress } from "@heroui/react";
 import { formatDataSize } from "@/src/libs/format-data-size";
 import H3 from "../elements/H3";
+import Progress from "./Progress";
 
 export default function FileCopyStatus({
   currentFile = "",
   processedFiles = 0,
   totalFiles = 0,
   currentFileBytesTransferred,
-  currentFileSize,
   totalBytesTransferred,
   totalSize,
 }: {
@@ -18,26 +17,19 @@ export default function FileCopyStatus({
   processedFiles?: number;
   totalFiles?: number;
   currentFileBytesTransferred?: number;
-  currentFileSize?: number;
   totalBytesTransferred?: number;
   totalSize?: number;
 }) {
   function getProgressPercent() {
-    if (!totalFiles) return 0;
-    const completedFiles = processedFiles ?? 0;
-    let currentFileProgress = 0;
     if (
-      currentFileSize != null &&
-      currentFileSize > 0 &&
-      currentFileBytesTransferred != null
-    ) {
-      currentFileProgress = Math.min(
-        1,
-        currentFileBytesTransferred / currentFileSize,
-      );
-    }
-    const overall = (completedFiles + currentFileProgress) / totalFiles;
-    return Math.min(100, overall * 100);
+      !totalSize ||
+      totalBytesTransferred == null ||
+      currentFileBytesTransferred == null
+    )
+      return 0;
+    const overall =
+      (totalBytesTransferred + currentFileBytesTransferred) / totalSize;
+    return overall;
   }
 
   function getHeader() {
@@ -45,12 +37,20 @@ export default function FileCopyStatus({
   }
 
   function getProgress() {
-    if (totalSize != null && totalSize > 0 && totalBytesTransferred != null) {
-      const remaining = Math.max(0, totalBytesTransferred);
-      return formatDataSize(remaining, { sizeRef: totalSize });
+    if (
+      totalSize == null ||
+      totalSize === 0 ||
+      totalBytesTransferred == null ||
+      currentFileBytesTransferred == null
+    ) {
+      return "";
     }
 
-    return "";
+    const remaining = Math.max(
+      0,
+      totalBytesTransferred + currentFileBytesTransferred,
+    );
+    return formatDataSize(remaining, { sizeRef: totalSize });
   }
 
   function getTotalSize() {
@@ -72,12 +72,7 @@ export default function FileCopyStatus({
           {currentFile || "Copying"}
         </div>
 
-        <Progress
-          aria-label="File transfer progress"
-          value={getProgressPercent()}
-          classNames={{ indicator: "bg-primary" }}
-          size="sm"
-        />
+        <Progress value={getProgressPercent()} />
 
         <div className="w-full flex justify-between text-default-400 mt-1">
           <span>{getProgress()}</span>

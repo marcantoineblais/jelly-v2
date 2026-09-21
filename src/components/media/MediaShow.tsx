@@ -2,10 +2,11 @@
 
 import { MediaFile } from "@/src/types/MediaFile";
 import { useMemo, useState } from "react";
-import { Accordion, AccordionItem } from "@heroui/react";
 import { formatNumber } from "@/src/libs/files/formatNumber";
 import MediaCheckbox from "./MediaCheckbox";
 import MediaSeason from "./MediaSeason";
+import Accordion from "../ui/accordion/Accordion";
+import AccordionItem from "../ui/accordion/AccordionItem";
 
 export default function MediaShow({
   files = [],
@@ -14,9 +15,7 @@ export default function MediaShow({
   files?: MediaFile[];
   handleSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }) {
-  const [selectedKeys, setSelectedKeys] = useState<
-    Set<string | number> | "all"
-  >(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const uniqueSeasons = useMemo(() => {
     const set = new Set<number | null | undefined>();
@@ -38,10 +37,9 @@ export default function MediaShow({
   return (
     <Accordion
       key={accordionKey}
-      isCompact
-      selectionMode="multiple"
-      selectedKeys={selectedKeys}
-      onSelectionChange={setSelectedKeys}
+      selectedItems={selectedKeys}
+      setSelectedItems={setSelectedKeys}
+      multiple
     >
       {uniqueSeasons.map((season) => {
         const formattedSeason =
@@ -53,10 +51,9 @@ export default function MediaShow({
         const key = `${season ?? "notset"}-${seasonFiles[0]?.id ?? ""}`;
         return (
           <AccordionItem
+            id={key}
             key={key}
-            textValue={label}
-            classNames={{ titleWrapper: "overflow-hidden" }}
-            title={
+            header={
               <MediaCheckbox
                 files={seasonFiles}
                 label={label}

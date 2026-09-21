@@ -10,7 +10,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { addToast } from "@heroui/react";
 import MediaEditForm from "./MediaEditForm";
 import FileSelectionBox from "../ui/FileSelectionBox";
 import FileCopyStatus from "../ui/FileCopyStatus";
@@ -21,6 +20,7 @@ import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-sock
 import MediaListEmpty from "./MediaListEmpty";
 import MediaListAccordion from "./MediaListAccordion";
 import useFetch from "@/src/hooks/use-fetch";
+import { useToast } from "@/src/providers/ToastProvider";
 
 export default function MediaList({
   files = [],
@@ -30,6 +30,7 @@ export default function MediaList({
   libraries: MediaLibrary[];
 }) {
   const { fetchData } = useFetch();
+  const toast = useToast();
   const [binSelected, setBinSelected] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilesLoading, setIsFilesLoading] = useState(false);
@@ -40,9 +41,7 @@ export default function MediaList({
       isSelected: false,
     })),
   );
-  const [selectedKeys, setSelectedKeys] = useState<
-    Set<string | number> | "all"
-  >(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const selectedFiles = useMemo(
     () => validatedFiles.filter((file) => file.isSelected),
@@ -124,33 +123,33 @@ export default function MediaList({
     );
   }
 
-  function handleSelectionChange(keys: "all" | Set<string | number>) {
+  function handleSelectionChange(keys: Set<string>) {
     let isBinSelected = false;
     setSelectedKeys((prev) => {
-      const prevKeys = prev as Set<string | number>;
-      const newKeys = keys as Set<string | number>;
+      const prevKeys = prev;
+      const newKeys = keys;
 
       if (newKeys.has("bin") && !prevKeys.has("bin")) {
         isBinSelected = true;
-        return new Set(["bin"]);
-      }
-
-      if (prevKeys.has("bin") && newKeys.size === 0) {
+        newKeys.clear();
+        newKeys.add("bin");
+      } else if (prevKeys.has("bin") && newKeys.size === 0) {
         isBinSelected = true;
-        return new Set([]);
+        newKeys.clear();
+      } else {
+        newKeys.delete("bin");
       }
 
-      newKeys.delete("bin");
+      setBinSelected((prev) => {
+        if (prev !== isBinSelected) {
+          setValidatedFiles((prev) =>
+            prev.map((file) => ({ ...file, isSelected: false })),
+          );
+        }
+        return isBinSelected;
+      });
+
       return newKeys;
-    });
-
-    setBinSelected((prev) => {
-      if (prev !== isBinSelected) {
-        setValidatedFiles((prev) =>
-          prev.map((file) => ({ ...file, isSelected: false })),
-        );
-      }
-      return isBinSelected;
     });
   }
 
@@ -190,11 +189,11 @@ export default function MediaList({
   function handleSaveMediaInfo(form: {
     title?: string;
     isSeasonEnabled?: boolean;
-    season?: number;
+    season?: number | null;
     isEpisodeEnabled?: boolean;
-    episode?: number;
+    episode?: number | null;
     isYearEnabled?: boolean;
-    year?: number;
+    year?: number | null;
     library?: string | Set<string>;
     useOriginalName?: boolean;
     incrementEpisodes?: boolean;
@@ -210,13 +209,12 @@ export default function MediaList({
         if (form.useOriginalName) newMediaInfo.title = file.name;
         else if (form.title) newMediaInfo.title = form.title.trim();
         if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
-        else if (!isNaN(form.season as number))
-          newMediaInfo.season = form.season;
+        else if (form.season != null) newMediaInfo.season = form.season;
         if (!form.isEpisodeEnabled) newMediaInfo.episode = undefined;
-        else if (!isNaN(form.episode as number))
-          newMediaInfo.episode = (form.episode as number) + counter;
+        else if (form.episode != null)
+          newMediaInfo.episode = form.episode + counter;
         if (!form.isYearEnabled) newMediaInfo.year = undefined;
-        else if (!isNaN(form.year as number)) newMediaInfo.year = form.year;
+        else if (form.year != null) newMediaInfo.year = form.year;
 
         let newLibrary = file.library;
         if (form.library && form.library !== "all") {
@@ -248,11 +246,7 @@ export default function MediaList({
 
   async function handleSave() {
     if (isTransferInProgress) {
-      addToast({
-        title: "Transfer already in progress",
-        description: "Please wait for the current transfer to finish.",
-        color: "warning",
-      });
+      toast.warning("Transfer already in progress");
       return;
     }
 
@@ -266,11 +260,9 @@ export default function MediaList({
     );
     if (incompleteFiles.length > 0) {
       const count = incompleteFiles.length;
-      addToast({
-        title: `${count} file${count > 1 ? "s are" : " is"} missing information`,
-        description: "Fix all required fields before saving.",
-        color: "warning",
-      });
+      toast.warning(
+        `${count} file${count > 1 ? "s are" : " is"} missing information`,
+      );
       return;
     }
 
@@ -286,13 +278,7 @@ export default function MediaList({
       };
 
       if (!response.ok || !data.ok) {
-        addToast({
-          title: "Failed to start transfer",
-          description:
-            data.error ||
-            "The file server is busy or an error occurred. Please try again.",
-          color: "danger",
-        });
+        toast.error("Failed to start transfer");
         return;
       }
     } catch (error) {
@@ -302,12 +288,7 @@ export default function MediaList({
         data: error,
         level: "error",
       });
-      addToast({
-        title: "Unexpected error",
-        description:
-          error instanceof Error ? error.message : "Something went wrong.",
-        color: "danger",
-      });
+      toast.error("Unexpected error");
     }
   }
 
@@ -320,7 +301,6 @@ export default function MediaList({
         currentFileBytesTransferred={
           transferStatus?.currentFileBytesTransferred
         }
-        currentFileSize={transferStatus?.currentFileSize}
         totalBytesTransferred={transferStatus?.totalBytesTransferred}
         totalSize={transferStatus?.totalSize}
       />
@@ -341,8 +321,8 @@ export default function MediaList({
         <MediaListAccordion
           sortedFiles={sortedFiles}
           binnedFiles={binnedFiles}
-          selectedKeys={selectedKeys}
-          onSelectionChange={handleSelectionChange}
+          selectedItems={selectedKeys}
+          setSelectedItems={handleSelectionChange}
           onSelect={handleSelect}
         />
       </div>

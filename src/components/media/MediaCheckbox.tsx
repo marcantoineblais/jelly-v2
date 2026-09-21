@@ -1,8 +1,8 @@
 "use client";
 
 import { MediaFile } from "@/src/types/MediaFile";
-import { Checkbox } from "@heroui/react";
-import { ChangeEvent, ReactNode, useMemo } from "react";
+import { ReactNode, useMemo } from "react";
+import CheckboxInput from "../ui/CheckboxInput";
 
 export default function MediaCheckbox({
   children,
@@ -19,8 +19,8 @@ export default function MediaCheckbox({
   isIndeterminate?: boolean;
   onSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }) {
-  function handleChange(e: ChangeEvent<HTMLInputElement>) {
-    onSelect(e.target.checked, files);
+  function handleChange(value: boolean) {
+    onSelect(value, files);
   }
 
   const hasError = useMemo(() => {
@@ -32,22 +32,24 @@ export default function MediaCheckbox({
   }, [files]);
 
   return (
-    <div className="flex gap-3 items-center">
-      <Checkbox
-        isSelected={isSelected}
+    <div className="flex items-center gap-2">
+      <CheckboxInput
+        id="media-checkbox"
+        checked={isSelected}
         isIndeterminate={isIndeterminate && !isSelected}
         onChange={handleChange}
-        classNames={{ wrapper: "after:bg-primary" }}
+        onClick={(e) => e.stopPropagation()}
       />
+
       <div className="flex flex-col">
         <div
-          className="w-full data-error:text-red-800 overflow-hidden"
+          className="w-full data-error:text-danger overflow-hidden"
           data-error={hasError || undefined}
         >
           <span className="block w-full truncate">{label}</span>
 
           {hasError && !Array.isArray(files) && (
-            <ul className="text-xs text-red-800">
+            <ul className="text-xs text-danger">
               {files.errors?.map((error, i) => (
                 <li key={i}>*{error}</li>
               ))}

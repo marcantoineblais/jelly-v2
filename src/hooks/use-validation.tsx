@@ -5,13 +5,6 @@ export default function useValidation(
 ) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const isInvalid = useCallback(
-    (fieldName: string) => {
-      return Boolean(errors[fieldName]);
-    },
-    [errors],
-  );
-
   const errorMessage = useCallback(
     (fieldName: string) => {
       return errors[fieldName] ?? "";
@@ -52,7 +45,6 @@ export default function useValidation(
   );
 
   return {
-    isInvalid,
     errorMessage,
     setError,
     setErrors,

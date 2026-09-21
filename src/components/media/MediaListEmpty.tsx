@@ -1,7 +1,7 @@
 "use client";
 
 import H2 from "../elements/H2";
-import { Spinner } from "@heroui/react";
+import Spinner from "../ui/Spinner";
 
 interface MediaListEmptyProps {
   title?: string;

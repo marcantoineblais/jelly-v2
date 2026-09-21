@@ -2,39 +2,39 @@
 
 import { MediaFile } from "@/src/types/MediaFile";
 import { SortedMedia } from "@/src/types/SortedMedia";
-import { Accordion, AccordionItem } from "@heroui/react";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import H2 from "../elements/H2";
 import H3 from "../elements/H3";
 import LibrarySectionContent from "./LibrarySectionContent";
+import Accordion from "../ui/accordion/Accordion";
+import AccordionItem from "../ui/accordion/AccordionItem";
 
 interface MediaListAccordionProps {
   sortedFiles: SortedMedia;
   binnedFiles: SortedMedia;
-  selectedKeys: Set<string | number> | "all";
-  onSelectionChange: (keys: "all" | Set<string | number>) => void;
+  selectedItems: Set<string>;
+  setSelectedItems: (keys: Set<string>) => void;
   onSelect: (selected: boolean, files: MediaFile | MediaFile[]) => void;
 }
 
 export default function MediaListAccordion({
   sortedFiles,
   binnedFiles,
-  selectedKeys,
-  onSelectionChange,
+  selectedItems,
+  setSelectedItems,
   onSelect,
 }: MediaListAccordionProps) {
-  const [binSelectedKeys, setBinSelectedKeys] = useState<
-    Set<string | number> | "all"
-  >(new Set());
+  const [binSelectedKeys, setBinSelectedKeys] = useState<Set<string>>(
+    new Set(),
+  );
 
   const libraryItems = Object.entries(sortedFiles).map(([key, files]) => (
     <AccordionItem
       key={key || "not-set"}
-      textValue={key || "Not set"}
-      classNames={{ titleWrapper: "overflow-hidden" }}
-      title={<H2 className="text-left">{key || "Not set"}</H2>}
+      id={key || "not-set"}
+      header={<H2 className="text-left">{key || "Not set"}</H2>}
     >
       <LibrarySectionContent
         sectionKey={key || "not-set"}
@@ -47,24 +47,26 @@ export default function MediaListAccordion({
   const binItem = (
     <AccordionItem
       key="bin"
-      textValue="Recycle bin"
-      indicator={<FontAwesomeIcon icon={faTrash} size="2x" />}
-      disableIndicatorAnimation
+      id="bin"
+      hideChevron
+      header={
+        <div className="w-full text-right">
+          <FontAwesomeIcon icon={faTrash} size="1x" />
+        </div>
+      }
     >
       <Accordion
         key="bin-inner"
-        isCompact
-        selectionMode="multiple"
-        selectedKeys={binSelectedKeys}
-        onSelectionChange={setBinSelectedKeys}
+        selectedItems={binSelectedKeys}
+        setSelectedItems={setBinSelectedKeys}
+        multiple
       >
         {Object.entries(binnedFiles).map(([key, files]) => {
           return (
             <AccordionItem
+              id={`bin-${key}`}
               key={`bin-${key}`}
-              classNames={{ titleWrapper: "overflow-hidden" }}
-              textValue={key || "Not set"}
-              title={<H3 className="text-left">{key || "Not set"}</H3>}
+              header={<H3 className="text-left">{key || "Not set"}</H3>}
             >
               <LibrarySectionContent
                 sectionKey={`bin-${key}`}
@@ -81,10 +83,10 @@ export default function MediaListAccordion({
   return (
     <Accordion
       key="media-list-main"
-      className="flex-col h-full overflow-y-auto overflow-x-hidden px-1 py-3"
-      onSelectionChange={onSelectionChange}
-      selectedKeys={selectedKeys}
-      selectionMode="multiple"
+      className="h-full overflow-y-auto overflow-x-hidden"
+      setSelectedItems={setSelectedItems}
+      selectedItems={selectedItems}
+      multiple
     >
       {[...libraryItems, binItem]}
     </Accordion>

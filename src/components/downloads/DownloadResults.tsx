@@ -1,20 +1,14 @@
 "use client";
 
-import {
-  Button,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Spinner,
-} from "@heroui/react";
 import type { FeedItem } from "@/src/libs/downloads/feed-format";
 import useTorrentPreview from "@/src/hooks/use-torrent-preview";
 import Table from "@/src/components/table/table";
 import TableItem from "@/src/components/table/feed-table-item";
 import TorrentFileTree from "@/src/components/torrent-file-tree/FileTree";
 import MediaListEmpty from "@/src/components/media/MediaListEmpty";
+import Modal from "../Modal";
+import Button from "../ui/Button";
+import Spinner from "../ui/Spinner";
 
 type DownloadResultsProps = {
   items: FeedItem[];
@@ -35,10 +29,10 @@ export default function DownloadResults({
     isStarting,
     isLoading,
     isModalOpen,
-    onModalOpenChange,
     selectTorrent,
     download,
     cancel,
+    resetState,
   } = useTorrentPreview();
 
   return (
@@ -62,54 +56,46 @@ export default function DownloadResults({
       )}
 
       <Modal
+        title="Metadata"
         isOpen={isModalOpen}
-        onOpenChange={onModalOpenChange}
-        placement="center"
-        scrollBehavior="inside"
-        isDismissable={!isLoading}
-        hideCloseButton={isLoading}
         onClose={cancel}
+        onUnmount={resetState}
+        footer={
+          <>
+            <Button
+              className="w-32"
+              color="default"
+              isDisabled={isLoading}
+              onClick={cancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-32"
+              color="primary"
+              isDisabled={isLoading}
+              isLoading={isStarting}
+              onClick={download}
+            >
+              Download
+            </Button>
+          </>
+        }
       >
         {selectedItem && (
-          <ModalContent>
-            <ModalHeader>Metadata</ModalHeader>
-
-            <ModalBody className="flex flex-col gap-2">
-              <p className="break-all">{selectedItem.title}</p>
-              {files.length === 0 ? (
-                <div className="w-full flex justify-center py-8">
-                  <Spinner size="lg" />
-                </div>
-              ) : (
-                <>
-                  <p className="text-start">Files:</p>
-                  <TorrentFileTree files={files} />
-                </>
-              )}
-            </ModalBody>
-
-            <ModalFooter className="flex justify-center gap-2">
-              <Button
-                className="w-32"
-                color="default"
-                variant="ghost"
-                isDisabled={isLoading}
-                onPress={cancel}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="w-32"
-                color="primary"
-                variant="solid"
-                isDisabled={isLoading}
-                isLoading={isStarting}
-                onPress={download}
-              >
-                Download
-              </Button>
-            </ModalFooter>
-          </ModalContent>
+          <div className="flex flex-col gap-2">
+            <p className="break-all">{selectedItem.title}</p>
+            {files.length === 0 ? (
+              <div className="w-full flex justify-center py-8">
+                <Spinner size="sm" />
+              </div>
+            ) : (
+              <>
+                <p className="text-start">Files:</p>
+                <TorrentFileTree files={files} />
+              </>
+            )}
+          </div>
         )}
       </Modal>
     </>

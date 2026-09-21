@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 
 type AccordionProps = {
   isOpen: boolean;
@@ -8,19 +8,12 @@ type AccordionProps = {
 };
 
 export default function Accordion({ isOpen, children }: AccordionProps) {
-  const [isRendering, setIsRendering] = useState(isOpen);
-
-  const handleTransitionEnd = () => {
-    setIsRendering(isOpen);
-  };
-
   return (
     <div
-      className="relative overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 h-full data-open:max-h-full"
+      className="duration-500 transition-[grid-template-rows] ease-in-out grid grid-rows-[0fr] data-open:grid-rows-[1fr]"
       data-open={isOpen || undefined}
-      onTransitionEnd={handleTransitionEnd}
     >
-      {isRendering || isOpen ? children : null}
+      <div className="p-px overflow-hidden">{children}</div>
     </div>
   );
 }

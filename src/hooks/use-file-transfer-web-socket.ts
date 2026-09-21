@@ -1,9 +1,9 @@
 "use client";
 
-import { addToast } from "@heroui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useConfig } from "../providers/config-provider-client";
 import { log } from "@/src/libs/logger";
+import { useToast } from "../providers/ToastProvider";
 
 export interface TransferStatus {
   currentFile: string;
@@ -19,6 +19,7 @@ export function useFileTransferWebSocket(
   onFilesRefreshed?: () => Promise<void>,
 ) {
   const { socketServerUrl } = useConfig();
+  const toast = useToast();
   const [isTransferInProgress, setIsTransferInProgress] = useState(false);
   const [transferStatus, setTransferStatus] = useState<TransferStatus | null>(
     null,
@@ -69,11 +70,7 @@ export function useFileTransferWebSocket(
             }, 2000);
 
             if (data.error) {
-              addToast({
-                title: "File transfer failed",
-                description: "There was an issue during file transfer.",
-                severity: "danger",
-              });
+              toast.error("File transfer failed");
               return;
             }
 
@@ -88,11 +85,7 @@ export function useFileTransferWebSocket(
                 transferErrors.length === 1
                   ? transferErrors[0].message
                   : `${transferErrors.length} file(s) had errors. First: ${transferErrors[0].message}`;
-              addToast({
-                title: "Transfer completed with errors",
-                description,
-                severity: "warning",
-              });
+              toast.warning("Transfer completed with errors\n" + description);
             }
           }
 
@@ -148,7 +141,7 @@ export function useFileTransferWebSocket(
         wsRef.current = null;
       }
     };
-  }, [fetchFiles, socketServerUrl]);
+  }, [fetchFiles, socketServerUrl, toast]);
 
   return {
     isTransferInProgress,

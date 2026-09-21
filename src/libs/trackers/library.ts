@@ -65,8 +65,14 @@ export async function getLastEpisode(
   season: number,
 ): Promise<LastEpisode> {
   const resolvedShowFolder = resolveShowFolderName(libraryPath, title);
-  const showDir = join(libraryPath, resolvedShowFolder ?? title);
-  const seasonPath = join(showDir, formatSeasonPath(season));
+  const showDir = join(
+    /* turbopackIgnore: true */ libraryPath,
+    resolvedShowFolder ?? title,
+  );
+  const seasonPath = join(
+    /* turbopackIgnore: true */ showDir,
+    formatSeasonPath(season),
+  );
   const lastEpisode = await findHighestEpisode(seasonPath);
   return {
     season,

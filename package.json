@@ -10,14 +10,12 @@
     "build:servers": "tsup"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.20",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
     "@fortawesome/free-regular-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.2.0",
-    "@heroui/react": "^2.8.9",
-    "@heroui/system": "^2.4.27",
-    "@heroui/theme": "^2.4.26",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
@@ -28,6 +26,7 @@
     "next": "^16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "tailwind-merge": "^3.7.0",
     "tsx": "^4.21.0",
     "ws": "^8.19.0"
   },
