@@ -126,7 +126,7 @@ export default function FloatingOptions<T>({
     <div
       ref={setFloating}
       style={floatingStyles}
-      className="z-50 rounded border border-border bg-surface-card shadow-lg"
+      className="z-50 rounded-md border border-border bg-surface-card shadow-lg"
     >
       {/* Search */}
       {isSearchable && (
@@ -145,7 +145,7 @@ export default function FloatingOptions<T>({
             onKeyDown={onSearchKeyDown}
             placeholder={searchPlaceholder || "Search"}
             className={twJoin(
-              "block w-full rounded border px-2 py-1.5 text-sm bg-surface-card",
+              "block w-full rounded-md border px-2 py-1.5 text-sm bg-surface-card",
               "border-border focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary-ring",
             )}
           />
@@ -217,7 +217,7 @@ export default function FloatingOptions<T>({
                       checked={isSelected}
                       readOnly
                       tabIndex={-1}
-                      className="size-3 shrink-0 rounded border-border text-primary focus:ring-0 pointer-events-none"
+                      className="size-3 shrink-0 rounded-md border-border text-primary focus:ring-0 pointer-events-none"
                     />
                   )}
                   <div className="min-w-0 grow flex flex-col gap-1 overflow-hidden">

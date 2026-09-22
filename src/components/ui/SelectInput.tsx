@@ -201,7 +201,7 @@ export default function SelectInput<T>({
           data-placeholder={showPlaceholder || undefined}
           onKeyDown={onSelectKeyDown}
           className={twJoin(
-            "relative flex w-full items-center justify-between rounded border pl-3 pr-9 h-9 text-sm text-left bg-surface-card overflow-hidden",
+            "relative flex w-full items-center justify-between rounded-md border pl-3 pr-9 h-9 text-sm text-left bg-surface-card overflow-hidden",
             "focus:outline-none focus:ring-1 disabled:opacity-50",
             "border-border focus:border-primary focus:ring-primary/50",
             "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/50",

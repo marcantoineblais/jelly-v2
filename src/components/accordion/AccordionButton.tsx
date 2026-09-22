@@ -13,12 +13,14 @@ export default function AccordionButton({
   onToggle,
 }: AccordionButtonProps) {
   return (
-    <IconButton
-      onClick={onToggle}
-      data-open={isOpen || undefined}
-      className="h-full data-open:rotate-180"
-      icon={faChevronDown}
-      ariaLabel={isOpen ? "Close accordion" : "Open accordion"}
-    />
+    <div className="shadow-btn border border-border rounded-md size-10 flex justify-center items-center">
+      <IconButton
+        onClick={onToggle}
+        data-open={isOpen || undefined}
+        className="h-full data-open:-rotate-180 duration-200 delay-300 transition-transform"
+        icon={faChevronDown}
+        ariaLabel={isOpen ? "Close accordion" : "Open accordion"}
+      />
+    </div>
   );
 }

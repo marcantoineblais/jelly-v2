@@ -84,7 +84,7 @@ export default function CheckboxInput({
             aria-invalid={Boolean(error) || undefined}
             aria-describedby={error ? `${id}-error` : undefined}
             className={twMerge(
-              "peer size-4 appearance-none rounded border bg-surface-card border-border",
+              "peer size-4 appearance-none rounded-md border bg-surface-card border-border",
               "transition-colors duration-200",
               "focus:outline-none focus:ring-1",
               colorClasses[color],

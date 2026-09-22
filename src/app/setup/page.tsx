@@ -10,6 +10,7 @@ import { validateSetupFormData } from "@/src/libs/validation/auth-validations";
 import Input from "@/src/components/ui/Input";
 import Button from "@/src/components/ui/Button";
 import { useToast } from "@/src/providers/ToastProvider";
+import PasswordInput from "@/src/components/ui/PasswordInput";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -82,10 +83,9 @@ export default function SetupPage() {
             validate={(value) => revalidateOnError("username", value)}
           />
 
-          <Input
+          <PasswordInput
             id="password"
             label="Password"
-            type="password"
             autoComplete="password"
             value={formData.password}
             onChange={(value) => setFormData({ ...formData, password: value })}
@@ -94,10 +94,9 @@ export default function SetupPage() {
             validate={(value) => revalidateOnError("password", value)}
           />
 
-          <Input
+          <PasswordInput
             id="confirmPassword"
             label="Confirm password"
-            type="password"
             value={formData.confirmPassword}
             onChange={(value) =>
               setFormData({ ...formData, confirmPassword: value })

@@ -175,7 +175,7 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
               <div className="flex gap-2">
                 <SelectInput
                   id="sortBy"
-                  className="basis-3/5"
+                  className="grow"
                   label="Sort by"
                   value={new Set([formData.sortBy])}
                   options={sortOptions}
@@ -189,7 +189,7 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
                 />
                 <SelectInput
                   id="sortOrder"
-                  className="basis-2/5"
+                  className="w-24 shrink-0 min-w-0"
                   label="Order"
                   value={new Set([formData.sortOrder])}
                   options={sortOrderOptions}

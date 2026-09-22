@@ -9,6 +9,7 @@ import { FetchError } from "@/src/libs/fetch-error";
 import { validateLoginFormData } from "@/src/libs/validation/auth-validations";
 import Input from "@/src/components/ui/Input";
 import Button from "@/src/components/ui/Button";
+import PasswordInput from "@/src/components/ui/PasswordInput";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -83,10 +84,9 @@ export default function LoginPage() {
             validate={(value) => revalidateOnError("username", value)}
           />
 
-          <Input
+          <PasswordInput
             id="password"
             label="Password"
-            type="password"
             value={formData.password}
             onChange={(value) => {
               setFormData({ ...formData, password: value });

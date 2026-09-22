@@ -75,7 +75,7 @@ export default function Input({
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         className={twJoin(
-          "mt-1 block w-full min-w-48 rounded border px-3 h-9 text-sm bg-surface-card border-border",
+          "mt-1 block w-full min-w-48 rounded-md border px-3 h-9 text-sm bg-surface-card border-border",
           "disabled:opacity-50",
           "focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50",
           "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/50",

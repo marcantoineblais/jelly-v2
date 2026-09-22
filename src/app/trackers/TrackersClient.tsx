@@ -437,8 +437,9 @@ export default function TrackersClient({
             {selectedShow && !isAccordionOpen && (
               <NumberInput
                 id="nextEpisode"
-                className="shrink-0w-24"
+                className="shrink-0 w-16"
                 min={0}
+                max={999}
                 label="Ep."
                 value={nextEpisode}
                 onChange={setNextEpisode}
@@ -502,7 +503,9 @@ export default function TrackersClient({
                 <NumberInput
                   id="season"
                   label="Season"
+                  className="grow"
                   min={0}
+                  max={999}
                   value={formData.season}
                   error={errorMessage("season")}
                   validate={(value) => revalidateOnError("season", value)}
@@ -518,6 +521,8 @@ export default function TrackersClient({
                   id="minEpisode"
                   label="Min episode"
                   min={0}
+                  max={999}
+                  className="grow"
                   value={formData.minEpisode}
                   error={errorMessage("minEpisode")}
                   onChange={(value) =>
