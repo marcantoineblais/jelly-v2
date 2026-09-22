@@ -429,7 +429,7 @@ export default function TrackersClient({
                 color="danger"
                 onClick={handleDeleteClick}
                 ariaLabel="Delete tracker"
-                className="size-9 rounded border border-border flex justify-center items-center self-end"
+                className="shrink-0 size-9 rounded border border-border flex justify-center items-center self-end"
                 icon={faTrash}
               />
             )}
@@ -437,7 +437,7 @@ export default function TrackersClient({
             {selectedShow && !isAccordionOpen && (
               <NumberInput
                 id="nextEpisode"
-                className="w-24"
+                className="shrink-0w-24"
                 min={0}
                 label="Ep."
                 value={nextEpisode}
