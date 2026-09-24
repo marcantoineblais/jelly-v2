@@ -65,7 +65,7 @@ export default function LoginPage() {
   return (
     <main className="container-main h-full w-full flex items-center justify-center">
       <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md border border-stone-200">
-        <H1 className="w-max text-center mb-12">Sign in</H1>
+        <H1 className="w-full text-center mb-12">Sign in</H1>
 
         <form
           onSubmit={handleSubmit}

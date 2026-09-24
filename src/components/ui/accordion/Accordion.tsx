@@ -19,6 +19,11 @@ export type AccordionContext = {
   contentOnly: boolean;
 };
 
+const AccordionLevelContext = createContext(0);
+export function useAccordionLevel() {
+  return useContext(AccordionLevelContext);
+}
+
 const AccordionCtx = createContext<AccordionContext | null>(null);
 export const ParentItemOpenContext = createContext(true);
 
@@ -49,6 +54,7 @@ export default function Accordion({
   ...props
 }: AccordionProps) {
   const parentItemOpen = useContext(ParentItemOpenContext);
+  const accordionLevel = useAccordionLevel();
 
   const isOpen = useCallback(
     (id: string) => selectedItems.has(id),
@@ -106,25 +112,27 @@ export default function Accordion({
   }, [parentItemOpen, closeAll, closeChildrenWhenParentCloses]);
 
   return (
-    <AccordionCtx.Provider
-      value={{
-        isOpen,
-        onOpen,
-        onClose,
-        onToggle,
-        closeAll,
-        contentOnly,
-      }}
-    >
-      <div
-        className={twMerge(
-          "bg-surface-card rounded px-2 py-4 space-y-2",
-          className,
-        )}
-        {...props}
+    <AccordionLevelContext.Provider value={accordionLevel + 1}>
+      <AccordionCtx.Provider
+        value={{
+          isOpen,
+          onOpen,
+          onClose,
+          onToggle,
+          closeAll,
+          contentOnly,
+        }}
       >
-        {children}
-      </div>
-    </AccordionCtx.Provider>
+        <div
+          className={twMerge(
+            "bg-surface-card rounded-md px-2 py-4 space-y-2",
+            className,
+          )}
+          {...props}
+        >
+          {children}
+        </div>
+      </AccordionCtx.Provider>
+    </AccordionLevelContext.Provider>
   );
 }

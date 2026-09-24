@@ -48,6 +48,7 @@ export default function MediaListAccordion({
     <AccordionItem
       key="bin"
       id="bin"
+      className="data-main-accordion:shadow-none"
       hideChevron
       header={
         <div className="w-full text-right">

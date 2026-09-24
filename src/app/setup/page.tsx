@@ -62,7 +62,7 @@ export default function SetupPage() {
   return (
     <main className="container-main h-full w-full flex items-center justify-center">
       <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md border border-stone-200">
-        <H1 className="text-center mb-2">Setup</H1>
+        <H1 className="w-full text-center mb-2">Setup</H1>
         <p className="text-center text-default-500 text-sm mb-6">
           Set up your username and password to get started.
         </p>

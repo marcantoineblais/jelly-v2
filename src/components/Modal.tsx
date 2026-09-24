@@ -134,7 +134,7 @@ export default function Modal({
         style={{ transitionDuration: `${FADE_DURATION}ms` }}
       >
         <div className="w-full flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <h2 className="text-sm font-semibold text-text">{title}</h2>
+          <h2 className="text-lg font-semibold text-text">{title}</h2>
           <IconButton onClick={onClose} icon={faXmark} ariaLabel="Close" />
         </div>
         <div className="w-full px-4 py-4 overflow-y-auto grow min-h-0">

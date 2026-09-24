@@ -4,7 +4,11 @@ import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { startTransition, useEffect, useState } from "react";
 import { twJoin, twMerge } from "tailwind-merge";
 
-import { ParentItemOpenContext, useAccordionContext } from "./Accordion";
+import {
+  ParentItemOpenContext,
+  useAccordionContext,
+  useAccordionLevel,
+} from "./Accordion";
 import IconButton from "../IconButton";
 
 type AccordionItemProps = {
@@ -32,6 +36,7 @@ export default function AccordionItem({
   ...props
 }: AccordionItemProps) {
   const { isOpen, onToggle, contentOnly } = useAccordionContext();
+  const accordionLevel = useAccordionLevel();
   const isItemOpen = isOpen(id);
 
   const [isRendered, setIsRendered] = useState(isItemOpen);
@@ -55,7 +60,14 @@ export default function AccordionItem({
 
   return (
     <ParentItemOpenContext.Provider value={isItemOpen}>
-      <div data-disabled={disableLabelClick || undefined} className={className}>
+      <div
+        data-disabled={disableLabelClick || undefined}
+        data-main-accordion={accordionLevel === 1 || undefined}
+        className={twMerge(
+          "data-main-accordion:py-4 pl-2 rounded-md data-main-accordion:shadow-btn",
+          className,
+        )}
+      >
         <div
           data-error={error || undefined}
           className={twMerge(

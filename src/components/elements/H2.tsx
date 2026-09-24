@@ -1,3 +1,5 @@
+import { twMerge } from "tailwind-merge";
+
 export default function H2({
   className = "",
   children,
@@ -6,7 +8,9 @@ export default function H2({
   children?: React.ReactNode;
 }) {
   return (
-    <h2 className={`w-full text-center text-3xl font-bold ${className}`}>
+    <h2
+      className={twMerge("w-full text-center text-2xl font-medium", className)}
+    >
       {children}
     </h2>
   );
