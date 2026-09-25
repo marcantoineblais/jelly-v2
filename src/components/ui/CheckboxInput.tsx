@@ -72,7 +72,7 @@ export default function CheckboxInput({
   return (
     <div className={className}>
       <div className="flex items-center gap-2">
-        <span className="relative size-4">
+        <span className="relative size-4.75">
           <input
             id={id}
             type="checkbox"
@@ -84,7 +84,7 @@ export default function CheckboxInput({
             aria-invalid={Boolean(error) || undefined}
             aria-describedby={error ? `${id}-error` : undefined}
             className={twMerge(
-              "peer size-4 appearance-none rounded-md border bg-surface-card border-border",
+              "peer size-4.75 appearance-none rounded-md border bg-surface-card border-border",
               "transition-colors duration-200",
               "focus:outline-none focus:ring-1",
               colorClasses[color],
@@ -97,7 +97,7 @@ export default function CheckboxInput({
             icon={isIndeterminate ? faMinus : faCheck}
             aria-hidden="true"
             className={twJoin(
-              "pointer-events-none absolute top-1 left-0.5 text-[10px] opacity-0 transition-opacity duration-200",
+              "pointer-events-none absolute top-1 left-0.5 text-[9px] opacity-0 transition-opacity duration-200",
               "peer-checked:opacity-100",
               colorClasses[color],
             )}
