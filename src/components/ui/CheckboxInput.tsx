@@ -159,7 +159,7 @@ export default function CheckboxInput({
           </svg>
         </span>
 
-        <Label htmlFor={id} isRequired={isRequired} className="leading-5">
+        <Label htmlFor={id} isRequired={isRequired} className="mt-0.5 leading-0">
           {label}
         </Label>
       </div>

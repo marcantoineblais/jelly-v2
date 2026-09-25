@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import MediaList from "@/src/components/media/MediaList";
 import { readFolders } from "@/src/libs/files/readFolders";
 import { readConfig } from "@/src/libs/readConfig";
