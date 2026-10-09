@@ -153,85 +153,89 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
         onSubmit={handleSubmit}
         className="card p-3 flex flex-col gap-3 shrink-0"
       >
-        <div className="flex gap-2">
-          <div className="relative grow min-w-0">
-            <FontAwesomeIcon
-              icon={faMagnifyingGlass}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-text-muted z-10"
-            />
-            <Input
-              id="title"
-              aria-label="Search by title"
-              placeholder="Search by title…"
-              value={title}
-              onChange={setTitle}
-              // Picking an indexer is part of almost every search
-              onFocus={() => setIsFiltersOpen(true)}
-              autoComplete="off"
-              isClearable
-              className="[&_input]:pl-10 [&_input]:min-w-0"
+        {/* No flex gap around the Collapse: a gap would linger until it
+            unmounts and make the layout jump. Spacing is inside instead. */}
+        <div>
+          <div className="flex gap-2">
+            <div className="relative grow min-w-0">
+              <FontAwesomeIcon
+                icon={faMagnifyingGlass}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-text-muted z-10"
+              />
+              <Input
+                id="title"
+                aria-label="Search by title"
+                placeholder="Search by title…"
+                value={title}
+                onChange={setTitle}
+                // Picking an indexer is part of almost every search
+                onFocus={() => setIsFiltersOpen(true)}
+                autoComplete="off"
+                isClearable
+                className="[&_input]:pl-10"
+              />
+            </div>
+            <DisclosureButton
+              isOpen={isFiltersOpen}
+              onToggle={() => setIsFiltersOpen((open) => !open)}
+              label="Filters"
+              badge={activeFilterCount}
             />
           </div>
-          <DisclosureButton
-            isOpen={isFiltersOpen}
-            onToggle={() => setIsFiltersOpen((open) => !open)}
-            label="Filters"
-            badge={activeFilterCount}
-          />
-        </div>
 
-        <Collapse isOpen={isFiltersOpen} className="-mx-1 px-1">
-          <div className="grid grid-cols-2 gap-2 pb-1">
-            <SelectInput
-              id="indexer"
-              className="col-span-2 sm:col-span-1"
-              options={indexerOptions}
-              label="Indexer"
-              placeholder="All indexers"
-              value={new Set([filters.indexer])}
-              onChange={(value) =>
-                updateFilters({ indexer: [...value][0] ?? "", category: "" })
-              }
-              isClearable
-            />
-            {categoryOptions.length > 0 && (
+          <Collapse isOpen={isFiltersOpen} className="-mx-1 px-1">
+            <div className="grid grid-cols-2 gap-2 pt-3 pb-1">
               <SelectInput
-                id="category"
+                id="indexer"
                 className="col-span-2 sm:col-span-1"
-                label="Category"
-                placeholder="Any category"
-                value={new Set([filters.category])}
-                options={categoryOptions}
+                options={indexerOptions}
+                label="Indexer"
+                placeholder="All indexers"
+                value={new Set([filters.indexer])}
                 onChange={(value) =>
-                  updateFilters({ category: [...value][0] ?? "" })
+                  updateFilters({ indexer: [...value][0] ?? "", category: "" })
                 }
                 isClearable
               />
-            )}
-            <SelectInput
-              id="sortBy"
-              label="Sort by"
-              className="min-w-0"
-              value={new Set([filters.sortBy])}
-              options={sortOptions}
-              onChange={(value) => {
-                const sortBy = [...value][0];
-                if (sortBy) updateFilters({ sortBy: sortBy as SortBy });
-              }}
-            />
-            <SelectInput
-              id="sortOrder"
-              className="min-w-0"
-              label="Order"
-              value={new Set([filters.sortOrder])}
-              options={sortOrderOptions}
-              onChange={(value) => {
-                const sortOrder = [...value][0] as "asc" | "desc" | undefined;
-                if (sortOrder) updateFilters({ sortOrder });
-              }}
-            />
-          </div>
-        </Collapse>
+              {categoryOptions.length > 0 && (
+                <SelectInput
+                  id="category"
+                  className="col-span-2 sm:col-span-1"
+                  label="Category"
+                  placeholder="Any category"
+                  value={new Set([filters.category])}
+                  options={categoryOptions}
+                  onChange={(value) =>
+                    updateFilters({ category: [...value][0] ?? "" })
+                  }
+                  isClearable
+                />
+              )}
+              <SelectInput
+                id="sortBy"
+                label="Sort by"
+                className="min-w-0"
+                value={new Set([filters.sortBy])}
+                options={sortOptions}
+                onChange={(value) => {
+                  const sortBy = [...value][0];
+                  if (sortBy) updateFilters({ sortBy: sortBy as SortBy });
+                }}
+              />
+              <SelectInput
+                id="sortOrder"
+                className="min-w-0"
+                label="Order"
+                value={new Set([filters.sortOrder])}
+                options={sortOrderOptions}
+                onChange={(value) => {
+                  const sortOrder = [...value][0] as "asc" | "desc" | undefined;
+                  if (sortOrder) updateFilters({ sortOrder });
+                }}
+              />
+            </div>
+          </Collapse>
+        </div>
 
         {isSearching ? (
           <Button

@@ -460,167 +460,171 @@ export default function TrackersClient({
         />
 
         <div className="card p-3 flex flex-col gap-3 shrink-0">
-          <div className="flex gap-2">
-            <SelectInput
-              id="show"
-              className="grow min-w-0"
-              data-open={isOpen}
-              label="Show"
-              error={errorMessage("show")}
-              validate={(value) => revalidateOnError("show", value)}
-              placeholder="Select a show"
-              options={sortedShowOptions}
-              value={new Set([selectedShowId])}
-              onChange={(value) =>
-                setSelectedShowId(([...value][0] as string) ?? "")
-              }
-            />
-
-            {selectedShow && isFormOpen && (
-              <IconButton
-                color="danger"
-                onClick={handleDeleteClick}
-                ariaLabel="Delete tracker"
-                className="shrink-0 size-10 rounded-xl border border-border bg-surface-elevated hover:bg-danger/10 hover:border-danger/40 flex justify-center items-center self-end"
-                icon={faTrash}
-              />
-            )}
-
-            {selectedShow && !isFormOpen && (
-              <NumberInput
-                id="nextEpisode"
-                className="shrink-0 w-20"
-                min={0}
-                max={999}
-                label="Ep."
-                value={nextEpisode}
-                onChange={setNextEpisode}
-                error={errorMessage("nextEpisode")}
-                validate={(value) => revalidateOnError("nextEpisode", value)}
-              />
-            )}
-          </div>
-
-          <Collapse isOpen={isFormOpen} className="-mx-1 px-1">
-            <div className="flex flex-col gap-2">
+          {/* Spacing lives inside the Collapse (pt-3) rather than in the
+              flex gap, so closing doesn't jump at the end. */}
+          <div>
+            <div className="flex gap-2">
               <SelectInput
-                id="library"
-                label="Library"
-                options={libraryOptions}
-                value={new Set([formData.library])}
+                id="show"
+                className="grow min-w-0"
+                data-open={isOpen}
+                label="Show"
+                error={errorMessage("show")}
+                validate={(value) => revalidateOnError("show", value)}
+                placeholder="Select a show"
+                options={sortedShowOptions}
+                value={new Set([selectedShowId])}
                 onChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    library: [...value][0] ?? "",
-                    title: "",
-                  }))
-                }
-                error={errorMessage("library")}
-                validate={(value) =>
-                  revalidateOnError("library", [...value][0] ?? "")
+                  setSelectedShowId(([...value][0] as string) ?? "")
                 }
               />
 
-              <Autocomplete
-                id="title"
-                label="Title"
-                value={formData.title}
-                error={errorMessage("title")}
-                validate={(value) => revalidateOnError("title", value)}
-                options={libraryMediaOptions}
-                onChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    title: value,
-                  }))
-                }
-                isClearable
-              />
+              {selectedShow && isFormOpen && (
+                <IconButton
+                  color="danger"
+                  onClick={handleDeleteClick}
+                  ariaLabel="Delete tracker"
+                  className="shrink-0 size-10 rounded-xl border border-border bg-surface-elevated hover:bg-danger/10 hover:border-danger/40 flex justify-center items-center self-end"
+                  icon={faTrash}
+                />
+              )}
 
-              <Input
-                id="additionalQuery"
-                label="Additional query"
-                value={formData.additionalQuery}
-                error={errorMessage("additionalQuery")}
-                validate={(value) =>
-                  revalidateOnError("additionalQuery", value)
-                }
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, additionalQuery: value }))
-                }
-                isClearable
-              />
-
-              <div className="flex gap-2">
+              {selectedShow && !isFormOpen && (
                 <NumberInput
-                  id="season"
-                  label="Season"
-                  className="grow"
+                  id="nextEpisode"
+                  className="shrink-0 w-20"
                   min={0}
                   max={999}
-                  value={formData.season}
-                  error={errorMessage("season")}
-                  validate={(value) => revalidateOnError("season", value)}
-                  onChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      season: value,
-                    }))
-                  }
+                  label="Ep."
+                  value={nextEpisode}
+                  onChange={setNextEpisode}
+                  error={errorMessage("nextEpisode")}
+                  validate={(value) => revalidateOnError("nextEpisode", value)}
                 />
+              )}
+            </div>
 
-                <NumberInput
-                  id="minEpisode"
-                  label="Min episode"
-                  min={0}
-                  max={999}
-                  className="grow"
-                  value={formData.minEpisode}
-                  error={errorMessage("minEpisode")}
-                  onChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      minEpisode: value,
-                    }))
-                  }
-                />
-              </div>
-
-              <SelectInput
-                id="indexer"
-                label="Indexer"
-                value={new Set([formData.indexer])}
-                placeholder="All indexers"
-                options={indexerOptions}
-                error={errorMessage("indexer")}
-                onChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    indexer: ([...value][0] as string) ?? "",
-                  }))
-                }
-                isClearable
-              />
-
-              {categoryOptions.length > 0 && (
+            <Collapse isOpen={isFormOpen} className="-mx-1 px-1">
+              <div className="flex flex-col gap-2 pt-3">
                 <SelectInput
-                  id="category"
-                  label="Category"
-                  value={new Set([formData.category])}
-                  options={categoryOptions}
-                  placeholder="Category"
-                  error={errorMessage("category")}
+                  id="library"
+                  label="Library"
+                  options={libraryOptions}
+                  value={new Set([formData.library])}
                   onChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      category: [...value][0] ?? "",
+                      library: [...value][0] ?? "",
+                      title: "",
+                    }))
+                  }
+                  error={errorMessage("library")}
+                  validate={(value) =>
+                    revalidateOnError("library", [...value][0] ?? "")
+                  }
+                />
+
+                <Autocomplete
+                  id="title"
+                  label="Title"
+                  value={formData.title}
+                  error={errorMessage("title")}
+                  validate={(value) => revalidateOnError("title", value)}
+                  options={libraryMediaOptions}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      title: value,
                     }))
                   }
                   isClearable
                 />
-              )}
-            </div>
-          </Collapse>
+
+                <Input
+                  id="additionalQuery"
+                  label="Additional query"
+                  value={formData.additionalQuery}
+                  error={errorMessage("additionalQuery")}
+                  validate={(value) =>
+                    revalidateOnError("additionalQuery", value)
+                  }
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, additionalQuery: value }))
+                  }
+                  isClearable
+                />
+
+                <div className="flex gap-2">
+                  <NumberInput
+                    id="season"
+                    label="Season"
+                    className="grow"
+                    min={0}
+                    max={999}
+                    value={formData.season}
+                    error={errorMessage("season")}
+                    validate={(value) => revalidateOnError("season", value)}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        season: value,
+                      }))
+                    }
+                  />
+
+                  <NumberInput
+                    id="minEpisode"
+                    label="Min episode"
+                    min={0}
+                    max={999}
+                    className="grow"
+                    value={formData.minEpisode}
+                    error={errorMessage("minEpisode")}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        minEpisode: value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <SelectInput
+                  id="indexer"
+                  label="Indexer"
+                  value={new Set([formData.indexer])}
+                  placeholder="All indexers"
+                  options={indexerOptions}
+                  error={errorMessage("indexer")}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      indexer: ([...value][0] as string) ?? "",
+                    }))
+                  }
+                  isClearable
+                />
+
+                {categoryOptions.length > 0 && (
+                  <SelectInput
+                    id="category"
+                    label="Category"
+                    value={new Set([formData.category])}
+                    options={categoryOptions}
+                    placeholder="Category"
+                    error={errorMessage("category")}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        category: [...value][0] ?? "",
+                      }))
+                    }
+                    isClearable
+                  />
+                )}
+              </div>
+            </Collapse>
+          </div>
 
           <div className="flex w-full justify-center gap-2">
             {mainButton()}

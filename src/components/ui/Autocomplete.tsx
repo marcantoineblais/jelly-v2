@@ -1,13 +1,13 @@
 "use client";
 
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { startTransition, useEffect, useState } from "react";
-import { twJoin } from "tailwind-merge";
 
 import useFloatingOptions from "../../hooks/useFloatingOptions";
 import FloatingOptions from "./FloatingOptions";
-import IconButton from "./IconButton";
-import Label from "./Label";
+import FieldFrame, {
+  FieldClearButton,
+  fieldInputClassName,
+} from "./FieldFrame";
 
 type Props = {
   id: string;
@@ -98,66 +98,50 @@ export default function Autocomplete({
     onChange(value);
   }
 
+  const showClear = isClearable && Boolean(value);
+
   return (
-    <>
-      <div className={className} onBlur={handleContainerBlur}>
-        <Label htmlFor={id} isRequired={isRequired && Boolean(label)}>
-          {label}
-        </Label>
-
-        <div className="relative w-full">
-          <input
-            ref={setReference}
-            id={id}
-            type="text"
-            value={value}
-            disabled={isDisabled}
-            placeholder={placeholder}
-            onChange={handleChange}
-            onFocus={handleFocus}
-            onKeyDown={onSelectKeyDown}
-            autoComplete="off"
-            data-clearable={isClearable || undefined}
-            data-invalid={error ? true : undefined}
-            aria-invalid={!!error}
-            aria-describedby={error ? `${id}-error` : undefined}
-            role="combobox"
-            aria-expanded={floatingOptionsProps.isOpen || undefined}
-            aria-controls={
-              floatingOptionsProps.isOpen ? `${id}-listbox` : undefined
-            }
-            className={twJoin(
-              "mt-1 block w-full min-w-48 rounded-xl border px-3 h-10 text-sm bg-surface/60 border-border",
-              "disabled:opacity-50 transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-muted hover:border-border-strong",
-              "focus:border-primary/70 focus:outline-none focus:ring-4 focus:ring-primary/15",
-              "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/15",
-              "data-clearable:pr-9",
-            )}
-          />
-
-          {isClearable && value && (
-            <IconButton
-              icon={faXmark}
-              onClick={handleClear}
-              className="absolute right-2 bottom-2.5 hover:bg-transparent transition-colors duration-200"
-              ariaLabel="Clear"
-              isDisabled={isDisabled}
-            />
-          )}
-        </div>
-
-        <FloatingOptions
-          id={id}
-          onSelect={handleSelect}
-          {...floatingOptionsProps}
-        />
-      </div>
-
-      {error && (
-        <p id={`${id}-error`} className="mt-1 text-sm text-danger" role="alert">
-          {error}
-        </p>
-      )}
-    </>
+    <FieldFrame
+      id={id}
+      label={label}
+      isRequired={isRequired}
+      error={error}
+      className={className}
+      onBlur={handleContainerBlur}
+      trailing={
+        showClear && (
+          <FieldClearButton onClick={handleClear} isDisabled={isDisabled} />
+        )
+      }
+    >
+      <input
+        ref={setReference}
+        id={id}
+        type="text"
+        value={value}
+        disabled={isDisabled}
+        placeholder={placeholder}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onKeyDown={onSelectKeyDown}
+        autoComplete="off"
+        data-trailing={showClear || undefined}
+        data-invalid={error ? true : undefined}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
+        role="combobox"
+        aria-expanded={floatingOptionsProps.isOpen || undefined}
+        aria-controls={
+          floatingOptionsProps.isOpen ? `${id}-listbox` : undefined
+        }
+        className={fieldInputClassName}
+      />
+      {/* Rendered in a portal; kept here so blur handling sees it as ours */}
+      <FloatingOptions
+        id={id}
+        onSelect={handleSelect}
+        {...floatingOptionsProps}
+      />
+    </FieldFrame>
   );
 }

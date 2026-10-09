@@ -234,35 +234,39 @@ export default function MediaList({
           />
 
           <div>
-            <SegmentedControl<View>
-              value={view}
-              onChange={handleViewChange}
-              segments={[
-                {
-                  value: "library",
-                  label: "To transfer",
-                  badge: activeFiles.length,
-                },
-                {
-                  value: "bin",
-                  label: (
-                    <span className="inline-flex items-center gap-1.5">
-                      <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
-                      Ignored
-                    </span>
-                  ),
-                  badge: ignoredCount,
-                },
-              ]}
-            />
+            <div>
+              <SegmentedControl<View>
+                value={view}
+                onChange={handleViewChange}
+                segments={[
+                  {
+                    value: "library",
+                    label: "To transfer",
+                    badge: activeFiles.length,
+                  },
+                  {
+                    value: "bin",
+                    label: (
+                      <span className="inline-flex items-center gap-1.5">
+                        <FontAwesomeIcon
+                          icon={faTrashCan}
+                          className="text-xs"
+                        />
+                        Ignored
+                      </span>
+                    ),
+                    badge: ignoredCount,
+                  },
+                ]}
+              />
+            </div>
+            {!isBinView && (
+              <IncompleteFilesBanner
+                count={incompleteFiles.length}
+                onSelect={handleSelectIncomplete}
+              />
+            )}
           </div>
-
-          {!isBinView && (
-            <IncompleteFilesBanner
-              count={incompleteFiles.length}
-              onSelect={handleSelectIncomplete}
-            />
-          )}
 
           <div
             data-loading={isFilesLoading || undefined}

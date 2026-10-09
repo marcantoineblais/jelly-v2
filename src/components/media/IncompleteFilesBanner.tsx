@@ -25,25 +25,28 @@ export default function IncompleteFilesBanner({
           transition={fadeTransition}
           className="overflow-hidden"
         >
-          <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-4 py-3">
-            <FontAwesomeIcon
-              icon={faTriangleExclamation}
-              className="text-warning shrink-0"
-            />
-            <p className="grow text-sm text-text-secondary">
-              <span className="font-semibold text-text">
-                {count} file{count > 1 ? "s" : ""}
-              </span>{" "}
-              need{count > 1 ? "" : "s"} more info before transferring.
-            </p>
-            <Button
-              size="small"
-              color="default"
-              onClick={onSelect}
-              className="shrink-0"
-            >
-              Select
-            </Button>
+          {/* pt-4 instead of the parent's gap, see Collapse */}
+          <div className="pt-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-4 py-3">
+              <FontAwesomeIcon
+                icon={faTriangleExclamation}
+                className="text-warning shrink-0"
+              />
+              <p className="grow text-sm text-text-secondary">
+                <span className="font-semibold text-text">
+                  {count} file{count > 1 ? "s" : ""}
+                </span>{" "}
+                need{count > 1 ? "" : "s"} more info before transferring.
+              </p>
+              <Button
+                size="small"
+                color="default"
+                onClick={onSelect}
+                className="shrink-0"
+              >
+                Select
+              </Button>
+            </div>
           </div>
         </motion.div>
       )}

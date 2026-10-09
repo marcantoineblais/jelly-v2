@@ -1,11 +1,11 @@
 "use client";
 
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { ReactNode } from "react";
-import { twJoin, twMerge } from "tailwind-merge";
 
-import IconButton from "./IconButton";
-import Label from "./Label";
+import FieldFrame, {
+  FieldClearButton,
+  fieldInputClassName,
+} from "./FieldFrame";
 
 type InputProps = {
   id: string;
@@ -56,13 +56,21 @@ export default function Input({
     onChange("");
   }
 
+  const showClear = isClearable && Boolean(value);
+
   return (
-    <div className={twMerge("relative", className)}>
-      {label && (
-        <Label htmlFor={id} isRequired={isRequired && Boolean(label)}>
-          {label}
-        </Label>
-      )}
+    <FieldFrame
+      id={id}
+      label={label}
+      isRequired={isRequired}
+      error={error}
+      className={className}
+      trailing={
+        showClear && (
+          <FieldClearButton onClick={handleClear} isDisabled={isDisabled} />
+        )
+      }
+    >
       <input
         id={id}
         value={value}
@@ -72,32 +80,12 @@ export default function Input({
         onFocus={onFocus}
         autoComplete={autoComplete}
         disabled={isDisabled || undefined}
-        data-clearable={isClearable || undefined}
+        data-trailing={showClear || undefined}
         data-invalid={Boolean(error) || undefined}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={twJoin(
-          "block w-full min-w-48 rounded-xl border px-3 h-10 text-sm bg-surface/60 border-border",
-          "disabled:opacity-50 transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-muted hover:border-border-strong",
-          "focus:border-primary/70 focus:outline-none focus:ring-4 focus:ring-primary/15",
-          "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/15",
-          "data-clearable:pr-9",
-        )}
+        className={fieldInputClassName}
       />
-
-      {isClearable && value && (
-        <IconButton
-          icon={faXmark}
-          onClick={handleClear}
-          className="absolute right-2 bottom-2.5 hover:bg-transparent transition-colors duration-200"
-          ariaLabel="Clear"
-        />
-      )}
-      {error && (
-        <p id={`${id}-error`} className="mt-1 text-sm text-danger" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
+    </FieldFrame>
   );
 }

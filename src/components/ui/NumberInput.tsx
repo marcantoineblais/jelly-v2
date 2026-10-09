@@ -1,9 +1,9 @@
 "use client";
 
 import { ReactNode } from "react";
-import { twJoin } from "tailwind-merge";
+import { twMerge } from "tailwind-merge";
 
-import Label from "./Label";
+import FieldFrame, { fieldInputClassName } from "./FieldFrame";
 import IconButton from "./IconButton";
 import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import useAutoTrigger from "@/src/hooks/useAutoTrigger";
@@ -98,34 +98,15 @@ export default function NumberInput({
   }
 
   return (
-    <div className={className}>
-      {label && (
-        <Label htmlFor={id} isRequired={isRequired}>
-          {label}
-        </Label>
-      )}
-      <div className="relative">
-        <input
-          id={id}
-          type="number"
-          step={step}
-          value={value == null ? "" : value.toString()}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          autoComplete={autoComplete}
-          disabled={isDisabled}
-          placeholder={placeholder}
-          aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : undefined}
-          data-invalid={error ? true : undefined}
-          className={twJoin(
-            "number-input block w-full rounded-xl border pl-3 pr-6 h-10 text-sm bg-surface/60",
-            "focus:outline-none focus:ring-4 disabled:opacity-50 transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-muted hover:border-border-strong",
-            "border-border focus:border-primary/70 focus:ring-primary/15",
-            "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/15",
-          )}
-        />
-        <div className="absolute inset-y-0 right-0 flex flex-col items-center justify-between p-1">
+    <FieldFrame
+      id={id}
+      label={label}
+      isRequired={isRequired}
+      error={error}
+      className={className}
+      trailingClassName="flex-col justify-between p-1"
+      trailing={
+        <>
           <IconButton
             ariaLabel="Increment"
             icon={faChevronUp}
@@ -136,7 +117,6 @@ export default function NumberInput({
             className="flex items-center h-4 overflow-hidden"
             size="xs"
           />
-
           <IconButton
             ariaLabel="Decrement"
             icon={faChevronDown}
@@ -147,13 +127,24 @@ export default function NumberInput({
             className="flex items-center h-4 overflow-hidden"
             size="xs"
           />
-        </div>
-      </div>
-      {error && (
-        <p id={`${id}-error`} className="mt-1 text-sm text-danger" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
+        </>
+      }
+    >
+      <input
+        id={id}
+        type="number"
+        step={step}
+        value={value == null ? "" : value.toString()}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        autoComplete={autoComplete}
+        disabled={isDisabled}
+        placeholder={placeholder}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
+        data-invalid={error ? true : undefined}
+        className={twMerge(fieldInputClassName, "number-input pr-6")}
+      />
+    </FieldFrame>
   );
 }
