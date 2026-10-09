@@ -19,7 +19,7 @@ export default function Label({
     <label
       htmlFor={htmlFor}
       className={twMerge(
-        "block text-sm font-medium text-text-secondary mb-1",
+        "block text-xs font-medium tracking-wide text-text-secondary mb-1",
         className,
       )}
       {...props}

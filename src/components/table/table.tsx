@@ -1,18 +1,25 @@
 import { ReactNode } from "react";
+import { twMerge } from "tailwind-merge";
 
 export type TableProps<T> = {
-  children: (item: T) => ReactNode;
+  children: (item: T, index: number) => ReactNode;
   items: T[];
+  className?: string;
 };
 
-export default function Table<T>({ children, items = [] }: TableProps<T>) {
+export default function Table<T>({
+  children,
+  items = [],
+  className,
+}: TableProps<T>) {
   return (
-    <div className="flex flex-col w-full max-h-full overflow-hidden">
-      <div className="flex flex-col w-full h-full rounded-lg border border-stone-200 overflow-hidden">
-        <ul className="w-full overflow-y-auto overflow-x-hidden">
-          {items.map((item) => children(item))}
-        </ul>
-      </div>
-    </div>
+    <ul
+      className={twMerge(
+        "flex flex-col gap-2 w-full min-h-0 overflow-y-auto overflow-x-hidden pb-4 -mx-1 px-1",
+        className,
+      )}
+    >
+      {items.map((item, index) => children(item, index))}
+    </ul>
   );
 }

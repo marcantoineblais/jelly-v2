@@ -64,10 +64,10 @@ export default function PasswordInput({
           aria-describedby={error ? `${id}-error` : undefined}
           data-invalid={error ? true : undefined}
           className={twJoin(
-            "block w-full rounded-md border px-3 py-2 pr-10 text-sm bg-surface-card",
-            "focus:outline-none focus:ring-1 disabled:opacity-50",
-            "border-border focus:border-primary focus:ring-primary/50",
-            "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/50",
+            "block w-full rounded-xl border px-3 h-10 pr-10 text-sm bg-surface/60",
+            "focus:outline-none focus:ring-4 disabled:opacity-50 transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-muted hover:border-border-strong",
+            "border-border focus:border-primary/70 focus:ring-primary/15",
+            "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/15",
           )}
         />
         <IconButton

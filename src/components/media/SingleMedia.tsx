@@ -13,27 +13,38 @@ export default function SingleMedia({
 
   const filename = createFilename(file.mediaInfo) || "No title";
   const info = file.mediaInfo ?? {};
-  const season = info.season ? `${formatNumber(info.season)}` : "None";
-  const episode = info.episode ? `${formatNumber(info.episode)}` : "None";
+  const season = info.season != null ? formatNumber(info.season) : "None";
+  const episode = info.episode != null ? formatNumber(info.episode) : "None";
   const year = info.year ? info.year.toString() : "None";
-  const type = file.library?.type ?? "";
+  const type = file.library?.type ?? "—";
   const fileSize = file.size != null ? formatDataSize(file.size) : "Unknown";
-  const elements = [
-    { label: "File path", content: file.path },
-    { label: "Original file name", content: file.name },
-    { label: "Title", content: filename },
-    { label: "Season", content: season },
-    { label: "Episode", content: episode },
-    { label: "Year", content: year },
-    { label: "File size", content: fileSize },
-    { label: "Media type", content: type },
-  ];
 
   return (
-    <ul>
-      {elements.map(({ label, content }) => (
-        <MediaInfoLine key={label} label={label} content={content} />
-      ))}
-    </ul>
+    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
+      <MediaInfoLine
+        className="col-span-2 sm:col-span-4"
+        label="New name"
+        content={`${filename}${file.ext ?? ""}`}
+        mono
+      />
+      <MediaInfoLine
+        className="col-span-2 sm:col-span-4"
+        label="Original file"
+        content={`${file.name}${file.ext ?? ""}`}
+        mono
+      />
+      <MediaInfoLine
+        className="col-span-2 sm:col-span-4"
+        label="Path"
+        content={file.path}
+        mono
+      />
+      <MediaInfoLine label="Season" content={season} />
+      <MediaInfoLine label="Episode" content={episode} />
+      <MediaInfoLine label="Year" content={year} />
+      <MediaInfoLine label="Size" content={fileSize} />
+      <MediaInfoLine label="Library" content={file.library?.name ?? "—"} />
+      <MediaInfoLine label="Type" content={type} />
+    </dl>
   );
 }

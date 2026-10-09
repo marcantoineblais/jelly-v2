@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Logo from "@/src/assets/img/logo.png";
 import H1 from "@/src/components/elements/H1";
 import useFetch from "@/src/hooks/use-fetch";
 import useValidation from "@/src/hooks/use-validation";
@@ -60,10 +62,22 @@ export default function SetupPage() {
   }
 
   return (
-    <main className="container-main h-full w-full flex items-center justify-center">
-      <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md border border-stone-200">
-        <H1 className="w-full text-center mb-2">Setup</H1>
-        <p className="text-center text-default-500 text-sm mb-6">
+    <main className="container-main h-full w-full flex items-center justify-center p-4">
+      <div className="w-full max-w-sm card rounded-3xl p-7 animate-fade-in-up">
+        <div className="flex justify-center mb-5">
+          <span className="relative size-16 rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-glow">
+            <Image
+              src={Logo}
+              alt="Jelly"
+              fill
+              sizes="64px"
+              className="object-cover"
+              priority
+            />
+          </span>
+        </div>
+        <H1 className="w-full text-center">Welcome</H1>
+        <p className="text-center text-text-muted text-sm mt-1 mb-8">
           Set up your username and password to get started.
         </p>
 
@@ -111,7 +125,7 @@ export default function SetupPage() {
             type="submit"
             isLoading={loading}
             isDisabled={loading}
-            className="mt-2 shadow-btn"
+            className="mt-2"
           >
             Create account
           </Button>

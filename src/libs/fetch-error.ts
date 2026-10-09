@@ -13,3 +13,9 @@ export class FetchError extends Error {
     Object.setPrototypeOf(this, FetchError.prototype);
   }
 }
+
+/** True when a request was cancelled through an AbortController. */
+export function isAbortError(error: unknown): boolean {
+  if (error instanceof FetchError) return error.status === 499;
+  return error instanceof DOMException && error.name === "AbortError";
+}

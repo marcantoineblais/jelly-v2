@@ -8,34 +8,35 @@ interface LibrarySectionContentProps {
   sectionKey: string;
   files: MediaFile[];
   onSelect: (selected: boolean, updatedFiles: MediaFile | MediaFile[]) => void;
+  onEditOne?: (file: MediaFile) => void;
 }
 
 export default function LibrarySectionContent({
   sectionKey,
   files,
   onSelect,
+  onEditOne,
 }: LibrarySectionContentProps) {
   if (files.length === 0) {
-    return <div className="text-center">Empty</div>;
+    return (
+      <div className="py-6 text-center text-sm text-text-muted">Empty</div>
+    );
   }
 
   const type = files[0]?.library.type ?? null;
 
   if (type === "show") {
     return (
-      <ShowsContent sectionKey={sectionKey} files={files} onSelect={onSelect} />
-    );
-  }
-
-  if (type === "movie" || type == null) {
-    return (
-      <MoviesContent
+      <ShowsContent
         sectionKey={sectionKey}
         files={files}
         onSelect={onSelect}
+        onEditOne={onEditOne}
       />
     );
   }
 
-  return <div className="text-center">Empty</div>;
+  return (
+    <MoviesContent files={files} onSelect={onSelect} onEditOne={onEditOne} />
+  );
 }

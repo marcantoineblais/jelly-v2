@@ -70,30 +70,30 @@ const toastStyles: Record<
   success: {
     icon: faCircleCheck,
     iconClassName: "text-success",
-    cardClassName: "border-success",
+    cardClassName: "border-success/40",
     backgroundColor:
-      "color-mix(in srgb, var(--color-success) 10%, var(--color-surface-card))",
+      "color-mix(in srgb, var(--color-success) 14%, var(--color-surface-card))",
   },
   error: {
     icon: faCircleExclamation,
     iconClassName: "text-danger",
-    cardClassName: "border-danger",
+    cardClassName: "border-danger/40",
     backgroundColor:
-      "color-mix(in srgb, var(--color-danger) 10%, var(--color-surface-card))",
+      "color-mix(in srgb, var(--color-danger) 14%, var(--color-surface-card))",
   },
   info: {
     icon: faCircleInfo,
     iconClassName: "text-primary",
-    cardClassName: "border-primary",
+    cardClassName: "border-primary/40",
     backgroundColor:
-      "color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-card))",
+      "color-mix(in srgb, var(--color-primary) 14%, var(--color-surface-card))",
   },
   warning: {
     icon: faTriangleExclamation,
     iconClassName: "text-warning",
-    cardClassName: "border-warning",
+    cardClassName: "border-warning/40",
     backgroundColor:
-      "color-mix(in srgb, var(--color-warning) 10%, var(--color-surface-card))",
+      "color-mix(in srgb, var(--color-warning) 14%, var(--color-surface-card))",
   },
 };
 
@@ -238,7 +238,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         key={toast.id}
         className={twJoin(
           "flex items-start gap-3 px-4 py-3",
-          "cursor-pointer rounded-lg border bg-surface-card shadow-lg",
+          "cursor-pointer rounded-xl border bg-surface-card shadow-2xl shadow-black/60 backdrop-blur animate-fade-in-up",
           style.cardClassName,
           "opacity-100 transition-opacity duration-500",
           "data-[collapsed=true]:-mt-12 data-[collapsed=true]:opacity-90",
@@ -258,7 +258,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           icon={style.icon}
           className={twJoin("mt-0.5 size-4 shrink-0", style.iconClassName)}
         />
-        <div className="min-w-0 flex-1 text-sm text-text">{toast.message}</div>
+        <div className="min-w-0 flex-1 text-sm text-text whitespace-pre-line">
+          {toast.message}
+        </div>
         <IconButton
           icon={faXmark}
           ariaLabel={"Dismiss"}

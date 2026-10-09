@@ -201,10 +201,10 @@ export default function SelectInput<T>({
           data-placeholder={showPlaceholder || undefined}
           onKeyDown={onSelectKeyDown}
           className={twJoin(
-            "relative flex w-full items-center justify-between rounded-md border pl-3 pr-9 h-9 text-sm text-left bg-surface-card overflow-hidden",
-            "focus:outline-none focus:ring-1 disabled:opacity-50",
-            "border-border focus:border-primary focus:ring-primary/50",
-            "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/50",
+            "relative flex w-full items-center justify-between rounded-xl border pl-3 pr-9 h-10 text-sm text-left bg-surface/60 overflow-hidden",
+            "focus:outline-none focus:ring-4 disabled:opacity-50 transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-muted hover:border-border-strong",
+            "border-border focus:border-primary/70 focus:ring-primary/15",
+            "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/15",
             "data-placeholder:text-text-muted",
           )}
         >

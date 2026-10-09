@@ -1,60 +1,58 @@
 "use client";
 
 import { MediaFile } from "@/src/types/MediaFile";
-import { useMemo, useState } from "react";
 import MediaCheckbox from "./MediaCheckbox";
-import SingleMedia from "./SingleMedia";
-import { createEpisodeLabel } from "@/src/libs/files/createFilename";
-import AccordionItem from "../ui/accordion/AccordionItem";
-import Accordion from "../ui/accordion/Accordion";
+import MediaFileRow from "./MediaFileRow";
+import Chip from "../ui/Chip";
 
 export default function MediaSeason({
+  id,
+  label,
   files = [],
+  showHeader = true,
   handleSelect = () => {},
+  onEditOne,
 }: {
+  id: string;
+  label: string;
   files?: MediaFile[];
+  showHeader?: boolean;
   handleSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
+  onEditOne?: (file: MediaFile) => void;
 }) {
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-
-  const accordionKey = useMemo(
-    () =>
-      `season-${files
-        .map((f) => f.id)
-        .sort((a, b) => a - b)
-        .join(",")}`,
-    [files],
-  );
+  const selectedCount = files.filter((f) => f.isSelected).length;
 
   return (
-    <Accordion
-      key={accordionKey}
-      selectedItems={selectedKeys}
-      setSelectedItems={setSelectedKeys}
-    >
-      {files.map((file) => {
-        const label = file.mediaInfo.title ?? "No title";
-        return (
-          <AccordionItem
+    <div className="flex flex-col">
+      {showHeader && (
+        <MediaCheckbox
+          id={id}
+          files={files}
+          label={label}
+          labelClassName="text-xs uppercase tracking-wider text-text-muted font-semibold"
+          className="py-1.5"
+          isSelected={files.length > 0 && selectedCount === files.length}
+          isIndeterminate={selectedCount > 0}
+          onSelect={handleSelect}
+          trailing={
+            <Chip>
+              {files.length} ep{files.length > 1 ? "s" : ""}
+            </Chip>
+          }
+        />
+      )}
+      <div className="ml-5 pl-2 border-l border-border flex flex-col gap-0.5">
+        {files.map((file) => (
+          <MediaFileRow
             key={file.id}
-            id={file.id.toString()}
-            header={
-              <MediaCheckbox
-                files={file}
-                label={label}
-                isSelected={file.isSelected}
-                onSelect={handleSelect}
-              >
-                <span className="text-xs text-gray-500">
-                  {createEpisodeLabel(file.mediaInfo)}
-                </span>
-              </MediaCheckbox>
-            }
-          >
-            <SingleMedia file={file} />
-          </AccordionItem>
-        );
-      })}
-    </Accordion>
+            file={file}
+            variant="episode"
+            label={file.mediaInfo.title ?? "No title"}
+            onSelect={handleSelect}
+            onEditOne={onEditOne}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

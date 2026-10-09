@@ -1,17 +1,17 @@
 "use client";
 
-import type { ChangeEvent, MouseEvent, ReactNode } from "react";
+import {
+  useMemo,
+  type ChangeEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { twJoin, twMerge } from "tailwind-merge";
 
 import Label from "./Label";
 
 type CheckboxColor =
-  | "primary"
-  | "secondary"
-  | "danger"
-  | "warning"
-  | "success"
-  | "default";
+  "primary" | "secondary" | "danger" | "warning" | "success" | "default";
 
 type CheckboxState = "unchecked" | "checked" | "indeterminate";
 
@@ -32,7 +32,7 @@ type CheckboxInputProps = {
 
 const checkboxColorClasses: Record<CheckboxColor, string> = {
   primary:
-    "data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary focus:ring-primary/50",
+    "data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary focus-visible:ring-primary/20",
   secondary:
     "data-[state=checked]:border-secondary data-[state=checked]:bg-secondary data-[state=indeterminate]:border-secondary data-[state=indeterminate]:bg-secondary focus:ring-secondary/50",
   danger:
@@ -68,11 +68,12 @@ export default function CheckboxInput({
   color = "primary",
   onClick,
 }: CheckboxInputProps) {
-  const state: CheckboxState = isIndeterminate
-    ? "indeterminate"
-    : checked
-      ? "checked"
-      : "unchecked";
+  const state: CheckboxState = useMemo(() => {
+    if (isIndeterminate) return "indeterminate";
+    if (checked) return "checked";
+
+    return "unchecked";
+  }, [isIndeterminate, checked]);
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const updatedChecked = isIndeterminate || e.target.checked;
@@ -87,7 +88,7 @@ export default function CheckboxInput({
         <span
           data-state={state}
           data-disabled={isDisabled ? "true" : undefined}
-          className="group grid size-4.75 shrink-0 place-items-center data-[disabled=true]:opacity-50"
+          className="group grid size-5 shrink-0 place-items-center data-[disabled=true]:opacity-50"
         >
           <input
             id={id}
@@ -102,9 +103,9 @@ export default function CheckboxInput({
             aria-invalid={Boolean(error) || undefined}
             aria-describedby={error ? `${id}-error` : undefined}
             className={twMerge(
-              "col-start-1 row-start-1 m-0 block size-full appearance-none rounded-md border border-border bg-surface-card p-0",
-              "transition-colors duration-200",
-              "focus:outline-none focus:ring-1",
+              "col-start-1 row-start-1 m-0 block size-full appearance-none rounded-md border border-border-strong bg-surface/60 p-0 cursor-pointer",
+              "transition-[background-color,border-color,transform,box-shadow] duration-200 active:scale-90 hover:border-text-muted",
+              "focus:outline-none focus-visible:ring-4",
               "disabled:cursor-not-allowed",
               checkboxColorClasses[color],
               "data-[invalid=true]:border-danger-light data-[invalid=true]:focus:border-danger data-[invalid=true]:focus:ring-danger-ring",
@@ -159,7 +160,11 @@ export default function CheckboxInput({
           </svg>
         </span>
 
-        <Label htmlFor={id} isRequired={isRequired} className="mt-0.5 leading-0">
+        <Label
+          htmlFor={id}
+          isRequired={isRequired}
+          className="mt-0.5 leading-0"
+        >
           {label}
         </Label>
       </div>

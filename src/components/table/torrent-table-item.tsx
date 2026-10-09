@@ -6,92 +6,124 @@ import {
   formatState,
   getStatusCategory,
 } from "@/src/libs/qbit/format";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faArrowDown,
+  faArrowUp,
+  faClock,
+  faUsers,
+} from "@fortawesome/free-solid-svg-icons";
 import Progress from "../ui/Progress";
 import { twJoin } from "tailwind-merge";
 
 export type TorrentTableItemProps = {
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   item: QbitTorrent;
+  index?: number;
+};
+
+const statusStyles: Record<string, { pill: string; bar: string }> = {
+  downloading: {
+    pill: "bg-status-downloading/12 text-status-downloading ring-status-downloading/25",
+    bar: "bg-status-downloading",
+  },
+  stalled: {
+    pill: "bg-status-stalled/12 text-status-stalled ring-status-stalled/25",
+    bar: "bg-status-stalled",
+  },
+  completed: {
+    pill: "bg-status-completed/12 text-status-completed ring-status-completed/25",
+    bar: "bg-status-completed",
+  },
+  seeding: {
+    pill: "bg-status-seeding/12 text-status-seeding ring-status-seeding/25",
+    bar: "bg-status-completed",
+  },
+  paused: {
+    pill: "bg-status-paused/12 text-status-paused ring-status-paused/25",
+    bar: "bg-status-paused",
+  },
+  error: {
+    pill: "bg-status-error/12 text-status-error ring-status-error/25",
+    bar: "bg-status-error",
+  },
+  other: {
+    pill: "bg-white/5 text-text-secondary ring-white/10",
+    bar: "bg-text-muted",
+  },
 };
 
 export default function TorrentTableItem({
   item,
+  index = 0,
   onClick = () => {},
 }: TorrentTableItemProps) {
   const status = getStatusCategory(item.state);
+  const style = statusStyles[status] ?? statusStyles.other;
+  const percent = Math.round((item.progress ?? 0) * 100);
+  const isActive = status === "downloading";
 
   return (
-    <li className="w-full py-0.5 first:pt-0 last:pb-0">
+    <li
+      className="animate-fade-in-up"
+      style={{ animationDelay: `${Math.min(index, 15) * 25}ms` }}
+    >
       <button
         data-status={status}
-        className={[
-          "flex flex-col w-full overflow-hidden p-4 bg-white cursor-pointer text-start hover:bg-stone-50 duration-200 border-l-4 border-l-transparent",
-          "data-[status=downloading]:border-l-status-downloading",
-          "data-[status=stalled]:border-l-status-stalled data-[status=stalled]:bg-status-stalled/5",
-          "data-[status=completed]:border-l-status-completed data-[status=completed]:bg-status-completed/5",
-          "data-[status=seeding]:border-l-status-completed data-[status=seeding]:bg-status-completed/5",
-          "data-[status=paused]:border-l-status-paused data-[status=paused]:bg-status-paused/5",
-          "data-[status=error]:border-l-status-error data-[status=error]:bg-status-error/5",
-        ].join(" ")}
+        className={twJoin(
+          "group w-full text-start card rounded-2xl px-4 py-3.5 cursor-pointer",
+          "transition-[border-color,background-color,transform] duration-200",
+          "hover:border-border-strong hover:bg-surface-elevated active:scale-[0.99]",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring",
+        )}
         onClick={onClick}
       >
-        <p className="whitespace-nowrap overflow-hidden w-full truncate">
-          {item.name}
-        </p>
-        <div className="w-full">
-          <Progress
-            data-status={status}
-            className={twJoin(
-              "data-[status=downloading]:bg-status-downloading",
-              "data-[status=stalled]:bg-status-stalled",
-              "data-[status=completed]:bg-status-completed",
-              "data-[status=seeding]:bg-status-completed",
-              "data-[status=paused]:bg-status-paused",
-              "data-[status=error]:bg-status-error",
-            )}
-            value={item.progress}
-          />
-          <div className="flex justify-between content-between text-xs">
-            <span className="truncate">{formatDataSize(item.completed)}</span>
-            <span className="truncate">{formatDataSize(item.size)}</span>
-          </div>
-        </div>
-
-        <div className="pt-2 flex justify-between text-xs text-neutral-500">
+        <div className="flex items-start gap-3">
+          <p className="grow min-w-0 text-sm font-medium text-text leading-snug line-clamp-2 break-all">
+            {item.name}
+          </p>
           <span
-            data-status={status}
-            className={[
-              "basis-1/2 whitespace-nowrap font-medium",
-              "data-[status=downloading]:text-status-downloading",
-              "data-[status=stalled]:text-status-stalled",
-              "data-[status=completed]:text-status-completed",
-              "data-[status=seeding]:text-status-completed",
-              "data-[status=paused]:text-status-paused",
-              "data-[status=error]:text-status-error",
-            ].join(" ")}
+            className={twJoin(
+              "shrink-0 inline-flex items-center h-6 px-2 rounded-full text-[11px] font-semibold ring-1 ring-inset",
+              style.pill,
+            )}
           >
             {formatState(item.state)}
           </span>
-          <span className="basis-1/2 whitespace-nowrap">
-            ETA: {formatEta(item.eta)}
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
+          <Progress
+            value={item.progress}
+            isAnimated={isActive}
+            className={style.bar}
+          />
+          <span className="shrink-0 w-10 text-right text-xs font-semibold tabular-nums text-text-secondary">
+            {percent}%
           </span>
         </div>
 
-        <div className="flex justify-between text-xs text-neutral-500">
-          <span className="basis-1/2 whitespace-nowrap">
-            Seeds: {item.numSeeds ?? "-"}
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-muted tabular-nums">
+          <span>
+            {formatDataSize(item.completed)}
+            <span className="text-text-muted/60"> / </span>
+            {formatDataSize(item.size)}
           </span>
-          <span className="basis-1/2 whitespace-nowrap">
-            Down: {formatSpeed(item.dlSpeed ?? 0)}
+          <span className="inline-flex items-center gap-1.5">
+            <FontAwesomeIcon icon={faArrowDown} className="text-[10px]" />
+            {formatSpeed(item.dlSpeed ?? 0)}
           </span>
-        </div>
-
-        <div className="flex justify-between text-xs text-neutral-500">
-          <span className="basis-1/2 whitespace-nowrap">
-            Leech: {item.numLeechs ?? "-"}
+          <span className="inline-flex items-center gap-1.5">
+            <FontAwesomeIcon icon={faArrowUp} className="text-[10px]" />
+            {formatSpeed(item.upSpeed ?? 0)}
           </span>
-          <span className="basis-1/2 whitespace-nowrap">
-            Up: {formatSpeed(item.upSpeed ?? 0)}
+          <span className="inline-flex items-center gap-1.5">
+            <FontAwesomeIcon icon={faUsers} className="text-[10px]" />
+            {item.numSeeds ?? "-"}/{item.numLeechs ?? "-"}
+          </span>
+          <span className="inline-flex items-center gap-1.5 ml-auto">
+            <FontAwesomeIcon icon={faClock} className="text-[10px]" />
+            {formatEta(item.eta)}
           </span>
         </div>
       </button>

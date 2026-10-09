@@ -9,6 +9,7 @@ import Input from "../ui/Input";
 import CheckboxInput from "../ui/CheckboxInput";
 import NumberInput from "../ui/NumberInput";
 import SelectInput from "../ui/SelectInput";
+import { createFilename } from "@/src/libs/files/createFilename";
 
 export default function MediaEditForm({
   files = [],
@@ -149,23 +150,75 @@ export default function MediaEditForm({
     });
   }
 
+  const preview = useMemo(() => {
+    const first = files[0];
+    if (!first) return "";
+    const info = { ...first.mediaInfo };
+    if (form.useOriginalName) info.title = first.name;
+    else if (form.title) info.title = form.title.trim();
+    info.season = form.isSeasonEnabled
+      ? (form.season ?? info.season)
+      : undefined;
+    info.episode = form.isEpisodeEnabled
+      ? (form.episode ?? info.episode)
+      : undefined;
+    info.year = form.isYearEnabled ? (form.year ?? info.year) : undefined;
+    return `${createFilename(info)}${first.ext ?? ""}`;
+  }, [files, form]);
+
+  const numberFields = [
+    {
+      id: "season",
+      label: "Season",
+      enabledKey: "isSeasonEnabled",
+      enabled: form.isSeasonEnabled,
+      value: form.season,
+      max: undefined,
+    },
+    {
+      id: "episode",
+      label: "Episode",
+      enabledKey: "isEpisodeEnabled",
+      enabled: form.isEpisodeEnabled,
+      value: form.episode,
+      max: undefined,
+    },
+    {
+      id: "year",
+      label: "Year",
+      enabledKey: "isYearEnabled",
+      enabled: form.isYearEnabled,
+      value: form.year,
+      max: 9999,
+    },
+  ] as const;
+
   return (
     <Modal
-      title="Edit selected files"
+      title={files.length > 1 ? `Edit ${files.length} files` : "Edit file"}
       isOpen={isOpen}
       onClose={() => onClose()}
       footer={
         <>
-          <Button color="default" className="w-32" onClick={() => onClose()}>
+          <Button color="default" className="w-28" onClick={() => onClose()}>
             Cancel
           </Button>
-          <Button className="w-32" onClick={() => onSaveMediaInfo(form)}>
+          <Button className="w-28" onClick={() => onSaveMediaInfo(form)}>
             Save
           </Button>
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5 md:w-lg">
+        <div className="rounded-xl bg-surface/60 border border-border px-3 py-2.5">
+          <div className="text-[11px] uppercase tracking-wider text-text-muted">
+            {files.length > 1 ? "Preview (first file)" : "Preview"}
+          </div>
+          <p className="mt-0.5 font-mono text-xs text-primary-light break-all">
+            {preview}
+          </p>
+        </div>
+
         <div className="flex flex-col gap-2">
           <Input
             id="title"
@@ -173,7 +226,9 @@ export default function MediaEditForm({
             placeholder="(Unchanged)"
             value={form.title}
             type="text"
+            isDisabled={form.useOriginalName}
             onChange={(v) => handleChange("title", v)}
+            isClearable
           />
 
           <CheckboxInput
@@ -184,72 +239,46 @@ export default function MediaEditForm({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <NumberInput
-            id="season"
-            label="Season"
-            placeholder={form.isSeasonEnabled ? "(Unchanged)" : ""}
-            className="grow"
-            value={form.season}
-            onChange={(v) => handleChange("season", v)}
-            min={0}
-          />
-          <div className="self-end flex items-center h-9">
-            <CheckboxInput
-              id="isSeasonEnabled"
-              checked={form.isSeasonEnabled}
-              onChange={(v) => handleChange("isSeasonEnabled", v)}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <NumberInput
-              id="episode"
-              label="Episode"
-              className="grow"
-              placeholder={form.isEpisodeEnabled ? "(Unchanged)" : ""}
-              value={form.episode}
-              onChange={(v) => handleChange("episode", v)}
-              min={0}
-            />
-            <div className="self-end flex items-center h-9">
-              <CheckboxInput
-                id="isEpisodeEnabled"
-                checked={form.isEpisodeEnabled}
-                onChange={(v) => handleChange("isEpisodeEnabled", v)}
+        <div className="grid grid-cols-3 gap-2">
+          {numberFields.map((field) => (
+            <div
+              key={field.id}
+              data-enabled={field.enabled || undefined}
+              className="rounded-xl border border-border p-2.5 pt-2 transition-colors duration-200 data-enabled:border-primary/30 data-enabled:bg-primary/5"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <label
+                  htmlFor={field.id}
+                  className="text-xs font-medium tracking-wide text-text-secondary"
+                >
+                  {field.label}
+                </label>
+                <CheckboxInput
+                  id={field.enabledKey}
+                  checked={field.enabled}
+                  onChange={(v) => handleChange(field.enabledKey, v)}
+                />
+              </div>
+              <NumberInput
+                id={field.id}
+                placeholder={field.enabled ? "(Unchanged)" : "None"}
+                value={field.value}
+                onChange={(v) => handleChange(field.id, v)}
+                min={0}
+                max={field.max}
               />
             </div>
-          </div>
+          ))}
+        </div>
 
+        {files.length > 1 && (
           <CheckboxInput
             id="incrementEpisodes"
-            label="Increment episodes"
+            label="Increment episode number for each file"
             checked={form.incrementEpisodes}
             onChange={(v) => handleChange("incrementEpisodes", v)}
           />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <NumberInput
-            id="year"
-            label="Year"
-            className="grow"
-            placeholder={form.isYearEnabled ? "(Unchanged)" : ""}
-            value={form.year}
-            onChange={(v) => handleChange("year", v)}
-            min={0}
-            max={9999}
-          />
-          <div className="self-end flex items-center h-9">
-            <CheckboxInput
-              id="isYearEnabled"
-              checked={form.isYearEnabled}
-              onChange={(v) => handleChange("isYearEnabled", v)}
-            />
-          </div>
-        </div>
+        )}
 
         <SelectInput
           id="library"

@@ -1,30 +1,45 @@
 "use client";
 
-import H1 from "../elements/H1";
 import Logo from "@/src/assets/img/logo.png";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBars,
+  faArrowRightArrowLeft,
+  faMagnifyingGlass,
   faRightFromBracket,
-  faTimes,
+  faSatelliteDish,
+  faCloudArrowDown,
+  type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import useFetch from "@/src/hooks/use-fetch";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { twJoin } from "tailwind-merge";
+import useFetch from "@/src/hooks/use-fetch";
+import useModal from "@/src/hooks/useModal";
 import Button from "../ui/Button";
 import IconButton from "../ui/IconButton";
-import useModal from "@/src/hooks/useModal";
 import Modal from "../Modal";
 
 const HIDDEN_PATHS = ["/login", "/setup"];
 
+type NavItem = { href: string; label: string; icon: IconDefinition };
+
+export const NAV_ITEMS: NavItem[] = [
+  { href: "/", label: "Transfers", icon: faArrowRightArrowLeft },
+  { href: "/downloads", label: "Search", icon: faMagnifyingGlass },
+  { href: "/trackers", label: "Trackers", icon: faSatelliteDish },
+  { href: "/torrents", label: "Torrents", icon: faCloudArrowDown },
+];
+
+function isActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export default function Navigation() {
   const { fetchData } = useFetch();
   const logoutModal = useModal();
-
-  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -33,15 +48,9 @@ export default function Navigation() {
       await fetchData("/api/auth/logout", { method: "POST" });
     } finally {
       logoutModal.onClose();
-      setIsOpen(false);
       router.push("/login");
       router.refresh();
     }
-  }
-
-  function handleNavigation(path: string) {
-    router.push(path);
-    setIsOpen(false);
   }
 
   if (HIDDEN_PATHS.includes(pathname)) {
@@ -50,137 +59,140 @@ export default function Navigation() {
 
   return (
     <>
-      <div className="w-full bg-primary/10">
-        <div className="container-main py-0.5 px-2 flex gap-4 justify-between items-center">
-          <div className="basis-1/3 flex items-center">
-            <Link href="/" className="flex items-center" tabIndex={-1}>
+      <header className="sticky top-0 z-40 w-full border-b border-border/70 glass">
+        <div className="container-main h-14 px-4 flex items-center justify-between gap-4">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 shrink-0 group"
+            tabIndex={-1}
+          >
+            <span className="relative size-9 rounded-xl overflow-hidden ring-1 ring-white/10 bg-surface-elevated transition-transform duration-300 group-hover:scale-105">
               <Image
                 src={Logo}
                 alt="Jelly"
-                width={64}
-                height={64}
+                fill
+                sizes="36px"
+                className="object-cover"
                 loading="eager"
               />
-            </Link>
-          </div>
+            </span>
+            <span className="text-lg font-semibold tracking-tight">Jelly</span>
+          </Link>
 
-          <div className="basis-1/3 flex items-center justify-center">
-            <Link href="/" className="flex items-center" tabIndex={-1}>
-              <H1 className="mt-0 text-2xl!">Jelly</H1>
-            </Link>
-          </div>
+          {/* Desktop tabs */}
+          <nav className="hidden sm:flex items-center gap-1 rounded-full bg-surface-card/80 border border-border p-1">
+            {NAV_ITEMS.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={twJoin(
+                    "relative px-3.5 h-8 flex items-center gap-2 rounded-full text-sm font-medium transition-colors duration-200",
+                    active
+                      ? "text-primary-foreground"
+                      : "text-text-muted hover:text-text",
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="nav-pill"
+                      className="absolute inset-0 rounded-full bg-primary shadow-glow"
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 38,
+                      }}
+                    />
+                  )}
+                  <FontAwesomeIcon
+                    icon={item.icon}
+                    className="relative text-xs"
+                  />
+                  <span className="relative">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-          <div className="basis-1/3 flex items-center justify-end">
-            <IconButton
-              ariaLabel="Open navigation menu"
-              icon={faBars}
-              size="2x"
-              onClick={() => setIsOpen(!isOpen)}
-            />
-
-            <div
-              className="z-40 p-8 fixed inset-y-0 right-0 max-sm:w-full w-sm translate-x-full data-open:translate-x-0 transition-transform duration-300 bg-surface-card"
-              data-open={isOpen || undefined}
-            >
-              <div className="absolute top-4 right-4">
-                <IconButton
-                  ariaLabel="Close navigation menu"
-                  icon={faTimes}
-                  className="text-2xl"
-                  onClick={() => setIsOpen(false)}
-                />
-              </div>
-              <h2 className="py-4 w-full flex justify-center text-xl">
-                Navigation
-              </h2>
-              <div className="h-full flex flex-col">
-                <div className="py-10 grow flex flex-col justify-between gap-12">
-                  <div className="flex flex-col justify-center items-center gap-4">
-                    <Button
-                      onClick={() => handleNavigation("/")}
-                      color="primary"
-                      className="w-full text-lg shadow-btn"
-                      isDisabled={pathname === "/"}
-                    >
-                      Transfers
-                    </Button>
-
-                    <Button
-                      onClick={() => handleNavigation("/downloads")}
-                      color="primary"
-                      className="w-full text-lg shadow-btn"
-                      isDisabled={pathname === "/downloads"}
-                    >
-                      Downloads
-                    </Button>
-
-                    <Button
-                      onClick={() => handleNavigation("/trackers")}
-                      color="primary"
-                      className="w-full text-lg shadow-btn"
-                      isDisabled={pathname === "/trackers"}
-                    >
-                      Trackers
-                    </Button>
-
-                    <Button
-                      onClick={() => handleNavigation("/torrents")}
-                      color="primary"
-                      className="w-full text-lg shadow-btn"
-                      isDisabled={pathname === "/torrents"}
-                    >
-                      Torrents
-                    </Button>
-                  </div>
-                  <div className="grow flex items-center justify-center">
-                    <Button
-                      onClick={() => setIsOpen(false)}
-                      color="default"
-                      className="w-full border-default-foreground shadow-btn"
-                    >
-                      Close
-                    </Button>
-                  </div>
-
-                  <div className="mb-16 flex justify-center">
-                    <Button
-                      onClick={logoutModal.onOpen}
-                      color="warning"
-                      className="w-full text-white shadow-btn"
-                    >
-                      <FontAwesomeIcon icon={faRightFromBracket} /> Logout
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <IconButton
+            ariaLabel="Logout"
+            icon={faRightFromBracket}
+            onClick={logoutModal.onOpen}
+            className="size-9 rounded-full flex items-center justify-center hover:bg-surface-hover"
+          />
         </div>
-      </div>
+      </header>
 
       <Modal
-        title="Logout"
+        title="Log out"
         isOpen={logoutModal.isOpen}
         onClose={logoutModal.onClose}
+        closeOnOutsideClick
         footer={
           <>
             <Button
               onClick={logoutModal.onClose}
               color="default"
-              className="w-32"
+              className="w-28"
             >
               Cancel
             </Button>
-            <Button onClick={handleLogout} color="warning" className="w-32">
-              Logout
+            <Button onClick={handleLogout} color="warning" className="w-28">
+              Log out
             </Button>
           </>
         }
       >
-        <div className="h-24 flex flex-col justify-center">
-          <p>Are you sure you want to logout?</p>
-        </div>
+        <p className="text-text-secondary">Are you sure you want to log out?</p>
       </Modal>
     </>
+  );
+}
+
+/** Bottom tab bar, shown on small screens only. */
+export function MobileTabBar() {
+  const pathname = usePathname();
+
+  if (HIDDEN_PATHS.includes(pathname)) {
+    return null;
+  }
+
+  return (
+    <nav className="sm:hidden shrink-0 border-t border-border/70 glass pb-[env(safe-area-inset-bottom)]">
+      <ul className="grid grid-cols-4">
+        {NAV_ITEMS.map((item) => {
+          const active = isActive(pathname, item.href);
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={twJoin(
+                  "relative h-16 flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors duration-200",
+                  active ? "text-primary" : "text-text-muted",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="tab-indicator"
+                    className="absolute top-0 h-0.5 w-10 rounded-full bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                  />
+                )}
+                <motion.span
+                  animate={{ scale: active ? 1.12 : 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                  <FontAwesomeIcon icon={item.icon} className="text-base" />
+                </motion.span>
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }

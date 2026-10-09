@@ -41,7 +41,7 @@ export default function IconButton({
 }: IconButtonProps) {
   const hoverClasses: Record<IconButtonColor, string> = useMemo(
     () => ({
-      default: "hover:text-text-hover",
+      default: "hover:text-text",
       danger: "hover:text-danger-hover",
       primary: "hover:text-primary-hover",
       success: "hover:text-success-hover",
@@ -60,8 +60,8 @@ export default function IconButton({
       disabled={isDisabled}
       onClick={onClick}
       className={twMerge(
-        "text-text-muted transition-colors duration-200 cursor-pointer",
-        "disabled:opacity-50 disabled:text-text-muted disabled:hover:text-text-muted",
+        "text-text-muted transition-[color,background-color,transform] duration-200 cursor-pointer active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring rounded-md",
+        "disabled:opacity-40 disabled:text-text-muted disabled:hover:text-text-muted disabled:cursor-not-allowed disabled:active:scale-100",
         hoverClasses[color],
         className,
       )}

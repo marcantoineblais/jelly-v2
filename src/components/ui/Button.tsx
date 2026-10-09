@@ -10,7 +10,8 @@ type ButtonColor =
   | "danger"
   | "warning"
   | "success"
-  | "default";
+  | "default"
+  | "ghost";
 
 type ButtonSize = "small" | "medium" | "large";
 
@@ -37,27 +38,29 @@ export default function Button({
   const colorClasses: Record<ButtonColor, string> = useMemo(
     () => ({
       primary:
-        "bg-primary text-primary-foreground hover:bg-primary-hover focus:ring-primary-ring disabled:bg-primary",
+        "bg-primary text-primary-foreground shadow-btn hover:bg-primary-hover hover:shadow-glow focus-visible:ring-primary-ring disabled:hover:bg-primary disabled:hover:shadow-btn",
       secondary:
-        "bg-secondary text-secondary-foreground hover:bg-secondary-hover focus:ring-secondary disabled:bg-secondary",
+        "bg-secondary text-secondary-foreground shadow-btn hover:bg-secondary-hover focus-visible:ring-secondary/50 disabled:hover:bg-secondary",
       danger:
-        "bg-danger text-danger-foreground hover:bg-danger-hover focus:ring-danger-ring disabled:bg-danger",
+        "bg-danger text-danger-foreground shadow-btn hover:bg-danger-hover focus-visible:ring-danger-ring disabled:hover:bg-danger",
       warning:
-        "bg-warning text-warning-foreground hover:bg-warning-hover focus:ring-warning disabled:bg-warning",
+        "bg-warning text-warning-foreground shadow-btn hover:bg-warning-hover focus-visible:ring-warning/50 disabled:hover:bg-warning",
       success:
-        "bg-success text-success-foreground hover:bg-success-hover focus:ring-success disabled:bg-success",
-      info: "bg-info text-info-foreground hover:bg-info-hover focus:ring-info disabled:bg-info",
+        "bg-success text-success-foreground shadow-btn hover:bg-success-hover focus-visible:ring-success/50 disabled:hover:bg-success",
+      info: "bg-info text-info-foreground shadow-btn hover:bg-info-hover focus-visible:ring-info/50 disabled:hover:bg-info",
       default:
-        "bg-surface-card text-text border border-border hover:bg-surface focus:ring-border disabled:bg-surface-card",
+        "bg-surface-elevated text-text border border-border shadow-btn hover:bg-surface-hover hover:border-border-strong focus-visible:ring-border-strong disabled:hover:bg-surface-elevated",
+      ghost:
+        "bg-transparent text-text-secondary hover:bg-surface-hover hover:text-text focus-visible:ring-border-strong",
     }),
     [],
   );
 
   const sizeClasses: Record<ButtonSize, string> = useMemo(
     () => ({
-      small: "h-8 px-2 text-sm",
-      medium: "h-10 px-4 text-base",
-      large: "h-12 px-8 text-lg",
+      small: "h-8 px-3 text-sm gap-1.5",
+      medium: "h-10 px-4 text-sm gap-2",
+      large: "h-12 px-6 text-base gap-2",
     }),
     [],
   );
@@ -75,10 +78,12 @@ export default function Button({
       {...props}
       disabled={isDisabled || isLoading || undefined}
       className={twMerge(
-        "relative rounded-lg min-w-16 cursor-pointer flex items-center justify-center font-semibold overflow-hidden duration-200",
+        "relative rounded-xl min-w-16 cursor-pointer inline-flex items-center justify-center font-semibold overflow-hidden select-none",
+        "transition-[background-color,box-shadow,transform,opacity,border-color] duration-200 active:scale-[0.97]",
+        "focus:outline-none focus-visible:ring-2",
         colorClasses[color],
         sizeClasses[size],
-        "disabled:opacity-50 disabled:cursor-default",
+        "disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100",
         className,
       )}
       onClick={onClick}

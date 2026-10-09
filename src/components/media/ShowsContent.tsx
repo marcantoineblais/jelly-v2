@@ -1,64 +1,46 @@
 "use client";
 
 import { MediaFile } from "@/src/types/MediaFile";
-import { useState } from "react";
-import MediaCheckbox from "./MediaCheckbox";
+import { useMemo } from "react";
 import MediaShow from "./MediaShow";
-import Accordion from "../ui/accordion/Accordion";
-import AccordionItem from "../ui/accordion/AccordionItem";
 
 interface ShowsContentProps {
   sectionKey: string;
   files: MediaFile[];
   onSelect: (selected: boolean, updatedFiles: MediaFile | MediaFile[]) => void;
+  onEditOne?: (file: MediaFile) => void;
 }
 
 export default function ShowsContent({
   sectionKey,
   files,
   onSelect,
+  onEditOne,
 }: ShowsContentProps) {
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-
-  const uniqueTitles = Array.from(
-    new Set(files.map((file) => file.mediaInfo.title || "")),
-  );
+  const shows = useMemo(() => {
+    const map = new Map<string, MediaFile[]>();
+    files.forEach((file) => {
+      const title = file.mediaInfo.title || "";
+      map.set(title, [...(map.get(title) ?? []), file]);
+    });
+    return Array.from(map.entries());
+  }, [files]);
 
   return (
-    <Accordion
-      key={sectionKey}
-      selectedItems={selectedKeys}
-      setSelectedItems={setSelectedKeys}
-      multiple
-    >
-      {uniqueTitles.map((title, index) => {
-        const showFiles = files.filter(
-          (file) => file.mediaInfo.title === title,
-        );
-        const itemKey = title || `untitled-${index}`;
-
+    <div className="flex flex-col gap-0.5">
+      {shows.map(([title, showFiles], index) => {
+        const key = `${sectionKey}-${title || `untitled-${index}`}`;
         return (
-          <AccordionItem
-            id={itemKey}
-            key={itemKey}
-            header={
-              <MediaCheckbox
-                files={showFiles}
-                label={title || "Not set"}
-                isSelected={showFiles.every((file) => file.isSelected)}
-                isIndeterminate={showFiles.some((file) => file.isSelected)}
-                onSelect={onSelect}
-              >
-                <span className="text-xs text-gray-500">
-                  {showFiles.length} episode{showFiles.length > 1 ? "s" : ""}
-                </span>
-              </MediaCheckbox>
-            }
-          >
-            <MediaShow files={showFiles} handleSelect={onSelect} />
-          </AccordionItem>
+          <MediaShow
+            key={key}
+            id={key}
+            title={title}
+            files={showFiles}
+            handleSelect={onSelect}
+            onEditOne={onEditOne}
+          />
         );
       })}
-    </Accordion>
+    </div>
   );
 }

@@ -5,9 +5,20 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faMagnifyingGlass,
+  faPlus,
+  faTrash,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import usePersistentState from "@/src/hooks/use-persistent-state";
+import PageHeader from "@/src/components/ui/PageHeader";
+import { isAbortError } from "@/src/libs/fetch-error";
+import RelativeTime from "@/src/components/ui/RelativeTime";
 import type { TrackedShow } from "@/src/types/TrackedShow";
 import type { JackettIndexer } from "@/src/libs/downloads/jackett";
 import type { FeedItem } from "@/src/libs/downloads/feed-format";
@@ -86,17 +97,31 @@ export default function TrackersClient({
   const { isOpen: isAccordionOpen, toggle: toggleAccordion } = useAccordion();
 
   const [shows, setShows] = useState<TrackedShow[]>(initialShows);
-  const [selectedShowId, setSelectedShowId] = useState("");
+  const [selectedShowId, setSelectedShowId] = usePersistentState(
+    "trackers:selected-show",
+    "",
+  );
+  const [lastSearch, setLastSearch] = usePersistentState<{
+    showId: string;
+    episode: number | null;
+    items: FeedItem[];
+    searchedAt: number;
+  } | null>("trackers:last-search", null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const [isSearchDisabled, setIsSearchDisabled] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   const [lastEpisode, setLastEpisode] = useState<{
     season: number;
     episode: number;
   } | null>(null);
   const [nextEpisode, setNextEpisode] = useState<number | null>(1);
-  const [items, setItems] = useState<FeedItem[]>([]);
+  const hasSearched =
+    lastSearch != null && lastSearch.showId === selectedShowId;
+  const items = hasSearched ? lastSearch.items : [];
+
+  // Cancel any in-flight search when leaving the page
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const [formData, setFormData] = useState<TrackerFormData>(EMPTY_FORM);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
@@ -111,6 +136,12 @@ export default function TrackersClient({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const selectedShow = shows.find((s) => s.id === selectedShowId);
+
+  useEffect(() => {
+    if (selectedShowId && !shows.some((s) => s.id === selectedShowId)) {
+      startTransition(() => setSelectedShowId(""));
+    }
+  }, [shows, selectedShowId, setSelectedShowId]);
 
   const sortedShowOptions = useMemo(
     () =>
@@ -269,16 +300,38 @@ export default function TrackersClient({
     });
     if (selectedShow.category) params.set("category", selectedShow.category);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const { data } = await fetchData<FeedResponse>(
         `/api/downloads/feed?${params}`,
-        { setIsLoading: setIsSearchLoading },
+        { setIsLoading: setIsSearchLoading, signal: controller.signal },
       );
-      setItems(data.items);
-    } catch {
-      setItems([]);
+      setLastSearch({
+        showId: selectedShow.id,
+        episode,
+        items: data.items,
+        searchedAt: Date.now(),
+      });
+    } catch (err) {
+      if (isAbortError(err)) {
+        toast.info("Search cancelled");
+        return;
+      }
+      setLastSearch({
+        showId: selectedShow.id,
+        episode,
+        items: [],
+        searchedAt: Date.now(),
+      });
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
-    setHasSearched(true);
+  }
+
+  function handleCancelSearch() {
+    abortRef.current?.abort();
+    abortRef.current = null;
   }
 
   async function handleAdd() {
@@ -357,8 +410,7 @@ export default function TrackersClient({
       setShows((prev) => prev.filter((s) => s.id !== deletingShow.id));
       if (selectedShowId === deletingShow.id) {
         setSelectedShowId("");
-        setHasSearched(false);
-        setItems([]);
+        setLastSearch(null);
         setLastEpisode(null);
       }
       toast.success("Tracker removed");
@@ -374,40 +426,64 @@ export default function TrackersClient({
       if (selectedShow) {
         return (
           <Button
-            className="w-44 shadow-btn"
+            className="grow"
             isLoading={isFormSubmitting}
             onClick={handleUpdate}
           >
-            Update
+            Save changes
           </Button>
         );
       }
       return (
         <Button
-          className="w-44 shadow-btn"
+          className="grow"
           isLoading={isFormSubmitting}
           onClick={handleAdd}
         >
-          Add
+          <FontAwesomeIcon icon={faPlus} className="text-xs" />
+          Add tracker
+        </Button>
+      );
+    }
+    if (isSearchLoading) {
+      return (
+        <Button color="default" className="grow" onClick={handleCancelSearch}>
+          <FontAwesomeIcon icon={faXmark} className="text-xs" />
+          Cancel search
         </Button>
       );
     }
     return (
       <Button
-        className="w-44 shadow-btn"
-        isLoading={isSearchLoading}
+        className="grow"
         isDisabled={!selectedShow || isSearchDisabled}
         onClick={handleSearch}
       >
-        Search
+        <FontAwesomeIcon icon={faMagnifyingGlass} className="text-xs" />
+        {selectedShow && nextEpisode != null
+          ? `Search S${pad2(selectedShow.season)}E${pad2(nextEpisode)}`
+          : "Search next episode"}
       </Button>
     );
   }
 
   return (
     <>
-      <main className="container-main h-full w-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
-        <div className="flex flex-col gap-2 p-3 bg-white/80 rounded-lg border border-stone-200">
+      <main className="container-main h-full w-full flex flex-col gap-4 px-4 pt-6 overflow-hidden">
+        <PageHeader
+          title="Trackers"
+          subtitle={
+            shows.length > 0
+              ? `${shows.length} show${shows.length > 1 ? "s" : ""} tracked${
+                  selectedShow && lastEpisode?.episode
+                    ? ` · last downloaded S${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
+                    : ""
+                }`
+              : "Follow shows and grab the next episode in one tap"
+          }
+        />
+
+        <div className="card p-3 flex flex-col gap-3 shrink-0 animate-fade-in-up">
           <div className="flex gap-2">
             <SelectInput
               id="show"
@@ -429,7 +505,7 @@ export default function TrackersClient({
                 color="danger"
                 onClick={handleDeleteClick}
                 ariaLabel="Delete tracker"
-                className="shrink-0 size-9 rounded border border-border flex justify-center items-center self-end"
+                className="shrink-0 size-10 rounded-xl border border-border bg-surface-elevated hover:bg-danger/10 hover:border-danger/40 flex justify-center items-center self-end"
                 icon={faTrash}
               />
             )}
@@ -437,7 +513,7 @@ export default function TrackersClient({
             {selectedShow && !isAccordionOpen && (
               <NumberInput
                 id="nextEpisode"
-                className="shrink-0 w-16"
+                className="shrink-0 w-20"
                 min={0}
                 max={999}
                 label="Ep."
@@ -575,9 +651,23 @@ export default function TrackersClient({
             <AccordionButton
               isOpen={isAccordionOpen}
               onToggle={toggleAccordion}
+              label={isAccordionOpen ? "Close" : selectedShow ? "Edit" : "New"}
             />
           </div>
         </div>
+
+        {hasSearched && !isSearchLoading && lastSearch && (
+          <p className="shrink-0 text-xs text-text-muted animate-fade-in">
+            <span className="text-text-secondary font-medium tabular-nums">
+              {items.length}
+            </span>{" "}
+            result{items.length === 1 ? "" : "s"}
+            {lastSearch.episode != null && selectedShow
+              ? ` for S${pad2(selectedShow.season)}E${pad2(lastSearch.episode)}`
+              : ""}{" "}
+            · <RelativeTime timestamp={lastSearch.searchedAt} />
+          </p>
+        )}
 
         <DownloadResults
           items={items}
@@ -622,7 +712,7 @@ export default function TrackersClient({
               <strong>{deletingShow.title}</strong>?
             </p>
 
-            <p className="mt-4 text-sm text-neutral-500">
+            <p className="mt-4 text-sm text-text-muted">
               {lastEpisode?.episode
                 ? `Last downloaded episode was: S${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
                 : "No episodes downloaded yet."}

@@ -121,10 +121,10 @@ export default function Autocomplete({
               floatingOptionsProps.isOpen ? `${id}-listbox` : undefined
             }
             className={twJoin(
-              "mt-1 block w-full min-w-48 rounded-md border px-3 h-9 text-sm bg-surface-card border-border",
-              "disabled:opacity-50",
-              "focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50",
-              "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/50",
+              "mt-1 block w-full min-w-48 rounded-xl border px-3 h-10 text-sm bg-surface/60 border-border",
+              "disabled:opacity-50 transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-muted hover:border-border-strong",
+              "focus:border-primary/70 focus:outline-none focus:ring-4 focus:ring-primary/15",
+              "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/15",
               "data-clearable:pr-9",
             )}
           />
@@ -133,7 +133,7 @@ export default function Autocomplete({
             <IconButton
               icon={faXmark}
               onClick={handleClear}
-              className="absolute right-2 bottom-1.5 hover:bg-transparent transition-colors duration-200"
+              className="absolute right-2 bottom-2.5 hover:bg-transparent transition-colors duration-200"
               ariaLabel="Clear"
               isDisabled={isDisabled}
             />

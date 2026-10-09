@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { log } from "../libs/logger";
-import { FetchError } from "../libs/fetch-error";
+import { FetchError, isAbortError } from "../libs/fetch-error";
 import { useRouter } from "next/navigation";
 import { useToast } from "../providers/ToastProvider";
 
@@ -17,6 +17,7 @@ export default function useFetch() {
         silent = false,
         setIsLoading = () => {},
         setIsDisabled = () => {},
+        signal,
       }: {
         method?: string;
         body?: BodyInit;
@@ -24,13 +25,14 @@ export default function useFetch() {
         silent?: boolean;
         setIsLoading?: (isLoading: boolean) => void;
         setIsDisabled?: (isDisabled: boolean) => void;
+        signal?: AbortSignal;
       } = {},
     ): Promise<{ data: T; status: number }> => {
       setIsLoading(true);
       setIsDisabled(true);
 
       try {
-        const response = await fetch(url, { method, body, headers });
+        const response = await fetch(url, { method, body, headers, signal });
         log({
           source: "useFetch",
           message: "Response: ",
@@ -75,6 +77,12 @@ export default function useFetch() {
         });
         return { data, status: response.status };
       } catch (error) {
+        if (isAbortError(error)) {
+          throw new FetchError("Request cancelled", {
+            data: { aborted: true },
+            status: 499,
+          });
+        }
         log({
           source: "useFetch",
           message: "Error: ",

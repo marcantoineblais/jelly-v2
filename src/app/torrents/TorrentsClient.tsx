@@ -20,6 +20,14 @@ import Modal from "@/src/components/Modal";
 import CheckboxInput from "@/src/components/ui/CheckboxInput";
 import Button from "@/src/components/ui/Button";
 import Spinner from "@/src/components/ui/Spinner";
+import PageHeader from "@/src/components/ui/PageHeader";
+import { faCloudArrowDown } from "@fortawesome/free-solid-svg-icons";
+import {
+  formatSpeed,
+  formatState,
+  getStatusCategory,
+} from "@/src/libs/qbit/format";
+import { formatDataSize } from "@/src/libs/format-data-size";
 
 export type SortBy = "name" | "size" | "progress" | "status" | "eta";
 
@@ -55,7 +63,7 @@ export default function TorrentsClient({
   const sortByOptions = useMemo(
     () =>
       TORRENT_SORT_BY.map((option) => ({
-        label: option,
+        label: `Sort: ${option}`,
         value: option,
       })),
     [],
@@ -64,7 +72,7 @@ export default function TorrentsClient({
   const sortOrderOptions = useMemo(
     () =>
       TORRENT_SORT_ORDER.map((option) => ({
-        label: option,
+        label: option === "asc" ? "Ascending" : "Descending",
         value: option,
       })),
     [],
@@ -77,6 +85,11 @@ export default function TorrentsClient({
   function setSortOrder(value: "asc" | "desc") {
     updateSession({ torrents: { sortBy, sortOrder: value } });
   }
+
+  const activeCount = torrents.filter(
+    (t) => getStatusCategory(t.state) === "downloading",
+  ).length;
+  const totalDl = torrents.reduce((sum, t) => sum + (t.dlSpeed ?? 0), 0);
 
   const sortedTorrents = useMemo(() => {
     const toSort = [...torrents];
@@ -170,13 +183,21 @@ export default function TorrentsClient({
   }
 
   return (
-    <main className="container-main w-full h-full flex flex-col gap-4 p-4 pb-8 overflow-hidden">
+    <main className="container-main w-full h-full flex flex-col gap-4 px-4 pt-6 overflow-hidden">
+      <PageHeader
+        title="Torrents"
+        subtitle={
+          torrents.length > 0
+            ? `${torrents.length} torrent${torrents.length > 1 ? "s" : ""} · ${activeCount} active · ↓ ${formatSpeed(totalDl)}`
+            : "qBittorrent queue"
+        }
+      />
+
       {/* Sorting controls */}
-      <div className="flex gap-2 bg-white/80 rounded-lg border border-stone-200 p-3">
+      <div className="flex gap-2 shrink-0 animate-fade-in-up">
         <SelectInput
           id="sort-by"
-          className="basis-2/3"
-          label="Sort by"
+          className="grow min-w-0"
           value={new Set([sortBy])}
           onChange={(value) => setSortBy([...value][0] as SortBy)}
           options={sortByOptions}
@@ -184,8 +205,7 @@ export default function TorrentsClient({
 
         <SelectInput
           id="sort-order"
-          className="basis-1/3"
-          label="Order"
+          className="w-36 min-w-0 shrink-0"
           value={new Set([sortOrder])}
           onChange={(value) => setSortOrder([...value][0] as "asc" | "desc")}
           options={sortOrderOptions}
@@ -196,16 +216,18 @@ export default function TorrentsClient({
       {sortedTorrents.length === 0 ? (
         <div className="flex w-full h-full justify-center items-center">
           <MediaListEmpty
-            title="No torrents found"
-            message="Add some and come back later."
+            icon={faCloudArrowDown}
+            title="No torrents"
+            message="Torrents you add from Search or Trackers will show up here."
           />
         </div>
       ) : (
         <Table items={sortedTorrents}>
-          {(item) => (
+          {(item, index) => (
             <TorrentTableItem
               key={item.hash}
               item={item}
+              index={index}
               onClick={() => handleSelectItem(item)}
             />
           )}
@@ -213,14 +235,15 @@ export default function TorrentsClient({
       )}
 
       <Modal
-        title="Torrent Details"
+        title="Torrent details"
         isOpen={isModalOpen}
         onClose={onModalClose}
         footer={
           <div className="w-full flex flex-col gap-4">
             <CheckboxInput
               id="delete-files"
-              label="Delete files"
+              label="Also delete downloaded files"
+              color="danger"
               className="self-start"
               checked={deleteFiles}
               onChange={setDeleteFiles}
@@ -246,8 +269,17 @@ export default function TorrentsClient({
         }
       >
         {selectedItem && (
-          <div className="flex flex-col gap-2">
-            <p className="break-all">{selectedItem?.name}</p>
+          <div className="flex flex-col gap-4 md:w-lg">
+            <div className="rounded-xl bg-surface/60 border border-border px-3 py-2.5">
+              <p className="text-sm font-medium text-text break-all">
+                {selectedItem?.name}
+              </p>
+              <p className="mt-1 text-xs text-text-muted tabular-nums">
+                {formatState(selectedItem.state)} ·{" "}
+                {Math.round(selectedItem.progress * 100)}% of{" "}
+                {formatDataSize(selectedItem.size)}
+              </p>
+            </div>
             {isLoadingFiles ? (
               <div className="flex justify-center py-4">
                 <Spinner size="sm" />

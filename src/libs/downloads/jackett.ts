@@ -132,6 +132,8 @@ export type SearchJackettOptions = {
   limit?: number;
   sortBy?: SortBy;
   sortOrder?: "asc" | "desc";
+  /** Aborts the upstream Jackett request (e.g. when the client cancels). */
+  signal?: AbortSignal;
 };
 
 export type SearchJackettResult = {
@@ -168,6 +170,7 @@ export async function searchJackett(
 
   const response = await fetch(
     `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?${params.toString()}`,
+    { signal: options?.signal },
   );
   if (!response.ok) throw new Error(`Jackett search: ${response.status}`);
   const data = await response.text();

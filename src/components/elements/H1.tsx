@@ -1,4 +1,3 @@
-import { pressStart2p } from "@/src/fonts";
 import { twMerge } from "tailwind-merge";
 
 export default function H1({
@@ -11,8 +10,7 @@ export default function H1({
   return (
     <h1
       className={twMerge(
-        "w-full text-center text-3xl text-gradient",
-        pressStart2p.className,
+        "w-full text-center text-3xl font-bold tracking-tight text-gradient",
         className,
       )}
     >

@@ -126,7 +126,7 @@ export default function FloatingOptions<T>({
     <div
       ref={setFloating}
       style={floatingStyles}
-      className="z-50 rounded-md border border-border bg-surface-card shadow-lg"
+      className="z-50 rounded-xl border border-border-strong bg-surface-elevated shadow-2xl shadow-black/60 overflow-hidden animate-fade-in"
     >
       {/* Search */}
       {isSearchable && (
@@ -145,7 +145,7 @@ export default function FloatingOptions<T>({
             onKeyDown={onSearchKeyDown}
             placeholder={searchPlaceholder || "Search"}
             className={twJoin(
-              "block w-full rounded-md border px-2 py-1.5 text-sm bg-surface-card",
+              "block w-full rounded-lg border px-2.5 py-1.5 text-sm bg-surface",
               "border-border focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary-ring",
             )}
           />
@@ -203,11 +203,11 @@ export default function FloatingOptions<T>({
                 }
                 style={opt.style}
                 className={twJoin(
-                  "min-w-0 px-3 py-1 h-max min-h-9 flex items-center text-sm cursor-pointer rounded-md",
-                  "hover:bg-surface transition-colors duration-200",
-                  "focus:bg-surface focus:ring-1 focus:ring-primary-ring focus:outline-none",
+                  "min-w-0 px-3 py-1 h-max min-h-9 flex items-center text-sm cursor-pointer rounded-lg text-text-secondary",
+                  "hover:bg-surface-hover hover:text-text transition-colors duration-150",
+                  "focus:bg-surface-hover focus:text-text focus:outline-none",
                   "data-disabled:cursor-default data-disabled:hover:bg-transparent data-disabled:text-text-muted",
-                  "data-selected:bg-primary/5 data-selected:hover:bg-primary/5",
+                  "data-selected:bg-primary/12 data-selected:text-primary-light data-selected:hover:bg-primary/15",
                 )}
               >
                 <div className="min-w-0 w-full flex items-center gap-2">

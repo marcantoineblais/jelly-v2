@@ -40,6 +40,8 @@ export const GET = withHandler(
       limit: validLimit,
       sortBy: validSortBy as SortBy | undefined,
       sortOrder: validSortOrder as "asc" | "desc" | undefined,
+      // Stop querying Jackett if the client cancels the search
+      signal: request.signal,
     };
 
     const { items, total } = await searchJackett(query, indexerId, options);

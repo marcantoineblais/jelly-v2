@@ -9,7 +9,10 @@ export default function H2({
 }) {
   return (
     <h2
-      className={twMerge("w-full text-center text-2xl font-medium", className)}
+      className={twMerge(
+        "w-full text-center text-xl font-semibold tracking-tight",
+        className,
+      )}
     >
       {children}
     </h2>

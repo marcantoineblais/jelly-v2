@@ -20,17 +20,17 @@ export default function FolderItem({ node, depth, maxSize }: FolderItemProps) {
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center gap-2 py-1 w-full text-left hover:opacity-70 transition-opacity"
+        className="flex items-center gap-2 py-1 w-full text-left hover:text-text transition-colors text-text-secondary"
         style={{ paddingLeft: `${depth * 1.25}rem` }}
       >
         <FontAwesomeIcon
           icon={faChevronRight}
           data-open={isOpen || undefined}
-          className="text-neutral-400 shrink-0 text-xs transition-transform duration-200 data-open:rotate-90"
+          className="text-text-muted shrink-0 text-xs transition-transform duration-200 data-open:rotate-90"
         />
         <FontAwesomeIcon
           icon={faFolder}
-          className="text-yellow-500 shrink-0 text-xs"
+          className="text-warning shrink-0 text-xs"
         />
         <span className="text-sm font-medium break-all">{node.name}</span>
       </button>

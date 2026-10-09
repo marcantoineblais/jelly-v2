@@ -17,10 +17,12 @@ export default function FileItem({ node, depth, maxSize }: FileItemProps) {
     >
       <FontAwesomeIcon
         icon={faFile}
-        className="text-neutral-400 shrink-0 text-xs mt-1"
+        className="text-text-muted shrink-0 text-xs mt-1"
       />
-      <span className="break-all text-sm min-w-0 flex-1">{node.name}</span>
-      <span className="whitespace-nowrap text-xs text-neutral-500 shrink-0 mt-0.5">
+      <span className="break-all text-sm text-text-secondary min-w-0 flex-1 font-mono text-xs leading-5">
+        {node.name}
+      </span>
+      <span className="whitespace-nowrap text-xs text-text-muted shrink-0 mt-0.5">
         {formatDataSize(node.file.size, { sizeRef: maxSize })}
       </span>
     </div>

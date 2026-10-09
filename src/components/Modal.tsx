@@ -118,7 +118,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 opacity-0 transition-opacity data-visible:opacity-100"
+      className="group/modal fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity data-visible:opacity-100"
       style={{ transitionDuration: `${FADE_DURATION}ms` }}
       data-visible={isVisible || undefined}
       role="alert"
@@ -130,18 +130,23 @@ export default function Modal({
       <div
         onPointerDown={(e) => e.stopPropagation()}
         data-loading={isLoading || undefined}
-        className="max-md:w-[calc(100dvw-1rem)] md:min-w-md w-max max-w-2xl max-h-[calc(100dvh-1rem)] flex flex-col bg-surface-card border border-border rounded-lg shadow-lg overflow-hidden data-loading:opacity-0"
+        className="max-md:w-full md:min-w-md w-max max-w-2xl max-h-[calc(100dvh-1rem)] flex flex-col bg-surface-card border border-border-strong rounded-2xl shadow-2xl shadow-black/70 overflow-hidden data-loading:opacity-0 translate-y-6 sm:translate-y-2 sm:scale-[0.97] transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] group-data-visible/modal:translate-y-0 group-data-visible/modal:scale-100"
         style={{ transitionDuration: `${FADE_DURATION}ms` }}
       >
-        <div className="w-full flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <h2 className="text-lg font-semibold text-text">{title}</h2>
-          <IconButton onClick={onClose} icon={faXmark} ariaLabel="Close" />
+        <div className="w-full flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
+          <h2 className="text-base font-semibold text-text">{title}</h2>
+          <IconButton
+            onClick={onClose}
+            icon={faXmark}
+            ariaLabel="Close"
+            className="size-8 rounded-full flex items-center justify-center hover:bg-surface-hover"
+          />
         </div>
-        <div className="w-full px-4 py-4 overflow-y-auto grow min-h-0">
+        <div className="w-full px-5 pb-4 pt-1 overflow-y-auto grow min-h-0">
           {children}
         </div>
         {footer && (
-          <div className="w-full flex justify-end gap-2 px-4 py-3 border-t border-border shrink-0">
+          <div className="w-full flex justify-end gap-2 px-5 py-3.5 border-t border-border bg-surface/40 shrink-0">
             {footer}
           </div>
         )}

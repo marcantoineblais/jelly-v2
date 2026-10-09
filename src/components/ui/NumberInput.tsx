@@ -99,9 +99,11 @@ export default function NumberInput({
 
   return (
     <div className={className}>
-      <Label htmlFor={id} isRequired={isRequired}>
-        {label}
-      </Label>
+      {label && (
+        <Label htmlFor={id} isRequired={isRequired}>
+          {label}
+        </Label>
+      )}
       <div className="relative">
         <input
           id={id}
@@ -117,10 +119,10 @@ export default function NumberInput({
           aria-describedby={error ? `${id}-error` : undefined}
           data-invalid={error ? true : undefined}
           className={twJoin(
-            "number-input mt-1 block w-full rounded-md border pl-3 pr-6 h-9 text-sm bg-surface-card",
-            "focus:outline-none focus:ring-1 disabled:opacity-50",
-            "border-border focus:border-primary focus:ring-primary/50",
-            "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/50",
+            "number-input block w-full rounded-xl border pl-3 pr-6 h-10 text-sm bg-surface/60",
+            "focus:outline-none focus:ring-4 disabled:opacity-50 transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-muted hover:border-border-strong",
+            "border-border focus:border-primary/70 focus:ring-primary/15",
+            "data-invalid:border-danger-light data-invalid:focus:border-danger data-invalid:focus:ring-danger/15",
           )}
         />
         <div className="absolute inset-y-0 right-0 flex flex-col items-center justify-between p-1">

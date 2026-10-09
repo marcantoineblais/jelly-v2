@@ -9,7 +9,10 @@ export default function H3({
 }) {
   return (
     <h3
-      className={twMerge("w-full text-center text-lg font-medium", className)}
+      className={twMerge(
+        "w-full text-center text-base font-semibold",
+        className,
+      )}
     >
       {children}
     </h3>
