@@ -11,7 +11,12 @@ import { twJoin, twMerge } from "tailwind-merge";
 import Label from "./Label";
 
 type CheckboxColor =
-  "primary" | "secondary" | "danger" | "warning" | "success" | "default";
+  | "primary"
+  | "secondary"
+  | "danger"
+  | "warning"
+  | "success"
+  | "default";
 
 type CheckboxState = "unchecked" | "checked" | "indeterminate";
 
