@@ -2,45 +2,38 @@
 
 import { MediaFile } from "@/src/types/MediaFile";
 import { MediaLibrary } from "@/src/types/MediaLibrary";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowsRotate,
-  faTrashCan,
-  faTriangleExclamation,
   faFolderOpen,
+  faTrashCan,
 } from "@fortawesome/free-solid-svg-icons";
-import { AnimatePresence, motion } from "framer-motion";
 import { twJoin } from "tailwind-merge";
-import MediaEditForm from "./MediaEditForm";
-import FileSelectionBox from "../ui/FileSelectionBox";
-import FileCopyStatus from "../ui/FileCopyStatus";
-import { validateData } from "@/src/libs/files/validateData";
 import { log } from "@/src/libs/logger";
-import { sortFilesByLibrary } from "@/src/libs/files/sortFilesByLibrary";
 import { formatDataSize } from "@/src/libs/format-data-size";
+import { getSelectionStats } from "@/src/libs/files/getSelectionStats";
+import type { MediaEditFormData } from "@/src/libs/files/applyMediaInfoEdit";
 import { useFileTransferWebSocket } from "@/src/hooks/use-file-transfer-web-socket";
-import MediaListEmpty from "./MediaListEmpty";
-import MediaListAccordion from "./MediaListAccordion";
+import useMediaFiles from "@/src/hooks/use-media-files";
 import useFetch from "@/src/hooks/use-fetch";
 import { useToast } from "@/src/providers/ToastProvider";
+import MediaEditForm from "./MediaEditForm";
+import MediaListEmpty from "./MediaListEmpty";
+import LibrarySectionList, { getSectionKey } from "./LibrarySectionList";
+import TransferActionBar from "./TransferActionBar";
+import IncompleteFilesBanner from "./IncompleteFilesBanner";
+import FileCopyStatus from "../ui/FileCopyStatus";
 import PageHeader from "../ui/PageHeader";
 import SegmentedControl from "../ui/SegmentedControl";
 import IconButton from "../ui/IconButton";
-import Button from "../ui/Button";
 
 type View = "library" | "bin";
 
-function prepareFiles(files: MediaFile[]): MediaFile[] {
-  return files.map((file) => ({
-    ...file,
-    errors: validateData(file),
-    isSelected: false,
-  }));
-}
+const BIN_KEY_PREFIX = "bin-";
 
 export default function MediaList({
-  files = [],
+  files: initialFiles = [],
   libraries = [],
 }: {
   files: MediaFile[];
@@ -48,54 +41,45 @@ export default function MediaList({
 }) {
   const { fetchData } = useFetch();
   const toast = useToast();
+  const {
+    files,
+    selectedFiles,
+    activeFiles,
+    incompleteFiles,
+    sortedFiles,
+    binnedFiles,
+    replaceFiles,
+    select,
+    selectWhere,
+    clearSelection,
+    ignoreSelected,
+    restoreSelected,
+    applyEditToSelected,
+  } = useMediaFiles(initialFiles, libraries);
+
   const [view, setView] = useState<View>("library");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isFilesLoading, setIsFilesLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [validatedFiles, setValidatedFiles] = useState<MediaFile[]>(() =>
-    prepareFiles(files),
-  );
+  const [isStartingTransfer, setIsStartingTransfer] = useState(false);
   const [openSections, setOpenSections] = useState<Set<string>>(
     () => new Set(),
   );
-  const binSelected = view === "bin";
-
-  const selectedFiles = useMemo(
-    () => validatedFiles.filter((file) => file.isSelected),
-    [validatedFiles],
-  );
-  const sortedFiles = useMemo(
-    () => sortFilesByLibrary(validatedFiles, libraries),
-    [validatedFiles, libraries],
-  );
-  const binnedFiles = useMemo(
-    () => sortFilesByLibrary(validatedFiles, libraries, true),
-    [validatedFiles, libraries],
-  );
-  const activeFiles = useMemo(
-    () => validatedFiles.filter((file) => !file.isIgnored),
-    [validatedFiles],
-  );
-  const binCount = validatedFiles.length - activeFiles.length;
-  const filesWithErrors = useMemo(
-    () => activeFiles.filter((file) => (file.errors?.length ?? 0) > 0),
-    [activeFiles],
-  );
-  const activeSize = useMemo(
-    () => activeFiles.reduce((sum, file) => sum + (file.size ?? 0), 0),
-    [activeFiles],
-  );
+  const isBinView = view === "bin";
+  const ignoredCount = files.length - activeFiles.length;
+  const activeSize = getSelectionStats(activeFiles).totalSize;
 
   // Open newly appearing library sections by default
-  const seenKeysRef = useRef<Set<string>>(new Set());
+  const seenSectionsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const keys = [
-      ...Object.keys(sortedFiles).map((k) => k || "not-set"),
-      ...Object.keys(binnedFiles).map((k) => `bin-${k || "not-set"}`),
+      ...Object.keys(sortedFiles).map((name) => getSectionKey(name)),
+      ...Object.keys(binnedFiles).map((name) =>
+        getSectionKey(name, BIN_KEY_PREFIX),
+      ),
     ];
-    const newKeys = keys.filter((key) => !seenKeysRef.current.has(key));
+    const newKeys = keys.filter((key) => !seenSectionsRef.current.has(key));
     if (newKeys.length === 0) return;
-    newKeys.forEach((key) => seenKeysRef.current.add(key));
+    newKeys.forEach((key) => seenSectionsRef.current.add(key));
     setOpenSections((prev) => new Set([...prev, ...newKeys]));
   }, [sortedFiles, binnedFiles]);
 
@@ -105,54 +89,19 @@ export default function MediaList({
       const { data } = await fetchData<{ files: MediaFile[] }>("/api/files", {
         headers: { "Content-Type": "application/json" },
       });
-      setValidatedFiles(prepareFiles(data.files));
+      replaceFiles(data.files);
     } finally {
       setIsFilesLoading(false);
     }
-  }, [fetchData]);
+  }, [fetchData, replaceFiles]);
 
   const { isTransferInProgress, transferStatus } =
     useFileTransferWebSocket(fetchFiles);
 
-  function handleSelect(
-    selected: boolean,
-    updatedFiles: MediaFile | MediaFile[],
-  ) {
-    const ids = new Set(
-      (Array.isArray(updatedFiles) ? updatedFiles : [updatedFiles]).map(
-        (f) => f.id,
-      ),
-    );
-    setValidatedFiles((prev) =>
-      prev.map((file) =>
-        ids.has(file.id) ? { ...file, isSelected: selected } : file,
-      ),
-    );
-  }
-
-  function setSelection(predicate: (file: MediaFile) => boolean) {
-    setValidatedFiles((prev) =>
-      prev.map((file) => ({ ...file, isSelected: predicate(file) })),
-    );
-  }
-
-  function handleClearSelection() {
-    setSelection(() => false);
-  }
-
-  function handleSelectAll() {
-    setSelection((file) => (file.isIgnored ?? false) === binSelected);
-  }
-
-  function handleSelectIncomplete() {
-    const ids = new Set(filesWithErrors.map((f) => f.id));
-    setSelection((file) => ids.has(file.id));
-  }
-
   function handleViewChange(next: View) {
     if (next === view) return;
     setView(next);
-    handleClearSelection();
+    clearSelection();
   }
 
   function handleToggleSection(key: string) {
@@ -164,116 +113,31 @@ export default function MediaList({
     });
   }
 
+  function handleSelectAll() {
+    selectWhere((file) => (file.isIgnored ?? false) === isBinView);
+  }
+
+  function handleSelectIncomplete() {
+    const ids = new Set(incompleteFiles.map((file) => file.id));
+    selectWhere((file) => ids.has(file.id));
+  }
+
   function handleEditOne(file: MediaFile) {
-    setSelection((f) => f.id === file.id);
-    setIsModalOpen(true);
+    selectWhere((candidate) => candidate.id === file.id);
+    setIsEditOpen(true);
   }
 
-  function handleDelete() {
-    setValidatedFiles((prev) =>
-      prev.map((file) => ({
-        ...file,
-        isSelected: false,
-        isIgnored: file.isSelected ? true : file.isIgnored,
-      })),
-    );
+  function handleSaveEdit(form: MediaEditFormData) {
+    applyEditToSelected(form);
+    setIsEditOpen(false);
   }
 
-  function handleRestore() {
-    setValidatedFiles((prev) =>
-      prev.map((file) => ({
-        ...file,
-        isSelected: false,
-        isIgnored: file.isSelected ? false : file.isIgnored,
-      })),
-    );
-  }
-
-  function handleClose(unselectAll = false) {
-    setIsModalOpen(false);
-    if (unselectAll) {
-      setValidatedFiles((prev) =>
-        prev.map((file) => ({ ...file, isSelected: false })),
-      );
-    }
-  }
-
-  function handleEdit() {
-    setIsModalOpen(true);
-  }
-
-  function handleSaveMediaInfo(form: {
-    title?: string;
-    isSeasonEnabled?: boolean;
-    season?: number | null;
-    isEpisodeEnabled?: boolean;
-    episode?: number | null;
-    isYearEnabled?: boolean;
-    year?: number | null;
-    library?: string | Set<string>;
-    useOriginalName?: boolean;
-    incrementEpisodes?: boolean;
-  }) {
-    const selectedIds = new Set(selectedFiles.map((f) => f.id));
-    let counter = 0;
-
-    setValidatedFiles((prev) =>
-      prev.map((file) => {
-        if (!selectedIds.has(file.id)) return file;
-
-        const newMediaInfo = { ...file.mediaInfo };
-        if (form.useOriginalName) newMediaInfo.title = file.name;
-        else if (form.title) newMediaInfo.title = form.title.trim();
-        if (!form.isSeasonEnabled) newMediaInfo.season = undefined;
-        else if (form.season != null) newMediaInfo.season = form.season;
-        if (!form.isEpisodeEnabled) newMediaInfo.episode = undefined;
-        else if (form.episode != null)
-          newMediaInfo.episode = form.episode + counter;
-        if (!form.isYearEnabled) newMediaInfo.year = undefined;
-        else if (form.year != null) newMediaInfo.year = form.year;
-
-        let newLibrary = file.library;
-        if (form.library && form.library !== "all") {
-          const key =
-            typeof form.library === "string"
-              ? form.library
-              : Array.from(form.library)[0];
-          newLibrary =
-            libraries.find((library) => library.name === key) ?? file.library;
-        }
-
-        if (form.incrementEpisodes) counter += 1;
-
-        return {
-          ...file,
-          mediaInfo: newMediaInfo,
-          library: newLibrary,
-          errors: validateData({
-            ...file,
-            mediaInfo: newMediaInfo,
-            library: newLibrary,
-          }),
-          isSelected: false,
-        };
-      }),
-    );
-    setIsModalOpen(false);
-  }
-
-  async function handleSave() {
+  async function handleTransfer() {
     if (isTransferInProgress) {
       toast.warning("Transfer already in progress");
       return;
     }
 
-    const updatedFiles = validatedFiles.filter((file) => !file.isIgnored);
-    const filesWithErrors = updatedFiles.map((file) => ({
-      ...file,
-      errors: validateData(file),
-    }));
-    const incompleteFiles = filesWithErrors.filter(
-      (file) => file.errors && file.errors.length > 0,
-    );
     if (incompleteFiles.length > 0) {
       const count = incompleteFiles.length;
       toast.warning(
@@ -282,12 +146,12 @@ export default function MediaList({
       return;
     }
 
-    setIsSaving(true);
+    setIsStartingTransfer(true);
     try {
       const response = await fetch("/api/save", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(updatedFiles),
+        body: JSON.stringify(activeFiles),
       });
       const data = (await response.json()) as {
         ok?: boolean;
@@ -296,7 +160,6 @@ export default function MediaList({
 
       if (!response.ok || !data.ok) {
         toast.error("Failed to start transfer");
-        return;
       }
     } catch (error) {
       log({
@@ -307,7 +170,7 @@ export default function MediaList({
       });
       toast.error("Unexpected error");
     } finally {
-      setIsSaving(false);
+      setIsStartingTransfer(false);
     }
   }
 
@@ -339,7 +202,7 @@ export default function MediaList({
     />
   );
 
-  if (validatedFiles.length === 0) {
+  if (files.length === 0) {
     return (
       <div className="h-full flex flex-col px-4 pt-6">
         <PageHeader title="Transfers" actions={refreshButton} />
@@ -353,7 +216,7 @@ export default function MediaList({
     );
   }
 
-  const sections = binSelected ? binnedFiles : sortedFiles;
+  const sections = isBinView ? binnedFiles : sortedFiles;
   const isViewEmpty = Object.keys(sections).length === 0;
 
   return (
@@ -370,7 +233,7 @@ export default function MediaList({
             actions={refreshButton}
           />
 
-          <div className="flex items-center justify-between gap-3">
+          <div>
             <SegmentedControl<View>
               value={view}
               onChange={handleViewChange}
@@ -388,47 +251,18 @@ export default function MediaList({
                       Ignored
                     </span>
                   ),
-                  badge: binCount,
+                  badge: ignoredCount,
                 },
               ]}
             />
           </div>
 
-          <AnimatePresence initial={false}>
-            {!binSelected && filesWithErrors.length > 0 && (
-              <motion.div
-                key="errors-banner"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center gap-3 rounded-2xl border border-warning/25 bg-warning/8 px-4 py-3">
-                  <FontAwesomeIcon
-                    icon={faTriangleExclamation}
-                    className="text-warning shrink-0"
-                  />
-                  <p className="grow text-sm text-text-secondary">
-                    <span className="font-semibold text-text">
-                      {filesWithErrors.length} file
-                      {filesWithErrors.length > 1 ? "s" : ""}
-                    </span>{" "}
-                    need{filesWithErrors.length > 1 ? "" : "s"} more info before
-                    transferring.
-                  </p>
-                  <Button
-                    size="small"
-                    color="default"
-                    onClick={handleSelectIncomplete}
-                    className="shrink-0"
-                  >
-                    Select
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {!isBinView && (
+            <IncompleteFilesBanner
+              count={incompleteFiles.length}
+              onSelect={handleSelectIncomplete}
+            />
+          )}
 
           <div
             data-loading={isFilesLoading || undefined}
@@ -436,23 +270,23 @@ export default function MediaList({
           >
             {isViewEmpty ? (
               <MediaListEmpty
-                icon={binSelected ? faTrashCan : faFolderOpen}
-                title={binSelected ? "Nothing ignored" : "All set"}
+                icon={isBinView ? faTrashCan : faFolderOpen}
+                title={isBinView ? "Nothing ignored" : "All set"}
                 message={
-                  binSelected
+                  isBinView
                     ? "Files you ignore will be listed here and won't be transferred."
                     : "Every file is in the bin. Restore some to transfer them."
                 }
               />
             ) : (
-              <MediaListAccordion
+              <LibrarySectionList
                 key={view}
                 sections={sections}
-                keyPrefix={binSelected ? "bin-" : ""}
+                keyPrefix={isBinView ? BIN_KEY_PREFIX : ""}
                 openSections={openSections}
                 onToggleSection={handleToggleSection}
-                onSelect={handleSelect}
-                onEditOne={binSelected ? undefined : handleEditOne}
+                onSelect={select}
+                onEditOne={isBinView ? undefined : handleEditOne}
               />
             )}
           </div>
@@ -461,18 +295,18 @@ export default function MediaList({
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 px-3 pb-3 pt-10 bg-linear-to-t from-background via-background/80 to-transparent">
         <div className="pointer-events-auto">
-          <FileSelectionBox
+          <TransferActionBar
             selectedCount={selectedFiles.length}
             transferCount={activeFiles.length}
-            binSelected={binSelected}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onRestore={handleRestore}
-            onSave={handleSave}
-            onClearSelection={handleClearSelection}
+            isBinView={isBinView}
+            onEdit={() => setIsEditOpen(true)}
+            onIgnore={ignoreSelected}
+            onRestore={restoreSelected}
+            onTransfer={handleTransfer}
+            onClearSelection={clearSelection}
             onSelectAll={handleSelectAll}
-            isSaving={isSaving}
-            saveDisabled={isTransferInProgress || activeFiles.length === 0}
+            isTransferring={isStartingTransfer}
+            isTransferDisabled={activeFiles.length === 0}
           />
         </div>
       </div>
@@ -480,9 +314,9 @@ export default function MediaList({
       <MediaEditForm
         files={selectedFiles}
         libraries={libraries}
-        isOpen={isModalOpen}
-        onClose={handleClose}
-        onSaveMediaInfo={handleSaveMediaInfo}
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSave={handleSaveEdit}
       />
     </div>
   );

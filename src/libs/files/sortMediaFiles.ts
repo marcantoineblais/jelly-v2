@@ -7,14 +7,14 @@ export default function sortMediaFiles(file1: MediaFile, file2: MediaFile) {
 
   if (titleSort !== 0) return titleSort;
 
-  const season1 = file1.mediaInfo.season || 0;
-  const season2 = file2.mediaInfo.season || 0;
+  const season1 = file1.mediaInfo.season ?? 0;
+  const season2 = file2.mediaInfo.season ?? 0;
   const seasonSort = season1 - season2;
 
   if (seasonSort !== 0) return seasonSort;
 
-  const episode1 = file1.mediaInfo.episode || 0;
-  const episode2 = file2.mediaInfo.episode || 0;
+  const episode1 = file1.mediaInfo.episode ?? 0;
+  const episode2 = file2.mediaInfo.episode ?? 0;
   const episodeSort = episode1 - episode2;
 
   return episodeSort;

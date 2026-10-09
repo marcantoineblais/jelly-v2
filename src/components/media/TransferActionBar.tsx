@@ -10,44 +10,46 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AnimatePresence, motion } from "framer-motion";
-import Button from "./Button";
-import IconButton from "./IconButton";
+import { quickTransition, springTransition } from "@/src/libs/motion";
+import Button from "../ui/Button";
+import IconButton from "../ui/IconButton";
 
-type FileSelectionBoxProps = {
-  selectedCount?: number;
-  transferCount?: number;
-  binSelected?: boolean;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onRestore?: () => void;
-  onSave?: () => void;
-  onClearSelection?: () => void;
-  onSelectAll?: () => void;
-  saveDisabled?: boolean;
-  isSaving?: boolean;
+type TransferActionBarProps = {
+  selectedCount: number;
+  /** Number of files that a transfer would move. */
+  transferCount: number;
+  isBinView: boolean;
+  onEdit: () => void;
+  onIgnore: () => void;
+  onRestore: () => void;
+  onTransfer: () => void;
+  onClearSelection: () => void;
+  onSelectAll: () => void;
+  isTransferDisabled?: boolean;
+  isTransferring?: boolean;
 };
 
-/** Sticky action bar for the Transfers page. */
-export default function FileSelectionBox({
-  selectedCount = 0,
-  transferCount = 0,
-  binSelected = false,
-  onEdit = () => {},
-  onDelete = () => {},
-  onRestore = () => {},
-  onSave = () => {},
-  onClearSelection = () => {},
-  onSelectAll = () => {},
-  saveDisabled = true,
-  isSaving = false,
-}: FileSelectionBoxProps) {
+/** Sticky action bar of the Transfers page. */
+export default function TransferActionBar({
+  selectedCount,
+  transferCount,
+  isBinView,
+  onEdit,
+  onIgnore,
+  onRestore,
+  onTransfer,
+  onClearSelection,
+  onSelectAll,
+  isTransferDisabled = false,
+  isTransferring = false,
+}: TransferActionBarProps) {
   const hasSelection = selectedCount > 0;
 
   return (
     <motion.div
       initial={{ y: 24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+      transition={springTransition}
       className="glass rounded-2xl border border-border-strong shadow-2xl shadow-black/60 p-2 pl-3 flex items-center gap-2"
     >
       <div className="min-w-0 grow flex items-center gap-2 h-10">
@@ -58,7 +60,7 @@ export default function FileSelectionBox({
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.15 }}
+              transition={quickTransition}
               className="flex items-center gap-2 min-w-0"
             >
               <IconButton
@@ -79,7 +81,7 @@ export default function FileSelectionBox({
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.15 }}
+              transition={quickTransition}
               onClick={onSelectAll}
               className="flex items-center gap-2 min-w-0 text-sm text-text-muted hover:text-text cursor-pointer transition-colors"
             >
@@ -97,10 +99,10 @@ export default function FileSelectionBox({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.15 }}
+            transition={quickTransition}
             className="flex items-center gap-2"
           >
-            {!binSelected && (
+            {!isBinView && (
               <Button
                 color="default"
                 onClick={onEdit}
@@ -111,7 +113,7 @@ export default function FileSelectionBox({
                 <span className="max-sm:hidden">Edit</span>
               </Button>
             )}
-            {binSelected ? (
+            {isBinView ? (
               <Button
                 color="default"
                 onClick={onRestore}
@@ -124,7 +126,7 @@ export default function FileSelectionBox({
             ) : (
               <Button
                 color="default"
-                onClick={onDelete}
+                onClick={onIgnore}
                 title="Move selected files to the bin"
                 className="px-3 min-w-0 hover:text-warning"
               >
@@ -136,12 +138,12 @@ export default function FileSelectionBox({
         )}
       </AnimatePresence>
 
-      {!binSelected && (
+      {!isBinView && (
         <Button
           color="primary"
-          onClick={onSave}
-          isDisabled={saveDisabled}
-          isLoading={isSaving}
+          onClick={onTransfer}
+          isDisabled={isTransferDisabled}
+          isLoading={isTransferring}
           title="Move all files to their library"
           className="px-4"
         >

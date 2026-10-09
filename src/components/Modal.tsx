@@ -1,14 +1,10 @@
 "use client";
 
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { EASE_OUT } from "@/src/libs/motion";
 
 import IconButton from "./ui/IconButton";
 
@@ -16,6 +12,7 @@ type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onMount?: () => void;
+  /** Called once the closing animation has finished. */
   onUnmount?: () => void;
   isLoading?: boolean;
   title: string;
@@ -24,7 +21,17 @@ type ModalProps = {
   closeOnOutsideClick?: boolean;
 };
 
-const FADE_DURATION = 300;
+const DURATION = 0.3;
+
+// Portals need `document`, which only exists after hydration.
+const subscribe = () => () => {};
+function useIsClient() {
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+}
 
 export default function Modal({
   isOpen,
@@ -37,59 +44,13 @@ export default function Modal({
   closeOnOutsideClick = false,
   isLoading = false,
 }: ModalProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const unmountTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isClient = useIsClient();
   const wasOpenRef = useRef(false);
-  const mountModal = useCallback(
-    (isOpen: boolean) => {
-      if (isOpen) {
-        if (unmountTimeoutRef.current) {
-          clearTimeout(unmountTimeoutRef.current);
-          unmountTimeoutRef.current = null;
-        }
-        setIsMounted(true);
-        if (!wasOpenRef.current) {
-          wasOpenRef.current = true;
-          onMount?.();
-        }
-        return;
-      }
-
-      if (!wasOpenRef.current) return;
-
-      wasOpenRef.current = false;
-      setIsVisible(false);
-      unmountTimeoutRef.current = setTimeout(() => {
-        setIsMounted(false);
-        unmountTimeoutRef.current = null;
-        onUnmount?.();
-      }, FADE_DURATION);
-    },
-    [onUnmount, onMount],
-  );
 
   useEffect(() => {
-    startTransition(() => mountModal(isOpen));
-  }, [isOpen, mountModal]);
-
-  useEffect(() => {
-    return () => {
-      if (unmountTimeoutRef.current) {
-        clearTimeout(unmountTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isMounted) return;
-
-    const frame = requestAnimationFrame(() => {
-      setIsVisible(true);
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [isMounted]);
+    if (isOpen && !wasOpenRef.current) onMount?.();
+    wasOpenRef.current = isOpen;
+  }, [isOpen, onMount]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -97,61 +58,61 @@ export default function Modal({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isMounted) return;
     document.body.dataset.modalOpen = "true";
     return () => {
+      document.removeEventListener("keydown", handler);
       delete document.body.dataset.modalOpen;
     };
-  }, [isMounted]);
+  }, [isOpen, onClose]);
 
-  function handleOutsideClick() {
-    if (closeOnOutsideClick) {
-      onClose();
-    }
-  }
-
-  if (!isMounted) return null;
+  if (!isClient) return null;
 
   return createPortal(
-    <div
-      className="group/modal fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity data-visible:opacity-100"
-      style={{ transitionDuration: `${FADE_DURATION}ms` }}
-      data-visible={isVisible || undefined}
-      role="alert"
-      aria-live="assertive"
-      aria-labelledby={title}
-      tabIndex={-1}
-      onPointerDown={handleOutsideClick}
-    >
-      <div
-        onPointerDown={(e) => e.stopPropagation()}
-        data-loading={isLoading || undefined}
-        className="max-md:w-full md:min-w-md w-max max-w-2xl max-h-[calc(100dvh-1rem)] flex flex-col bg-surface-card border border-border-strong rounded-2xl shadow-2xl shadow-black/70 overflow-hidden data-loading:opacity-0 translate-y-6 sm:translate-y-2 sm:scale-[0.97] transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] group-data-visible/modal:translate-y-0 group-data-visible/modal:scale-100"
-        style={{ transitionDuration: `${FADE_DURATION}ms` }}
-      >
-        <div className="w-full flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
-          <h2 className="text-base font-semibold text-text">{title}</h2>
-          <IconButton
-            onClick={onClose}
-            icon={faXmark}
-            ariaLabel="Close"
-            className="size-8 rounded-full flex items-center justify-center hover:bg-surface-hover"
-          />
-        </div>
-        <div className="w-full px-5 pb-4 pt-1 overflow-y-auto grow min-h-0">
-          {children}
-        </div>
-        {footer && (
-          <div className="w-full flex justify-end gap-2 px-5 py-3.5 border-t border-border bg-surface/40 shrink-0">
-            {footer}
-          </div>
-        )}
-      </div>
-    </div>,
+    <AnimatePresence onExitComplete={onUnmount}>
+      {isOpen && (
+        <motion.div
+          key="modal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: DURATION }}
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          tabIndex={-1}
+          onPointerDown={() => closeOnOutsideClick && onClose()}
+        >
+          <motion.div
+            initial={{ y: 24, scale: 0.97 }}
+            animate={{ y: 0, scale: 1 }}
+            exit={{ y: 24, scale: 0.97 }}
+            transition={{ duration: DURATION, ease: EASE_OUT }}
+            onPointerDown={(e) => e.stopPropagation()}
+            data-loading={isLoading || undefined}
+            className="max-md:w-full md:min-w-md w-max max-w-2xl max-h-[calc(100dvh-1rem)] flex flex-col bg-surface-card border border-border-strong rounded-2xl shadow-2xl shadow-black/70 overflow-hidden data-loading:opacity-0"
+          >
+            <div className="w-full flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
+              <h2 className="text-base font-semibold text-text">{title}</h2>
+              <IconButton
+                onClick={onClose}
+                icon={faXmark}
+                ariaLabel="Close"
+                className="size-8 rounded-full flex items-center justify-center hover:bg-surface-hover"
+              />
+            </div>
+            <div className="w-full px-5 pb-4 pt-1 overflow-y-auto grow min-h-0">
+              {children}
+            </div>
+            {footer && (
+              <div className="w-full flex justify-end gap-2 px-5 py-3.5 border-t border-border bg-surface/40 shrink-0">
+                {footer}
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
   );
 }

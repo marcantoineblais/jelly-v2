@@ -1,4 +1,5 @@
 import { twMerge } from "tailwind-merge";
+import SectionLabel from "../ui/SectionLabel";
 
 export default function MediaInfoLine({
   label = "",
@@ -13,9 +14,7 @@ export default function MediaInfoLine({
 }) {
   return (
     <div className={twMerge("min-w-0 flex flex-col gap-0.5", className)}>
-      <dt className="text-[11px] uppercase tracking-wider text-text-muted">
-        {label}
-      </dt>
+      <SectionLabel as="dt">{label}</SectionLabel>
       <dd
         className={twMerge(
           "text-sm text-text-secondary break-all",

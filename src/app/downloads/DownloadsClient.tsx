@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClockRotateLeft,
@@ -8,24 +8,21 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import type { JackettIndexer } from "@/src/libs/downloads/jackett";
-import { SortBy, type FeedItem } from "@/src/libs/downloads/feed-format";
-import useFetch from "../../hooks/use-fetch";
+import type { FeedItem, SortBy } from "@/src/libs/downloads/feed-format";
 import usePersistentState from "@/src/hooks/use-persistent-state";
-import { FeedResponse } from "../api/downloads/feed/route";
-import {
-  Accordion,
-  AccordionButton,
-  useAccordion,
-} from "@/src/components/accordion";
-import DownloadResults from "@/src/components/downloads/DownloadResults";
-import SearchStatus from "@/src/components/downloads/SearchStatus";
+import useFeedSearch from "@/src/hooks/use-feed-search";
+import { useSession } from "@/src/providers/session-provider-client";
+import type { SessionData } from "@/src/providers/session-provider";
+import { useToast } from "@/src/providers/ToastProvider";
 import {
   DOWNLOAD_DEFAULT_CATEGORIES,
   DOWNLOAD_SORT_BY,
   DOWNLOAD_SORT_ORDER,
 } from "@/src/config";
-import { useToast } from "@/src/providers/ToastProvider";
-import { isAbortError } from "@/src/libs/fetch-error";
+import DownloadResults from "@/src/components/downloads/DownloadResults";
+import SearchStatus from "@/src/components/downloads/SearchStatus";
+import Collapse from "@/src/components/ui/Collapse";
+import DisclosureButton from "@/src/components/ui/DisclosureButton";
 import RelativeTime from "@/src/components/ui/RelativeTime";
 import Input from "@/src/components/ui/Input";
 import SelectInput from "@/src/components/ui/SelectInput";
@@ -33,13 +30,13 @@ import Button from "@/src/components/ui/Button";
 import PageHeader from "@/src/components/ui/PageHeader";
 import IconButton from "@/src/components/ui/IconButton";
 
-type FormData = {
-  title: string;
-  indexer: string;
-  sortBy: SortBy;
-  sortOrder: "asc" | "desc";
-  category: string;
-  limit: number | null;
+type Filters = Required<NonNullable<SessionData["downloads"]>>;
+
+const DEFAULT_FILTERS: Filters = {
+  indexer: "",
+  category: "",
+  sortBy: "date",
+  sortOrder: "desc",
 };
 
 type LastSearch = {
@@ -49,45 +46,36 @@ type LastSearch = {
   searchedAt: number;
 };
 
-const EMPTY_FORM: FormData = {
-  title: "",
-  indexer: "",
-  sortBy: "date",
-  sortOrder: "desc",
-  category: "",
-  limit: null,
-};
-
 type DownloadsClientProps = {
   indexers: JackettIndexer[];
 };
 
 export default function DownloadsClient({ indexers }: DownloadsClientProps) {
-  const { fetchData } = useFetch();
   const toast = useToast();
-  const { isOpen, toggle } = useAccordion();
+  const { session, updateSession } = useSession();
+  const { search, cancel, isSearching } = useFeedSearch();
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  const [formData, setFormData] = usePersistentState<FormData>(
-    "downloads:form",
-    EMPTY_FORM,
-  );
+  // Filters are user preferences (saved in the session); the typed title and
+  // the last results are kept in this browser.
+  const filters: Filters = { ...DEFAULT_FILTERS, ...session.downloads };
+  const [title, setTitle] = usePersistentState("downloads:title", "");
   const [lastSearch, setLastSearch, clearLastSearch] =
     usePersistentState<LastSearch | null>("downloads:last-search", null);
 
-  const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const selectedIndexer = indexers.find((i) => i.id === filters.indexer);
 
-  // Cancel any in-flight search when leaving the page
-  useEffect(() => () => abortRef.current?.abort(), []);
+  function updateFilters(patch: Partial<Filters>) {
+    updateSession({ downloads: { ...filters, ...patch } });
+  }
 
-  const categories = useMemo(() => {
-    const indexer = indexers.find((i) => i.id === formData.indexer);
-    const list = indexer ? indexer.categories : DOWNLOAD_DEFAULT_CATEGORIES;
-    return list.map((category) => ({
-      value: category.id,
-      label: category.name,
-    }));
-  }, [formData.indexer, indexers]);
+  const categoryOptions = useMemo(
+    () =>
+      (selectedIndexer?.categories ?? DOWNLOAD_DEFAULT_CATEGORIES).map(
+        (category) => ({ value: category.id, label: category.name }),
+      ),
+    [selectedIndexer],
+  );
 
   const indexerOptions = useMemo(
     () =>
@@ -109,94 +97,61 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
     [],
   );
 
-  const activeFilters =
-    (formData.indexer ? 1 : 0) +
-    (formData.category ? 1 : 0) +
-    (formData.sortBy !== EMPTY_FORM.sortBy ||
-    formData.sortOrder !== EMPTY_FORM.sortOrder
+  const activeFilterCount =
+    (filters.indexer ? 1 : 0) +
+    (filters.category ? 1 : 0) +
+    (filters.sortBy !== DEFAULT_FILTERS.sortBy ||
+    filters.sortOrder !== DEFAULT_FILTERS.sortOrder
       ? 1
       : 0);
 
-  function handleIndexerChange(id: string) {
-    const indexer = indexers.find((i) => i.id === id);
-    setFormData((prev) => ({
-      ...prev,
-      indexer: id,
-      category: "",
-      limit: indexer?.limit ?? null,
-    }));
-  }
-
-  function handleCancel() {
-    abortRef.current?.abort();
-    abortRef.current = null;
-  }
-
   async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (isSearchLoading) return;
+    if (isSearching) return;
 
-    const { indexer, sortBy, sortOrder, category, limit } = formData;
-    const title = formData.title.trim();
+    const query = title.trim();
+    const { indexer, category, sortBy, sortOrder } = filters;
 
-    if (!title && !category) {
+    if (!query && !category) {
       toast.warning("Enter a title or pick a category to search.");
       return;
     }
 
-    const controller = new AbortController();
-    abortRef.current = controller;
+    const params = new URLSearchParams({
+      name: query || "*",
+      indexers: indexer,
+      sortBy,
+      sortOrder,
+    });
+    if (category) params.set("category", category);
+    if (selectedIndexer?.limit)
+      params.set("limit", String(selectedIndexer.limit));
 
-    try {
-      const searchParams = new URLSearchParams({
-        name: title || "*",
-        indexers: indexer,
-        sortBy,
-        sortOrder,
-      });
-      if (category) searchParams.set("category", category);
-      if (limit != null && limit > 0) searchParams.set("limit", String(limit));
+    const items = await search(params);
+    if (items === null) return;
 
-      const { data } = await fetchData<FeedResponse>(
-        `/api/downloads/feed?${searchParams.toString()}`,
-        { setIsLoading: setIsSearchLoading, signal: controller.signal },
-      );
-
-      const categoryName = categories.find((c) => c.value === category)?.label;
-      setLastSearch({
-        items: data.items,
-        query: title || categoryName || "*",
-        indexerName:
-          indexers.find((i) => i.id === indexer)?.name ?? "All indexers",
-        searchedAt: Date.now(),
-      });
-      if (isOpen) toggle();
-    } catch (err) {
-      if (isAbortError(err)) {
-        toast.info("Search cancelled");
-        return;
-      }
-      setLastSearch({
-        items: [],
-        query: title,
-        indexerName: "",
-        searchedAt: Date.now(),
-      });
-    } finally {
-      if (abortRef.current === controller) abortRef.current = null;
-    }
+    setLastSearch({
+      items,
+      query:
+        query ||
+        categoryOptions.find((c) => c.value === category)?.label ||
+        "*",
+      indexerName: selectedIndexer?.name ?? "All indexers",
+      searchedAt: Date.now(),
+    });
+    setIsFiltersOpen(false);
   }
 
   return (
     <main className="container-main h-full w-full flex flex-col gap-4 px-4 pt-6 overflow-hidden">
       <PageHeader
-        title="Search"
-        subtitle={`Find torrents across ${indexers.length || "your"} indexer${indexers.length === 1 ? "" : "s"}`}
+        title="Downloads"
+        subtitle={`Search torrents across ${indexers.length || "your"} indexer${indexers.length === 1 ? "" : "s"}`}
       />
 
       <form
         onSubmit={handleSubmit}
-        className="card p-3 flex flex-col gap-3 shrink-0 animate-fade-in-up"
+        className="card p-3 flex flex-col gap-3 shrink-0"
       >
         <div className="flex gap-2">
           <div className="relative grow min-w-0">
@@ -208,24 +163,24 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
               id="title"
               aria-label="Search by title"
               placeholder="Search by title…"
-              value={formData.title}
-              onChange={(value) =>
-                setFormData((prev) => ({ ...prev, title: value }))
-              }
+              value={title}
+              onChange={setTitle}
+              // Picking an indexer is part of almost every search
+              onFocus={() => setIsFiltersOpen(true)}
               autoComplete="off"
               isClearable
               className="[&_input]:pl-10 [&_input]:min-w-0"
             />
           </div>
-          <AccordionButton
-            isOpen={isOpen}
-            onToggle={toggle}
+          <DisclosureButton
+            isOpen={isFiltersOpen}
+            onToggle={() => setIsFiltersOpen((open) => !open)}
             label="Filters"
-            badge={activeFilters}
+            badge={activeFilterCount}
           />
         </div>
 
-        <Accordion isOpen={isOpen}>
+        <Collapse isOpen={isFiltersOpen} className="-mx-1 px-1">
           <div className="grid grid-cols-2 gap-2 pb-1">
             <SelectInput
               id="indexer"
@@ -233,25 +188,22 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
               options={indexerOptions}
               label="Indexer"
               placeholder="All indexers"
-              value={new Set([formData.indexer])}
+              value={new Set([filters.indexer])}
               onChange={(value) =>
-                handleIndexerChange(([...value][0] as string) ?? "")
+                updateFilters({ indexer: [...value][0] ?? "", category: "" })
               }
               isClearable
             />
-            {categories.length > 0 && (
+            {categoryOptions.length > 0 && (
               <SelectInput
                 id="category"
                 className="col-span-2 sm:col-span-1"
                 label="Category"
                 placeholder="Any category"
-                value={new Set([formData.category])}
-                options={categories}
+                value={new Set([filters.category])}
+                options={categoryOptions}
                 onChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    category: ([...value][0] as string) ?? "",
-                  }))
+                  updateFilters({ category: [...value][0] ?? "" })
                 }
                 isClearable
               />
@@ -260,43 +212,38 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
               id="sortBy"
               label="Sort by"
               className="min-w-0"
-              value={new Set([formData.sortBy])}
+              value={new Set([filters.sortBy])}
               options={sortOptions}
-              onChange={(selection) =>
-                setFormData((prev) => {
-                  const sortBy = Array.from(selection)[0];
-                  if (!sortBy) return prev;
-                  return { ...prev, sortBy: sortBy as SortBy };
-                })
-              }
+              onChange={(value) => {
+                const sortBy = [...value][0];
+                if (sortBy) updateFilters({ sortBy: sortBy as SortBy });
+              }}
             />
             <SelectInput
               id="sortOrder"
               className="min-w-0"
               label="Order"
-              value={new Set([formData.sortOrder])}
+              value={new Set([filters.sortOrder])}
               options={sortOrderOptions}
-              onChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  sortOrder:
-                    ([...value][0] as "asc" | "desc") || prev.sortOrder,
-                }))
-              }
+              onChange={(value) => {
+                const sortOrder = [...value][0] as "asc" | "desc" | undefined;
+                if (sortOrder) updateFilters({ sortOrder });
+              }}
             />
           </div>
-        </Accordion>
+        </Collapse>
 
-        {isSearchLoading ? (
+        {isSearching ? (
           <Button
             key="cancel"
             type="button"
             color="default"
             className="w-full"
             onClick={(e) => {
-              // Prevent the click from submitting once the button re-renders
+              // The button turns into "submit" on re-render; don't let this
+              // click submit the form again.
               e.preventDefault();
-              handleCancel();
+              cancel();
             }}
           >
             <FontAwesomeIcon icon={faXmark} className="text-xs" />
@@ -310,11 +257,11 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
         )}
       </form>
 
-      {isSearchLoading ? (
-        <SearchStatus onCancel={handleCancel} />
+      {isSearching ? (
+        <SearchStatus />
       ) : (
         lastSearch && (
-          <div className="flex items-center justify-between gap-3 text-xs text-text-muted shrink-0 animate-fade-in">
+          <div className="flex items-center justify-between gap-3 text-xs text-text-muted shrink-0">
             <span className="min-w-0 truncate">
               <FontAwesomeIcon
                 icon={faClockRotateLeft}
@@ -325,7 +272,7 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
               </span>{" "}
               result{lastSearch.items.length === 1 ? "" : "s"} for{" "}
               <span className="text-text-secondary">“{lastSearch.query}”</span>
-              {lastSearch.indexerName && ` · ${lastSearch.indexerName}`} ·{" "}
+              {` · ${lastSearch.indexerName} · `}
               <RelativeTime timestamp={lastSearch.searchedAt} />
             </span>
             <IconButton
@@ -340,7 +287,7 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
       )}
 
       <div
-        data-loading={isSearchLoading || undefined}
+        data-loading={isSearching || undefined}
         className="flex-1 min-h-0 flex flex-col transition-opacity duration-300 data-loading:opacity-40 data-loading:pointer-events-none"
       >
         <DownloadResults

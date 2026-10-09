@@ -47,10 +47,15 @@ export default function Autocomplete({
   validate = () => {},
 }: Props) {
   const [suggestions, setSuggestions] = useState<Option[]>(options);
-  const { setIsOpen, setReference, onSelectKeyDown, floatingOptionsProps } =
-    useFloatingOptions({
-      options: suggestions,
-    });
+  const {
+    setIsOpen,
+    setReference,
+    onSelectKeyDown,
+    isInFloating,
+    floatingOptionsProps,
+  } = useFloatingOptions({
+    options: suggestions,
+  });
 
   useEffect(() => {
     startTransition(() => setSuggestions(options));
@@ -78,6 +83,7 @@ export default function Autocomplete({
 
   function handleContainerBlur(e: React.FocusEvent<HTMLDivElement>) {
     if (e.currentTarget.contains(e.relatedTarget)) return;
+    if (isInFloating(e.relatedTarget)) return;
     setIsOpen(false);
   }
 

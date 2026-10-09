@@ -66,6 +66,7 @@ export default function SelectInput<T>({
     reference,
     setReference,
     onSelectKeyDown,
+    isInFloating,
     floatingOptionsProps,
   } = useFloatingOptions({
     options,
@@ -127,6 +128,7 @@ export default function SelectInput<T>({
 
   function handleContainerBlur(e: React.FocusEvent<HTMLDivElement>) {
     if (e.currentTarget.contains(e.relatedTarget)) return;
+    if (isInFloating(e.relatedTarget)) return;
     handleClickOutside();
   }
 

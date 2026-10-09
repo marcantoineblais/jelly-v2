@@ -28,6 +28,7 @@ import {
   getStatusCategory,
 } from "@/src/libs/qbit/format";
 import { formatDataSize } from "@/src/libs/format-data-size";
+import InfoBox from "@/src/components/ui/InfoBox";
 
 export type SortBy = "name" | "size" | "progress" | "status" | "eta";
 
@@ -194,7 +195,7 @@ export default function TorrentsClient({
       />
 
       {/* Sorting controls */}
-      <div className="flex gap-2 shrink-0 animate-fade-in-up">
+      <div className="flex gap-2 shrink-0">
         <SelectInput
           id="sort-by"
           className="grow min-w-0"
@@ -270,7 +271,7 @@ export default function TorrentsClient({
       >
         {selectedItem && (
           <div className="flex flex-col gap-4 md:w-lg">
-            <div className="rounded-xl bg-surface/60 border border-border px-3 py-2.5">
+            <InfoBox>
               <p className="text-sm font-medium text-text break-all">
                 {selectedItem?.name}
               </p>
@@ -279,7 +280,7 @@ export default function TorrentsClient({
                 {Math.round(selectedItem.progress * 100)}% of{" "}
                 {formatDataSize(selectedItem.size)}
               </p>
-            </div>
+            </InfoBox>
             {isLoadingFiles ? (
               <div className="flex justify-center py-4">
                 <Spinner size="sm" />

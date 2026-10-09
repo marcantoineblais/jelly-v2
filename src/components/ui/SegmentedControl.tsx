@@ -2,6 +2,7 @@
 
 import { ReactNode, useId } from "react";
 import { motion } from "framer-motion";
+import { springTransition } from "@/src/libs/motion";
 import { twJoin, twMerge } from "tailwind-merge";
 
 export type Segment<T extends string> = {
@@ -54,7 +55,7 @@ export default function SegmentedControl<T extends string>({
               <motion.span
                 layoutId={layoutId}
                 className="absolute inset-0 rounded-lg bg-surface-hover ring-1 ring-border-strong shadow-btn"
-                transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                transition={springTransition}
               />
             )}
             <span className="relative">{segment.label}</span>

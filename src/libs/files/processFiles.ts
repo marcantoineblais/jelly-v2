@@ -130,6 +130,7 @@ function buildDestinationPath(file: MediaFile): string | null {
     return path.join(
       basepath,
       folderName,
+      // Jellyfin convention: season 0 (and unknown seasons) go in "Specials"
       season ? `Season ${formatNumber(season)}` : "Specials",
       filename + file.ext,
     );

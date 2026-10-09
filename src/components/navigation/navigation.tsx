@@ -14,6 +14,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { springTransition } from "@/src/libs/motion";
 import { twJoin } from "tailwind-merge";
 import useFetch from "@/src/hooks/use-fetch";
 import useModal from "@/src/hooks/useModal";
@@ -27,7 +28,7 @@ type NavItem = { href: string; label: string; icon: IconDefinition };
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Transfers", icon: faArrowRightArrowLeft },
-  { href: "/downloads", label: "Search", icon: faMagnifyingGlass },
+  { href: "/downloads", label: "Downloads", icon: faMagnifyingGlass },
   { href: "/trackers", label: "Trackers", icon: faSatelliteDish },
   { href: "/torrents", label: "Torrents", icon: faCloudArrowDown },
 ];
@@ -99,11 +100,7 @@ export default function Navigation() {
                     <motion.span
                       layoutId="nav-pill"
                       className="absolute inset-0 rounded-full bg-primary shadow-glow"
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 38,
-                      }}
+                      transition={springTransition}
                     />
                   )}
                   <FontAwesomeIcon
@@ -178,12 +175,12 @@ export function MobileTabBar() {
                   <motion.span
                     layoutId="tab-indicator"
                     className="absolute top-0 h-0.5 w-10 rounded-full bg-primary"
-                    transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                    transition={springTransition}
                   />
                 )}
                 <motion.span
                   animate={{ scale: active ? 1.12 : 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  transition={springTransition}
                 >
                   <FontAwesomeIcon icon={item.icon} className="text-base" />
                 </motion.span>

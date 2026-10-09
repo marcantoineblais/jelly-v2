@@ -95,7 +95,8 @@ export function extractInfo(
   let title = extractTitle(filename, matcher);
   let year = extractYear(filename);
 
-  if (!episode && hasMainFolder) {
+  // Episode/season 0 are valid (pilots, specials): only treat undefined as missing
+  if (episode === undefined && hasMainFolder) {
     [season, episode, matcher] = extractSeries(mainFolder);
   }
 
@@ -103,7 +104,7 @@ export function extractInfo(
     title = extractTitle(mainFolder, matcher);
   }
 
-  if (!season && hasSeasonFolder) {
+  if (season === undefined && hasSeasonFolder) {
     const match = seasonFolder.match(SEASON_PATTERN);
     if (match) season = parseInt(match[2]);
   }

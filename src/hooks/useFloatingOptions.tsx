@@ -31,7 +31,7 @@ export default function useFloatingOptions<T>({
   );
 
   const {
-    refs: { reference, setReference, setFloating },
+    refs: { reference, floating, setReference, setFloating },
     floatingStyles,
     placement,
   } = useFloating({
@@ -114,6 +114,14 @@ export default function useFloatingOptions<T>({
     ],
   );
 
+  // The options list is rendered in a portal, so DOM containment checks
+  // (e.g. on blur) must include it explicitly.
+  const isInFloating = useCallback(
+    (node: EventTarget | null) =>
+      node instanceof Node && Boolean(floating.current?.contains(node)),
+    [floating],
+  );
+
   const floatingOptionsProps = useMemo(
     () => ({
       isOpen,
@@ -159,6 +167,7 @@ export default function useFloatingOptions<T>({
     onSelectKeyDown,
     reference,
     setReference,
+    isInFloating,
     floatingOptionsProps,
   };
 }

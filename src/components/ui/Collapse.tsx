@@ -1,41 +1,34 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { twMerge } from "tailwind-merge";
+import { fadeTransition } from "@/src/libs/motion";
 
-/** Animated height collapse that unmounts content once closed. */
+/** Animated height collapse; content is unmounted once closed. */
 export default function Collapse({
   isOpen,
   children,
   className,
-  duration = 250,
 }: {
   isOpen: boolean;
   children: ReactNode;
   className?: string;
-  duration?: number;
 }) {
-  const [isRendered, setIsRendered] = useState(isOpen);
-
-  useEffect(() => {
-    if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsRendered(true);
-      return;
-    }
-    const timeout = setTimeout(() => setIsRendered(false), duration);
-    return () => clearTimeout(timeout);
-  }, [isOpen, duration]);
-
   return (
-    <div
-      data-open={isOpen || undefined}
-      className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] ease-[cubic-bezier(0.22,1,0.36,1)] data-open:grid-rows-[1fr] data-open:opacity-100"
-      style={{ transitionDuration: `${duration}ms` }}
-    >
-      <div className={twMerge("min-h-0 overflow-hidden", className)}>
-        {isRendered && children}
-      </div>
-    </div>
+    <AnimatePresence initial={false}>
+      {isOpen && (
+        <motion.div
+          key="collapse"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={fadeTransition}
+          className={twMerge("overflow-hidden", className)}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

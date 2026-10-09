@@ -3,168 +3,72 @@
 import { MediaFile } from "@/src/types/MediaFile";
 import { MediaLibrary } from "@/src/types/MediaLibrary";
 import { startTransition, useEffect, useMemo, useState } from "react";
+import { createFilename } from "@/src/libs/files/createFilename";
+import {
+  applyMediaInfoEdit,
+  createMediaEditForm,
+  EMPTY_MEDIA_EDIT_FORM,
+  type MediaEditFormData,
+} from "@/src/libs/files/applyMediaInfoEdit";
 import Modal from "../Modal";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import CheckboxInput from "../ui/CheckboxInput";
 import NumberInput from "../ui/NumberInput";
 import SelectInput from "../ui/SelectInput";
-import { createFilename } from "@/src/libs/files/createFilename";
+import InfoBox from "../ui/InfoBox";
+
+type MediaEditFormProps = {
+  files: MediaFile[];
+  libraries: MediaLibrary[];
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (form: MediaEditFormData) => void;
+};
 
 export default function MediaEditForm({
-  files = [],
-  libraries = [],
-  isOpen = false,
-  onClose = () => {},
-  onSaveMediaInfo = () => {},
-}: {
-  files: MediaFile[];
-  libraries?: MediaLibrary[];
-  isOpen?: boolean;
-  onClose?: () => void;
-  onSaveMediaInfo?: (form: {
-    title?: string;
-    isSeasonEnabled?: boolean;
-    season?: number | null;
-    isEpisodeEnabled?: boolean;
-    episode?: number | null;
-    isYearEnabled?: boolean;
-    year?: number | null;
-    library?: string | undefined;
-    useOriginalName?: boolean;
-    incrementEpisodes?: boolean;
-  }) => void;
-}) {
-  const [form, setForm] = useState<{
-    title?: string;
-    isSeasonEnabled?: boolean;
-    season?: number | null;
-    isEpisodeEnabled?: boolean;
-    episode?: number | null;
-    isYearEnabled?: boolean;
-    year?: number | null;
-    library?: string;
-    useOriginalName?: boolean;
-    incrementEpisodes?: boolean;
-  }>({
-    title: "",
-    season: null,
-    episode: null,
-    year: null,
-    library: undefined,
-    useOriginalName: false,
-    incrementEpisodes: false,
-    isSeasonEnabled: false,
-    isEpisodeEnabled: false,
-    isYearEnabled: false,
-  });
+  files,
+  libraries,
+  isOpen,
+  onClose,
+  onSave,
+}: MediaEditFormProps) {
+  const [form, setForm] = useState<MediaEditFormData>(EMPTY_MEDIA_EDIT_FORM);
 
   const options = useMemo(
     () =>
       libraries
-        .filter((lab) => lab.name)
-        .map((lab) => ({ label: lab.name, value: lab.name })) as {
-        label: string;
-        value: string;
-      }[],
+        .filter((library) => library.name)
+        .map((library) => ({ label: library.name!, value: library.name! })),
     [libraries],
   );
 
-  // Initialize/reset form state when files or libraries change
+  // Pre-fill the form each time it opens for a new selection
   useEffect(() => {
-    const firstFile = files[0];
-    if (!firstFile) return;
-    startTransition(() => {
-      setForm({
-        title: files.every(
-          (file) => file.mediaInfo.title === firstFile?.mediaInfo.title,
-        )
-          ? (firstFile.mediaInfo.title ?? "")
-          : "",
-        season: files.every(
-          (file) => file.mediaInfo.season === firstFile?.mediaInfo.season,
-        )
-          ? (firstFile.mediaInfo.season ?? null)
-          : null,
-        episode: files.every(
-          (file) => file.mediaInfo.episode === firstFile?.mediaInfo.episode,
-        )
-          ? (firstFile.mediaInfo.episode ?? null)
-          : null,
-        year: files.every(
-          (file) => file.mediaInfo.year === firstFile?.mediaInfo.year,
-        )
-          ? (firstFile.mediaInfo.year ?? null)
-          : null,
-        library:
-          files.every((file) => file.library === firstFile?.library) &&
-          firstFile.library.name
-            ? firstFile.library.name
-            : undefined,
-        useOriginalName: false,
-        incrementEpisodes: false,
-        isSeasonEnabled: files.some(
-          (file) => file.mediaInfo.season !== undefined,
-        ),
-        isEpisodeEnabled: files.some(
-          (file) => file.mediaInfo.episode !== undefined,
-        ),
-        isYearEnabled: files.some((file) => file.mediaInfo.year !== undefined),
-      });
-    });
-  }, [files, libraries]);
+    if (!isOpen || files.length === 0) return;
+    startTransition(() => setForm(createMediaEditForm(files)));
+  }, [files, isOpen]);
 
-  // Handlers for form fields
-  function handleChange(
-    field: string,
-    value: string | number | boolean | null,
+  function handleChange<K extends keyof MediaEditFormData>(
+    field: K,
+    value: MediaEditFormData[K],
   ) {
     setForm((prev) => {
-      // Auto-enable checkboxes when a value is set for season, episode, or year
-      if (field === "season" && (value === null || typeof value === "number")) {
-        return {
-          ...prev,
-          [field]: value,
-          isSeasonEnabled: value != null,
-        };
-      }
-      if (
-        field === "episode" &&
-        (value === null || typeof value === "number")
-      ) {
-        return {
-          ...prev,
-          [field]: value,
-          isEpisodeEnabled: value != null,
-        };
-      }
-      if (field === "year" && (value === null || typeof value === "number")) {
-        return {
-          ...prev,
-          [field]: value,
-          isYearEnabled: value != null,
-        };
-      }
-
-      return { ...prev, [field]: value };
+      const next = { ...prev, [field]: value };
+      // Typing a value enables the matching field, clearing it disables it
+      if (field === "season") next.isSeasonEnabled = value != null;
+      if (field === "episode") next.isEpisodeEnabled = value != null;
+      if (field === "year") next.isYearEnabled = value != null;
+      return next;
     });
   }
 
   const preview = useMemo(() => {
     const first = files[0];
     if (!first) return "";
-    const info = { ...first.mediaInfo };
-    if (form.useOriginalName) info.title = first.name;
-    else if (form.title) info.title = form.title.trim();
-    info.season = form.isSeasonEnabled
-      ? (form.season ?? info.season)
-      : undefined;
-    info.episode = form.isEpisodeEnabled
-      ? (form.episode ?? info.episode)
-      : undefined;
-    info.year = form.isYearEnabled ? (form.year ?? info.year) : undefined;
-    return `${createFilename(info)}${first.ext ?? ""}`;
-  }, [files, form]);
+    const { mediaInfo } = applyMediaInfoEdit(first, form, libraries);
+    return `${createFilename(mediaInfo)}${first.ext ?? ""}`;
+  }, [files, form, libraries]);
 
   const numberFields = [
     {
@@ -197,27 +101,24 @@ export default function MediaEditForm({
     <Modal
       title={files.length > 1 ? `Edit ${files.length} files` : "Edit file"}
       isOpen={isOpen}
-      onClose={() => onClose()}
+      onClose={onClose}
       footer={
         <>
-          <Button color="default" className="w-28" onClick={() => onClose()}>
+          <Button color="default" className="w-28" onClick={onClose}>
             Cancel
           </Button>
-          <Button className="w-28" onClick={() => onSaveMediaInfo(form)}>
+          <Button className="w-28" onClick={() => onSave(form)}>
             Save
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-5 md:w-lg">
-        <div className="rounded-xl bg-surface/60 border border-border px-3 py-2.5">
-          <div className="text-[11px] uppercase tracking-wider text-text-muted">
-            {files.length > 1 ? "Preview (first file)" : "Preview"}
-          </div>
-          <p className="mt-0.5 font-mono text-xs text-primary-light break-all">
+        <InfoBox label={files.length > 1 ? "Preview (first file)" : "Preview"}>
+          <p className="font-mono text-xs text-primary-light break-all">
             {preview}
           </p>
-        </div>
+        </InfoBox>
 
         <div className="flex flex-col gap-2">
           <Input
@@ -286,7 +187,7 @@ export default function MediaEditForm({
           placeholder="(Unchanged)"
           options={options}
           value={new Set([form.library])}
-          onChange={(v) => handleChange("library", [...v][0] ?? "")}
+          onChange={(v) => handleChange("library", [...v][0] || undefined)}
         />
       </div>
     </Modal>

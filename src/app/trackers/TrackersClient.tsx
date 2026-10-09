@@ -5,11 +5,11 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import {
   faMagnifyingGlass,
+  faPen,
   faPlus,
   faTrash,
   faXmark,
@@ -17,23 +17,24 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import usePersistentState from "@/src/hooks/use-persistent-state";
 import PageHeader from "@/src/components/ui/PageHeader";
-import { isAbortError } from "@/src/libs/fetch-error";
 import RelativeTime from "@/src/components/ui/RelativeTime";
 import type { TrackedShow } from "@/src/types/TrackedShow";
 import type { JackettIndexer } from "@/src/libs/downloads/jackett";
 import type { FeedItem } from "@/src/libs/downloads/feed-format";
 import type { CheckTrackerResponse } from "../api/trackers/[id]/check/route";
-import type { FeedResponse } from "../api/downloads/feed/route";
 import { DOWNLOAD_DEFAULT_CATEGORIES } from "@/src/config";
 import useFetch from "@/src/hooks/use-fetch";
 import DownloadResults from "@/src/components/downloads/DownloadResults";
-import {
-  Accordion,
-  AccordionButton,
-  useAccordion,
-} from "@/src/components/accordion";
+import Collapse from "@/src/components/ui/Collapse";
+import DisclosureButton from "@/src/components/ui/DisclosureButton";
+import useFeedSearch from "@/src/hooks/use-feed-search";
+import { useSession } from "@/src/providers/session-provider-client";
 import { LibraryFoldersResponse } from "../api/trackers/libraries/[name]/folders/route";
-import { formatSearchQuery, pad2 } from "@/src/libs/trackers/library-utils";
+import {
+  formatSearchQuery,
+  pad2,
+  type LastEpisode,
+} from "@/src/libs/trackers/library-utils";
 import { FetchError } from "@/src/libs/fetch-error";
 import useValidation from "@/src/hooks/use-validation";
 import { validateFormData } from "@/src/libs/validation/tracker-validations";
@@ -94,12 +95,17 @@ export default function TrackersClient({
   const toast = useToast();
   const { validate, errorMessage, setErrors, revalidateOnError } =
     useValidation(validateFormData);
-  const { isOpen: isAccordionOpen, toggle: toggleAccordion } = useAccordion();
+  const { session, updateSession } = useSession();
+  const { search, cancel: cancelSearch, isSearching } = useFeedSearch();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const toggleForm = () => setIsFormOpen((open) => !open);
 
   const [shows, setShows] = useState<TrackedShow[]>(initialShows);
-  const [selectedShowId, setSelectedShowId] = usePersistentState(
-    "trackers:selected-show",
-    "",
+  // The selected show is a user preference; the last results stay in this browser
+  const selectedShowId = session.trackers?.selectedShowId ?? "";
+  const setSelectedShowId = useCallback(
+    (id: string) => updateSession({ trackers: { selectedShowId: id } }),
+    [updateSession],
   );
   const [lastSearch, setLastSearch] = usePersistentState<{
     showId: string;
@@ -107,21 +113,13 @@ export default function TrackersClient({
     items: FeedItem[];
     searchedAt: number;
   } | null>("trackers:last-search", null);
-  const abortRef = useRef<AbortController | null>(null);
 
   const [isSearchDisabled, setIsSearchDisabled] = useState(false);
-  const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const [lastEpisode, setLastEpisode] = useState<{
-    season: number;
-    episode: number;
-  } | null>(null);
+  const [lastEpisode, setLastEpisode] = useState<LastEpisode | null>(null);
   const [nextEpisode, setNextEpisode] = useState<number | null>(1);
   const hasSearched =
     lastSearch != null && lastSearch.showId === selectedShowId;
   const items = hasSearched ? lastSearch.items : [];
-
-  // Cancel any in-flight search when leaving the page
-  useEffect(() => () => abortRef.current?.abort(), []);
 
   const [formData, setFormData] = useState<TrackerFormData>(EMPTY_FORM);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
@@ -182,9 +180,9 @@ export default function TrackersClient({
   );
 
   const isOpen = useMemo(() => {
-    if (isAccordionOpen && selectedShow) return true;
-    if (!isAccordionOpen && selectedShow) return false;
-  }, [isAccordionOpen, selectedShow]);
+    if (isFormOpen && selectedShow) return true;
+    if (!isFormOpen && selectedShow) return false;
+  }, [isFormOpen, selectedShow]);
 
   const fetchFolders = useCallback(
     async (libraryName: string) => {
@@ -216,7 +214,7 @@ export default function TrackersClient({
         setNextEpisode(
           Math.max(
             selectedShow?.minEpisode ?? 1,
-            (lastEpisode?.episode ?? 0) + 1,
+            lastEpisode?.episode != null ? lastEpisode.episode + 1 : 0,
           ),
         );
       } catch {
@@ -228,7 +226,7 @@ export default function TrackersClient({
   );
 
   useEffect(() => {
-    if (!isAccordionOpen) return;
+    if (!isFormOpen) return;
     startTransition(() => {
       if (selectedShow) {
         setFormData({
@@ -245,7 +243,7 @@ export default function TrackersClient({
         setLibraryContent([]);
       }
     });
-  }, [selectedShow, isAccordionOpen]);
+  }, [selectedShow, isFormOpen]);
 
   useEffect(() => {
     startTransition(() => {
@@ -279,7 +277,9 @@ export default function TrackersClient({
     const title = selectedShow.title.trim();
     const season = selectedShow.season;
     const episode = nextEpisode;
-    const additionalQuery = formData.additionalQuery.trim();
+    // Use the saved tracker, not the edit form: the form is only filled
+    // while it is open and can still hold another show's values.
+    const additionalQuery = selectedShow.additionalQuery?.trim() ?? "";
 
     const hasErrors = validate({
       title,
@@ -300,38 +300,14 @@ export default function TrackersClient({
     });
     if (selectedShow.category) params.set("category", selectedShow.category);
 
-    const controller = new AbortController();
-    abortRef.current = controller;
-    try {
-      const { data } = await fetchData<FeedResponse>(
-        `/api/downloads/feed?${params}`,
-        { setIsLoading: setIsSearchLoading, signal: controller.signal },
-      );
-      setLastSearch({
-        showId: selectedShow.id,
-        episode,
-        items: data.items,
-        searchedAt: Date.now(),
-      });
-    } catch (err) {
-      if (isAbortError(err)) {
-        toast.info("Search cancelled");
-        return;
-      }
-      setLastSearch({
-        showId: selectedShow.id,
-        episode,
-        items: [],
-        searchedAt: Date.now(),
-      });
-    } finally {
-      if (abortRef.current === controller) abortRef.current = null;
-    }
-  }
-
-  function handleCancelSearch() {
-    abortRef.current?.abort();
-    abortRef.current = null;
+    const results = await search(params);
+    if (results === null) return;
+    setLastSearch({
+      showId: selectedShow.id,
+      episode,
+      items: results,
+      searchedAt: Date.now(),
+    });
   }
 
   async function handleAdd() {
@@ -352,7 +328,7 @@ export default function TrackersClient({
       setShows((prev) => [...prev, data.show]);
       setFormData(EMPTY_FORM);
       setLibraryContent([]);
-      toggleAccordion();
+      toggleForm();
       toast.success("Tracker added");
     } catch (err) {
       if (err instanceof FetchError) {
@@ -382,7 +358,7 @@ export default function TrackersClient({
       setShows((prev) =>
         prev.map((s) => (s.id === selectedShow.id ? data.show : s)),
       );
-      toggleAccordion();
+      toggleForm();
       fetchEpisode(selectedShow.id);
       toast.success("Tracker updated");
     } catch (err) {
@@ -422,7 +398,7 @@ export default function TrackersClient({
   }
 
   function mainButton() {
-    if (isAccordionOpen) {
+    if (isFormOpen) {
       if (selectedShow) {
         return (
           <Button
@@ -445,9 +421,9 @@ export default function TrackersClient({
         </Button>
       );
     }
-    if (isSearchLoading) {
+    if (isSearching) {
       return (
-        <Button color="default" className="grow" onClick={handleCancelSearch}>
+        <Button color="default" className="grow" onClick={cancelSearch}>
           <FontAwesomeIcon icon={faXmark} className="text-xs" />
           Cancel search
         </Button>
@@ -475,7 +451,7 @@ export default function TrackersClient({
           subtitle={
             shows.length > 0
               ? `${shows.length} show${shows.length > 1 ? "s" : ""} tracked${
-                  selectedShow && lastEpisode?.episode
+                  selectedShow && lastEpisode?.episode != null
                     ? ` · last downloaded S${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
                     : ""
                 }`
@@ -483,7 +459,7 @@ export default function TrackersClient({
           }
         />
 
-        <div className="card p-3 flex flex-col gap-3 shrink-0 animate-fade-in-up">
+        <div className="card p-3 flex flex-col gap-3 shrink-0">
           <div className="flex gap-2">
             <SelectInput
               id="show"
@@ -500,7 +476,7 @@ export default function TrackersClient({
               }
             />
 
-            {selectedShow && isAccordionOpen && (
+            {selectedShow && isFormOpen && (
               <IconButton
                 color="danger"
                 onClick={handleDeleteClick}
@@ -510,7 +486,7 @@ export default function TrackersClient({
               />
             )}
 
-            {selectedShow && !isAccordionOpen && (
+            {selectedShow && !isFormOpen && (
               <NumberInput
                 id="nextEpisode"
                 className="shrink-0 w-20"
@@ -525,7 +501,7 @@ export default function TrackersClient({
             )}
           </div>
 
-          <Accordion isOpen={isAccordionOpen}>
+          <Collapse isOpen={isFormOpen} className="-mx-1 px-1">
             <div className="flex flex-col gap-2">
               <SelectInput
                 id="library"
@@ -644,20 +620,21 @@ export default function TrackersClient({
                 />
               )}
             </div>
-          </Accordion>
+          </Collapse>
 
           <div className="flex w-full justify-center gap-2">
             {mainButton()}
-            <AccordionButton
-              isOpen={isAccordionOpen}
-              onToggle={toggleAccordion}
-              label={isAccordionOpen ? "Close" : selectedShow ? "Edit" : "New"}
+            <DisclosureButton
+              isOpen={isFormOpen}
+              onToggle={toggleForm}
+              label={isFormOpen ? "Close" : selectedShow ? "Edit" : "New"}
+              icon={isFormOpen ? faXmark : selectedShow ? faPen : faPlus}
             />
           </div>
         </div>
 
-        {hasSearched && !isSearchLoading && lastSearch && (
-          <p className="shrink-0 text-xs text-text-muted animate-fade-in">
+        {hasSearched && !isSearching && lastSearch && (
+          <p className="shrink-0 text-xs text-text-muted">
             <span className="text-text-secondary font-medium tabular-nums">
               {items.length}
             </span>{" "}
@@ -713,7 +690,7 @@ export default function TrackersClient({
             </p>
 
             <p className="mt-4 text-sm text-text-muted">
-              {lastEpisode?.episode
+              {lastEpisode?.episode != null
                 ? `Last downloaded episode was: S${pad2(lastEpisode.season)}E${pad2(lastEpisode.episode)}`
                 : "No episodes downloaded yet."}
             </p>

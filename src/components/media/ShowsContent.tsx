@@ -36,7 +36,7 @@ export default function ShowsContent({
             id={key}
             title={title}
             files={showFiles}
-            handleSelect={onSelect}
+            onSelect={onSelect}
             onEditOne={onEditOne}
           />
         );

@@ -1,46 +1,47 @@
 "use client";
 
 import { MediaFile } from "@/src/types/MediaFile";
-import { ReactNode, useMemo } from "react";
+import { ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
+import { hasErrors } from "@/src/libs/files/getSelectionStats";
 import CheckboxInput from "../ui/CheckboxInput";
 
-/**
- * Selectable row header: the whole row toggles selection, the checkbox
- * reflects the (possibly indeterminate) state of the given files.
- */
-export default function MediaCheckbox({
-  id,
-  children,
-  files = [],
-  label = "",
-  isSelected = false,
-  isIndeterminate = false,
-  onSelect = () => {},
-  trailing,
-  className,
-  labelClassName,
-}: {
+type SelectableRowProps = {
   id: string;
-  children?: ReactNode;
-  files?: MediaFile | MediaFile[];
-  label?: ReactNode;
+  files: MediaFile | MediaFile[];
+  label: ReactNode;
   isSelected?: boolean;
   isIndeterminate?: boolean;
-  onSelect?: (selected: boolean, files: MediaFile | MediaFile[]) => void;
+  onSelect: (selected: boolean, files: MediaFile | MediaFile[]) => void;
+  /** Chips shown under the label. */
+  children?: ReactNode;
+  /** Controls on the right; clicks there don't toggle the selection. */
   trailing?: ReactNode;
   className?: string;
   labelClassName?: string;
-}) {
-  const hasError = useMemo(() => {
-    if (Array.isArray(files)) {
-      return files.some((file) => file.errors && file.errors.length > 0);
-    }
-    return files.errors !== undefined && files.errors.length > 0;
-  }, [files]);
+};
+
+/**
+ * Row whose whole surface toggles the selection of one or more files.
+ */
+export default function SelectableRow({
+  id,
+  files,
+  label,
+  isSelected = false,
+  isIndeterminate = false,
+  onSelect,
+  children,
+  trailing,
+  className,
+  labelClassName,
+}: SelectableRowProps) {
+  const isInvalid = Array.isArray(files)
+    ? files.some(hasErrors)
+    : hasErrors(files);
 
   function toggle() {
-    onSelect(isIndeterminate && !isSelected ? true : !isSelected, files);
+    onSelect(!isSelected, files);
   }
 
   return (
@@ -58,7 +59,7 @@ export default function MediaCheckbox({
         }
       }}
       className={twMerge(
-        "group/row w-full min-w-0 flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer",
+        "w-full min-w-0 flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer",
         "transition-colors duration-150 hover:bg-white/3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-ring",
         "data-selected:bg-primary/8 data-selected:hover:bg-primary/10",
         className,
@@ -67,15 +68,15 @@ export default function MediaCheckbox({
       <CheckboxInput
         id={`select-${id}`}
         checked={isSelected}
-        isIndeterminate={isIndeterminate && !isSelected}
-        color={hasError ? "danger" : "primary"}
+        isIndeterminate={isIndeterminate}
+        color={isInvalid ? "danger" : "primary"}
         onChange={(value) => onSelect(value, files)}
         onClick={(e) => e.stopPropagation()}
       />
 
       <div className="min-w-0 grow flex flex-col gap-1">
         <span
-          data-error={hasError || undefined}
+          data-error={isInvalid || undefined}
           className={twMerge(
             "block w-full truncate text-sm font-medium text-text data-error:text-danger-light",
             labelClassName,

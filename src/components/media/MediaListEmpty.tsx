@@ -7,6 +7,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { ReactNode } from "react";
 import Spinner from "../ui/Spinner";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/src/libs/motion";
 
 interface MediaListEmptyProps {
   title?: string;
@@ -24,7 +26,10 @@ export default function MediaListEmpty({
   action,
 }: MediaListEmptyProps) {
   return (
-    <div className="w-full h-full flex flex-col justify-center items-center gap-4 py-12 px-6 text-center animate-fade-in-up">
+    <motion.div
+      {...fadeInUp}
+      className="w-full h-full flex flex-col justify-center items-center gap-4 py-12 px-6 text-center"
+    >
       {isLoading ? (
         <Spinner size="lg" />
       ) : (
@@ -42,6 +47,6 @@ export default function MediaListEmpty({
           {action}
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -1,5 +1,9 @@
+"use client";
+
 import { ReactNode } from "react";
+import { motion } from "framer-motion";
 import { twMerge } from "tailwind-merge";
+import { fadeInUp } from "@/src/libs/motion";
 
 export default function PageHeader({
   title,
@@ -13,11 +17,9 @@ export default function PageHeader({
   className?: string;
 }) {
   return (
-    <div
-      className={twMerge(
-        "flex items-end justify-between gap-4 animate-fade-in",
-        className,
-      )}
+    <motion.div
+      {...fadeInUp}
+      className={twMerge("flex items-end justify-between gap-4", className)}
     >
       <div className="min-w-0">
         <h1 className="text-2xl font-bold tracking-tight text-text">{title}</h1>
@@ -28,6 +30,6 @@ export default function PageHeader({
       {actions && (
         <div className="flex items-center gap-2 shrink-0">{actions}</div>
       )}
-    </div>
+    </motion.div>
   );
 }

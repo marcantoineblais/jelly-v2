@@ -13,6 +13,8 @@ import Input from "@/src/components/ui/Input";
 import Button from "@/src/components/ui/Button";
 import { useToast } from "@/src/providers/ToastProvider";
 import PasswordInput from "@/src/components/ui/PasswordInput";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/src/libs/motion";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -63,7 +65,10 @@ export default function SetupPage() {
 
   return (
     <main className="container-main h-full w-full flex items-center justify-center p-4">
-      <div className="w-full max-w-sm card rounded-3xl p-7 animate-fade-in-up">
+      <motion.div
+        {...fadeInUp}
+        className="w-full max-w-sm card rounded-3xl p-7"
+      >
         <div className="flex justify-center mb-5">
           <span className="relative size-16 rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-glow">
             <Image
@@ -130,7 +135,7 @@ export default function SetupPage() {
             Create account
           </Button>
         </form>
-      </div>
+      </motion.div>
     </main>
   );
 }

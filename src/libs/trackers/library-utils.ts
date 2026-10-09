@@ -1,6 +1,7 @@
 export type LastEpisode = {
   season: number;
-  episode: number;
+  /** Highest episode found in the library, or null when none (0 is valid). */
+  episode: number | null;
 };
 
 export function pad2(n: number): string {

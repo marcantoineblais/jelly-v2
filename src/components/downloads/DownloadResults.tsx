@@ -10,6 +10,8 @@ import Modal from "../Modal";
 import Button from "../ui/Button";
 import Spinner from "../ui/Spinner";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import InfoBox from "../ui/InfoBox";
+import SectionLabel from "../ui/SectionLabel";
 
 type DownloadResultsProps = {
   items: FeedItem[];
@@ -90,7 +92,7 @@ export default function DownloadResults({
       >
         {selectedItem && (
           <div className="flex flex-col gap-4 md:w-lg">
-            <div className="rounded-xl bg-surface/60 border border-border px-3 py-2.5">
+            <InfoBox>
               <p className="text-sm font-medium text-text break-all">
                 {selectedItem.title}
               </p>
@@ -103,7 +105,7 @@ export default function DownloadResults({
                   .filter(Boolean)
                   .join(" · ")}
               </p>
-            </div>
+            </InfoBox>
             {files.length === 0 ? (
               <div className="w-full flex flex-col items-center gap-3 py-8 text-xs text-text-muted">
                 <Spinner size="sm" />
@@ -111,9 +113,9 @@ export default function DownloadResults({
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <p className="text-[11px] uppercase tracking-wider text-text-muted">
+                <SectionLabel as="p">
                   {files.length} file{files.length > 1 ? "s" : ""}
-                </p>
+                </SectionLabel>
                 <TorrentFileTree files={files} />
               </div>
             )}

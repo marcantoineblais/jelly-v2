@@ -4,7 +4,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { formatDataSize } from "@/src/libs/format-data-size";
+import { fadeInUp } from "@/src/libs/motion";
 import Progress from "./Progress";
+import InfoBox from "./InfoBox";
+import SectionLabel from "./SectionLabel";
+
+type FileCopyStatusProps = {
+  currentFile?: string;
+  processedFiles?: number;
+  totalFiles?: number;
+  currentFileBytesTransferred?: number;
+  totalBytesTransferred?: number;
+  totalSize?: number;
+};
 
 export default function FileCopyStatus({
   currentFile = "",
@@ -13,35 +25,21 @@ export default function FileCopyStatus({
   currentFileBytesTransferred,
   totalBytesTransferred,
   totalSize,
-}: {
-  isOpen?: boolean;
-  currentFile?: string;
-  processedFiles?: number;
-  totalFiles?: number;
-  currentFileBytesTransferred?: number;
-  totalBytesTransferred?: number;
-  totalSize?: number;
-}) {
-  const hasBytes =
-    !!totalSize &&
-    totalBytesTransferred != null &&
-    currentFileBytesTransferred != null;
-
-  const transferred = hasBytes
-    ? Math.max(0, totalBytesTransferred! + currentFileBytesTransferred!)
-    : 0;
-  const progress = hasBytes ? transferred / totalSize! : 0;
+}: FileCopyStatusProps) {
+  const transferred =
+    totalBytesTransferred != null && currentFileBytesTransferred != null
+      ? Math.max(0, totalBytesTransferred + currentFileBytesTransferred)
+      : null;
+  const progress =
+    totalSize && transferred != null ? transferred / totalSize : 0;
   const percent = Math.min(100, Math.round(progress * 100));
-  const isDone = totalFiles > 0 && processedFiles >= totalFiles;
-
-  const fileName = currentFile ? currentFile.split(/[\\/]/).pop() : "";
+  const isFinishing = totalFiles > 0 && processedFiles >= totalFiles;
+  const fileName = currentFile.split(/[\\/]/).pop();
 
   return (
     <div className="w-full h-full flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: 16, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        {...fadeInUp}
         className="card w-full max-w-lg p-6 flex flex-col gap-6"
       >
         <div className="flex items-center gap-4">
@@ -56,7 +54,7 @@ export default function FileCopyStatus({
           </div>
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-text">
-              {isDone ? "Finishing up…" : "Transferring files"}
+              {isFinishing ? "Finishing up…" : "Transferring files"}
             </h2>
             <p className="text-sm text-text-muted">
               Keep this page open or come back later.
@@ -78,36 +76,28 @@ export default function FileCopyStatus({
           value={progress}
           isAnimated
           trackClassName="h-2.5"
-          className="bg-linear-to-r from-emerald-500 to-teal-300"
+          className="bg-linear-to-r from-primary to-primary-light"
         />
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-surface/60 border border-border px-3 py-2.5">
-            <div className="text-[11px] uppercase tracking-wider text-text-muted">
-              Transferred
-            </div>
-            <div className="text-sm font-medium tabular-nums text-text">
-              {hasBytes
+          <InfoBox label="Transferred">
+            <p className="text-sm font-medium tabular-nums text-text">
+              {totalSize && transferred != null
                 ? formatDataSize(transferred, { sizeRef: totalSize })
                 : "—"}
-            </div>
-          </div>
-          <div className="rounded-xl bg-surface/60 border border-border px-3 py-2.5">
-            <div className="text-[11px] uppercase tracking-wider text-text-muted">
-              Total
-            </div>
-            <div className="text-sm font-medium tabular-nums text-text">
+            </p>
+          </InfoBox>
+          <InfoBox label="Total">
+            <p className="text-sm font-medium tabular-nums text-text">
               {totalSize
                 ? formatDataSize(totalSize, { sizeRef: totalSize })
                 : "—"}
-            </div>
-          </div>
+            </p>
+          </InfoBox>
         </div>
 
         <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-wider text-text-muted mb-1">
-            Current file
-          </div>
+          <SectionLabel className="mb-1">Current file</SectionLabel>
           <p
             className="font-mono text-xs text-text-secondary truncate"
             title={currentFile}

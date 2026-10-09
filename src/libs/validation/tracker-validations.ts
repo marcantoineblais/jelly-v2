@@ -7,7 +7,7 @@ const validateShow = (show: unknown) => {
 const validateNextEpisode = (nextEpisode: unknown) => {
   if (nextEpisode == null) return "Next episode is required";
   if (typeof nextEpisode !== "number") return "Next episode must be a number";
-  if (nextEpisode < 1) return "Next episode must be a positive number";
+  if (nextEpisode < 0) return "Next episode must be a positive number";
   if (!Number.isInteger(nextEpisode)) return "Next episode must be an integer";
   return null;
 };
@@ -27,7 +27,7 @@ const validateSeason = (season: unknown) => {
 };
 
 const validateMinEpisode = (minEpisode: unknown) => {
-  if (!minEpisode) return null;
+  if (minEpisode == null) return null;
 
   if (typeof minEpisode !== "number") return "Min episode must be a number";
   if (minEpisode < 0) return "Min episode must be a positive number";

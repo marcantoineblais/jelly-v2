@@ -24,7 +24,11 @@
   --color-primary-light: #34d399;
   --color-primary-hover: #34d399;
   --color-primary-foreground: #03140d;
-  --color-primary-ring: rgb(16 185 129 / 0.45);
+  --color-primary-ring: color-mix(
+    in srgb,
+    var(--color-primary) 45%,
+    transparent
+  );
 
   --color-secondary: #38bdf8;
   --color-secondary-hover: #7dd3fc;
@@ -48,7 +52,7 @@
   --color-danger: #f26b57;
   --color-danger-light: #f8a194;
   --color-danger-hover: #f98a79;
-  --color-danger-ring: rgb(242 107 87 / 0.45);
+  --color-danger-ring: color-mix(in srgb, var(--color-danger) 45%, transparent);
   --color-danger-foreground: #1f0703;
 
   --shadow-btn:
@@ -56,7 +60,8 @@
   --shadow-card:
     0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 10px 30px -12px rgb(0 0 0 / 0.7);
   --shadow-glow:
-    0 0 0 1px rgb(16 185 129 / 0.35), 0 8px 30px -6px rgb(16 185 129 / 0.45);
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent),
+    0 8px 30px -6px color-mix(in srgb, var(--color-primary) 45%, transparent);
 
   /* Torrent status colors */
   --color-status-downloading: var(--color-success);
@@ -66,29 +71,7 @@
   --color-status-paused: var(--color-default);
   --color-status-error: var(--color-danger);
 
-  --animate-fade-in: fade-in 0.35s ease-out both;
-  --animate-fade-in-up: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-shimmer: shimmer 1.8s linear infinite;
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 
   @keyframes shimmer {
     from {
@@ -142,19 +125,19 @@ body {
   background:
     radial-gradient(
       60rem 30rem at 15% -10%,
-      rgb(16 185 129 / 0.12),
+      color-mix(in srgb, var(--color-primary) 12%, transparent),
       transparent 60%
     ),
     radial-gradient(
       50rem 30rem at 110% 10%,
-      rgb(56 189 248 / 0.07),
+      color-mix(in srgb, var(--color-secondary) 7%, transparent),
       transparent 60%
     ),
     var(--color-background);
 }
 
 ::selection {
-  background: rgb(16 185 129 / 0.35);
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 /* Thin, discreet scrollbars */
@@ -190,7 +173,7 @@ body {
 }
 
 .text-gradient {
-  @apply text-transparent bg-clip-text bg-linear-to-b from-emerald-300 to-emerald-600;
+  @apply text-transparent bg-clip-text bg-linear-to-b from-primary-light to-primary;
 }
 
 /* Card surface used across the app */
@@ -202,7 +185,11 @@ body {
 }
 
 @utility glass {
-  background-color: rgb(17 24 22 / 0.72);
+  background-color: color-mix(
+    in srgb,
+    var(--color-surface-card) 72%,
+    transparent
+  );
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
 }

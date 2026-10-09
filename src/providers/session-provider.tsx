@@ -10,6 +10,15 @@ export type SessionData = {
     sortBy?: string;
     sortOrder?: "asc" | "desc";
   };
+  downloads?: {
+    indexer?: string;
+    category?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  };
+  trackers?: {
+    selectedShowId?: string;
+  };
 };
 
 export default async function SessionProvider({

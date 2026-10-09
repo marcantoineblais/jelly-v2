@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { fadeInUp } from "@/src/libs/motion";
 
 const SLOW_AFTER_S = 10;
 
-/** Live "searching" indicator with elapsed time and a cancel shortcut. */
-export default function SearchStatus({ onCancel }: { onCancel: () => void }) {
+/** Live "searching" indicator with elapsed time. */
+export default function SearchStatus() {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -22,8 +23,8 @@ export default function SearchStatus({ onCancel }: { onCancel: () => void }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
+      {...fadeInUp}
+      role="status"
       className="shrink-0 flex items-center gap-3 rounded-xl border border-border bg-surface-card px-3.5 py-2.5 text-xs"
     >
       <span className="flex gap-1" aria-hidden="true">
@@ -35,18 +36,13 @@ export default function SearchStatus({ onCancel }: { onCancel: () => void }) {
           />
         ))}
       </span>
-      <span className="grow min-w-0 truncate text-text-secondary">
-        {isSlow ? "Some indexers are slow to respond…" : "Searching indexers…"}
-        <span className="ml-1.5 tabular-nums text-text-muted">{elapsed}s</span>
-      </span>
-      <button
-        type="button"
-        onClick={onCancel}
+      <span
         data-slow={isSlow || undefined}
-        className="shrink-0 font-semibold text-text-muted hover:text-text cursor-pointer transition-colors data-slow:text-warning"
+        className="grow min-w-0 truncate text-text-secondary data-slow:text-warning"
       >
-        Cancel
-      </button>
+        {isSlow ? "Indexers are slow to respond…" : "Searching indexers…"}
+      </span>
+      <span className="shrink-0 tabular-nums text-text-muted">{elapsed}s</span>
     </motion.div>
   );
 }

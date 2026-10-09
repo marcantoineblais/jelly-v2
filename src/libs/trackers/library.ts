@@ -80,17 +80,19 @@ export async function getLastEpisode(
   };
 }
 
-async function findHighestEpisode(seasonPath: string): Promise<number> {
+async function findHighestEpisode(seasonPath: string): Promise<number | null> {
   try {
-    let highest = 0;
+    let highest: number | null = null;
     for (const entry of readdirSync(seasonPath)) {
       const match = entry.match(EPISODE_RE);
       if (!match) continue;
       const episode = parseInt(match[2], 10);
-      if (!isNaN(episode) && episode > highest) highest = episode;
+      if (!isNaN(episode) && (highest === null || episode > highest)) {
+        highest = episode;
+      }
     }
     return highest;
   } catch {
-    return 0;
+    return null;
   }
 }

@@ -3,15 +3,16 @@
 import {
   Dispatch,
   SetStateAction,
+  startTransition,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
 const STORAGE_PREFIX = "jelly:";
 
-// In-memory cache so state survives client-side navigation instantly,
-// localStorage keeps it across reloads.
+// Survives client-side navigation instantly; localStorage covers reloads.
 const memoryCache = new Map<string, unknown>();
 
 function readStorage<T>(key: string): T | undefined {
@@ -23,64 +24,64 @@ function readStorage<T>(key: string): T | undefined {
   }
 }
 
-function writeStorage<T>(key: string, value: T) {
+function writeStorage(key: string, value: unknown) {
   try {
-    window.localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    if (value === undefined) {
+      window.localStorage.removeItem(STORAGE_PREFIX + key);
+    } else {
+      window.localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    }
   } catch {
-    // storage full or unavailable: memory cache still works
+    // Storage full or unavailable: the memory cache still works
   }
 }
 
 /**
- * useState that remembers its value between page visits.
- * Returns [value, setValue, clear].
+ * useState that is kept in this browser between page visits and reloads.
+ * For per-user preferences that should follow the account, use the session
+ * (`useSession`) instead. Returns [value, setValue, reset].
  */
 export default function usePersistentState<T>(
   key: string,
   initialValue: T,
 ): [T, Dispatch<SetStateAction<T>>, () => void] {
+  const initialValueRef = useRef(initialValue);
   const [value, setValue] = useState<T>(() =>
     memoryCache.has(key) ? (memoryCache.get(key) as T) : initialValue,
   );
+  const valueRef = useRef(value);
 
-  // Restore from localStorage after a full page load (not during SSR,
-  // to avoid hydration mismatches).
+  // After a full page load, restore from localStorage. Done in an effect so
+  // the server and client render the same initial markup.
   useEffect(() => {
     if (memoryCache.has(key)) return;
     const stored = readStorage<T>(key);
-    if (stored !== undefined) {
-      memoryCache.set(key, stored);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setValue(stored);
-    }
+    if (stored === undefined) return;
+    memoryCache.set(key, stored);
+    valueRef.current = stored;
+    startTransition(() => setValue(stored));
   }, [key]);
 
   const setPersistentValue: Dispatch<SetStateAction<T>> = useCallback(
     (action) => {
-      setValue((prev) => {
-        const next =
-          typeof action === "function"
-            ? (action as (prev: T) => T)(prev)
-            : action;
-        memoryCache.set(key, next);
-        writeStorage(key, next);
-        return next;
-      });
+      const next =
+        typeof action === "function"
+          ? (action as (prev: T) => T)(valueRef.current)
+          : action;
+      valueRef.current = next;
+      memoryCache.set(key, next);
+      writeStorage(key, next);
+      setValue(next);
     },
     [key],
   );
 
-  const clear = useCallback(() => {
+  const reset = useCallback(() => {
     memoryCache.delete(key);
-    try {
-      window.localStorage.removeItem(STORAGE_PREFIX + key);
-    } catch {
-      // ignore
-    }
-    setValue(initialValue);
-    // initialValue intentionally excluded: callers pass literals
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    writeStorage(key, undefined);
+    valueRef.current = initialValueRef.current;
+    setValue(initialValueRef.current);
   }, [key]);
 
-  return [value, setPersistentValue, clear];
+  return [value, setPersistentValue, reset];
 }
