@@ -173,6 +173,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [show],
   );
 
+  // Stable value: consumers (useFetch, and every effect depending on it)
+  // must not be recreated each time a toast appears or disappears.
+  const contextValue = useMemo(
+    () => ({ show, success, error, info, warning, dismiss, dismissAll }),
+    [show, success, error, info, warning, dismiss, dismissAll],
+  );
+
   useEffect(() => {
     if (
       isHovered ||
@@ -271,9 +278,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ToastContext.Provider
-      value={{ show, success, error, info, warning, dismiss, dismissAll }}
-    >
+    <ToastContext.Provider value={contextValue}>
       {children}
       {isMounted &&
         createPortal(

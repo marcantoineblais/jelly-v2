@@ -4,6 +4,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useState,
 } from "react";
@@ -203,7 +204,7 @@ export default function TrackersClient({
   );
 
   const fetchEpisode = useCallback(
-    async (showId: string) => {
+    async (showId: string, minEpisode: number) => {
       try {
         const { data } = await fetchData<CheckTrackerResponse>(
           `/api/trackers/${showId}/check`,
@@ -213,7 +214,7 @@ export default function TrackersClient({
         setLastEpisode(lastEpisode);
         setNextEpisode(
           Math.max(
-            selectedShow?.minEpisode ?? 1,
+            minEpisode,
             lastEpisode?.episode != null ? lastEpisode.episode + 1 : 0,
           ),
         );
@@ -222,7 +223,7 @@ export default function TrackersClient({
         setNextEpisode(1);
       }
     },
-    [fetchData, selectedShow],
+    [fetchData],
   );
 
   useEffect(() => {
@@ -245,6 +246,13 @@ export default function TrackersClient({
     });
   }, [selectedShow, isFormOpen]);
 
+  // Suggest the next episode only when the selected show (or its minimum
+  // episode) changes, so a number typed by hand survives searches, toasts
+  // and other re-renders.
+  const selectedMinEpisode = selectedShow?.minEpisode ?? 1;
+  const loadNextEpisode = useEffectEvent((showId: string, minEpisode: number) =>
+    fetchEpisode(showId, minEpisode),
+  );
   useEffect(() => {
     startTransition(() => {
       if (!selectedShowId) {
@@ -252,9 +260,9 @@ export default function TrackersClient({
         setNextEpisode(1);
         return;
       }
-      fetchEpisode(selectedShowId);
+      loadNextEpisode(selectedShowId, selectedMinEpisode);
     });
-  }, [selectedShowId, fetchEpisode]);
+  }, [selectedShowId, selectedMinEpisode]);
 
   useEffect(() => {
     startTransition(() => {
@@ -359,7 +367,7 @@ export default function TrackersClient({
         prev.map((s) => (s.id === selectedShow.id ? data.show : s)),
       );
       toggleForm();
-      fetchEpisode(selectedShow.id);
+      fetchEpisode(selectedShow.id, payload.minEpisode ?? 1);
       toast.success("Tracker updated");
     } catch (err) {
       if (err instanceof FetchError) {
