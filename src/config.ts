@@ -12,8 +12,6 @@ export const JWT_SIGN_TOKEN = process.env.JWT_SIGN_TOKEN!;
 export const JWT_COOKIE_NAME = IS_PROD
   ? "__Secure-session-token"
   : "session-token";
-export const SESSION_DATA_PATH =
-  process.env.SESSION_DATA_PATH ?? "/data/sessions";
 export const AUTH_DATA_PATH =
   process.env.AUTH_DATA_PATH ?? "/data/auth/credentials.json";
 export const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days

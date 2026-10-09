@@ -1,21 +1,9 @@
-import { SessionData } from "@/src/providers/session-provider";
+import type { SessionData } from "@/src/providers/session-provider";
+import { PREFS_COOKIE_NAME, PREFS_MAX_AGE_S } from "./prefs";
 
-type FetchFn = (
-  url: string,
-  options: { method?: string; headers?: HeadersInit; body?: BodyInit },
-) => Promise<unknown>;
-
-export async function persistSession(
-  session: SessionData,
-  fetchFn: FetchFn,
-): Promise<void> {
-  try {
-    await fetchFn("/api/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(session),
-    });
-  } catch {
-    // ignore
-  }
+/** Saves the preferences in the browser's cookie (no network request). */
+export function writePrefsCookie(prefs: SessionData): void {
+  const value = encodeURIComponent(JSON.stringify(prefs));
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${PREFS_COOKIE_NAME}=${value}; Path=/; Max-Age=${PREFS_MAX_AGE_S}; SameSite=Lax${secure}`;
 }

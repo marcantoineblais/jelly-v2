@@ -1,10 +1,9 @@
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { JWT_COOKIE_NAME } from "@/src/config";
-import { getCurrentUser } from "@/src/libs/auth/login";
-import { readSession } from "@/src/libs/session/storage";
+import { parsePrefs, PREFS_COOKIE_NAME } from "@/src/libs/session/prefs";
 import SessionProviderClient from "./session-provider-client";
 
+/** UI preferences, stored per browser in a cookie (see libs/session/prefs). */
 export type SessionData = {
   torrents?: {
     sortBy?: string;
@@ -27,16 +26,10 @@ export default async function SessionProvider({
   children: ReactNode;
 }) {
   const cookieStore = await cookies();
-  const token = cookieStore.get(JWT_COOKIE_NAME)?.value;
-  const username = await getCurrentUser(token);
-
-  let session: SessionData | null = null;
-  if (username) {
-    session = await readSession(username);
-  }
+  const session = parsePrefs(cookieStore.get(PREFS_COOKIE_NAME)?.value);
 
   return (
-    <SessionProviderClient initSession={session ?? {}}>
+    <SessionProviderClient initSession={session}>
       {children}
     </SessionProviderClient>
   );

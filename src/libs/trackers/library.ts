@@ -4,7 +4,8 @@ import { readConfig } from "@/src/libs/readConfig";
 import type { MediaLibrary } from "@/src/types/MediaLibrary";
 import { formatSeasonPath, LastEpisode } from "./library-utils";
 
-const EPISODE_RE = /S(\d{2})E(\d{2})/i;
+// 2-3 digit seasons/episodes (e.g. S01E05, S01E105 for long-running shows)
+const EPISODE_RE = /S(\d{2,3})E(\d{2,3})(?!\d)/i;
 
 function normalizeShowTitleForMatch(title: string): string {
   return title

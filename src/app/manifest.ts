@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Media files manager for Jellyfin",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#047857",
+    background_color: "#090d0c",
+    theme_color: "#090d0c",
     orientation: "portrait-primary",
     icons: [
       {

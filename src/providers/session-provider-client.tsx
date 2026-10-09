@@ -9,8 +9,7 @@ import React, {
   useState,
 } from "react";
 import type { SessionData } from "./session-provider";
-import useFetch from "../hooks/use-fetch";
-import { persistSession } from "@/src/libs/session/client";
+import { writePrefsCookie } from "@/src/libs/session/client";
 
 type SessionContextValue = {
   session: SessionData;
@@ -26,22 +25,20 @@ export default function SessionProviderClient({
   children: React.ReactNode;
   initSession?: SessionData;
 }) {
-  const { fetchData } = useFetch();
   const [session, setSession] = useState<SessionData>(initSession);
 
-  const isFirstRender = useRef(true);
   const updateSession = useCallback((data: Partial<SessionData>) => {
     setSession((prev) => ({ ...prev, ...data }));
   }, []);
 
+  // Writing a cookie is local to the browser, so it can happen on every change
+  const lastSavedRef = useRef(JSON.stringify(initSession));
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (Object.keys(session).length === 0) return;
-    persistSession(session, fetchData);
-  }, [session, fetchData]);
+    const serialized = JSON.stringify(session);
+    if (serialized === lastSavedRef.current) return;
+    lastSavedRef.current = serialized;
+    writePrefsCookie(session);
+  }, [session]);
 
   const value: SessionContextValue = { session, updateSession };
 
