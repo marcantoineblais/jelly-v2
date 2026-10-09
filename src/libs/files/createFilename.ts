@@ -4,11 +4,9 @@ import type { MediaInfo } from "@/src/types/MediaInfo";
 export function createFilename(info: MediaInfo = {}): string {
   const title = info.title || "Not set";
   const year = info.year ? `(${info.year})` : null;
-  let se = "";
-  if (info.season !== undefined || info.episode !== undefined) {
-    se = " - " + createEpisodeLabel(info);
-  }
-  return [title, year, se].filter(Boolean).join(" ");
+  const name = [title, year].filter(Boolean).join(" ");
+  if (info.season === undefined && info.episode === undefined) return name;
+  return `${name} - ${createEpisodeLabel(info)}`;
 }
 
 export function createEpisodeLabel(info: MediaInfo = {}): string {

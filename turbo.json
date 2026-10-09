@@ -1,0 +1,18 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "envMode": "loose",
+  "tasks": {
+    "dev:web": {
+      "cache": false,
+      "persistent": true
+    },
+    "dev:socket": {
+      "cache": false,
+      "persistent": true
+    },
+    "dev:files": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

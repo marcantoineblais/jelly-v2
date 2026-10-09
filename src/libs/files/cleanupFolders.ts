@@ -95,6 +95,9 @@ export async function cleanupTransferredFolders({
 
   for (const folder of sortedFolders) {
     try {
+      // Files can sit directly in a download root: never delete the root
+      if (isDownloadRoot({ dirPath: folder, downloadRoots })) continue;
+
       const exists = await directoryExists(folder);
       if (!exists) continue;
 

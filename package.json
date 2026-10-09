@@ -2,8 +2,12 @@
   "name": "jelly",
   "version": "5.0.0",
   "private": true,
+  "packageManager": "pnpm@12.10.1",
   "scripts": {
-    "dev": "next dev",
+    "dev": "turbo run dev:web dev:socket dev:files",
+    "dev:web": "next dev",
+    "dev:socket": "tsx watch servers/socket-server.ts",
+    "dev:files": "tsx watch servers/file-server.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -43,6 +47,7 @@
     "eslint-config-prettier": "^10.1.8",
     "tailwindcss": "^4.3.3",
     "tsup": "^8.5.1",
+    "turbo": "^2.11.7",
     "typescript": "^5.9.3"
   }
 }

@@ -60,17 +60,22 @@ async function copyFileWithProgress({
     // Use fs.copyFile which delegates to the OS native copy
     // (CopyFileW on Windows, copy_file_range on Linux). This avoids the
     // userspace read→write streaming loop that saturates SMB.
+    //
+    // Progress contract: `totalBytesTransferred` only counts files that are
+    // already done; the client adds `currentFileBytesTransferred` on top.
+    let isCopying = true;
     const progressInterval = setInterval(async () => {
       try {
         const destStat = await fs.stat(updatedPath);
+        // A stat started before the copy finished can resolve after it:
+        // don't send that stale (smaller) value after the final update.
+        if (!isCopying) return;
         sendProgress({
           ws,
           payload: {
             ...progress,
-            currentFileBytesTransferred: destStat.size,
+            currentFileBytesTransferred: Math.min(destStat.size, fileSize),
             currentFileSize: fileSize,
-            totalBytesTransferred:
-              progress.totalBytesTransferred + destStat.size,
             errors,
           },
         });
@@ -82,6 +87,7 @@ async function copyFileWithProgress({
     try {
       await fs.copyFile(file.path, updatedPath);
     } finally {
+      isCopying = false;
       clearInterval(progressInterval);
     }
 
@@ -94,7 +100,6 @@ async function copyFileWithProgress({
         ...progress,
         currentFileBytesTransferred: fileSize,
         currentFileSize: fileSize,
-        totalBytesTransferred: progress.totalBytesTransferred + fileSize,
         errors,
       },
     });

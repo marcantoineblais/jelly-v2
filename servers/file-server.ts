@@ -24,6 +24,7 @@ app.post(
     }
 
     isTransferActive = true;
+    let isJobFinished = false;
     const socketUrl = process.env.SOCKET_SERVER_URL || "ws://localhost:3001";
     let responseSent = false;
 
@@ -37,6 +38,7 @@ app.post(
       } catch (error) {
         console.error("Error during file transfer", error);
       } finally {
+        isJobFinished = true;
         isTransferActive = false;
         if (ws.readyState === WebSocket.OPEN) ws.close();
       }
@@ -52,7 +54,10 @@ app.post(
       isTransferActive = false;
     });
     ws.on("close", () => {
-      console.error("WebSocket connection closed unexpectedly");
+      // Closing is expected once the job is done (see `finally` above)
+      if (!isJobFinished) {
+        console.error("WebSocket connection closed unexpectedly");
+      }
       isTransferActive = false;
     });
   },

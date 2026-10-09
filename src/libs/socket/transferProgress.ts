@@ -5,8 +5,10 @@ export interface ProgressPayload {
   currentFile: string;
   processedFiles: number;
   totalFiles: number;
+  /** Bytes copied so far for the file in progress. */
   currentFileBytesTransferred?: number;
   currentFileSize?: number;
+  /** Bytes of the files already completed (excludes the current file). */
   totalBytesTransferred: number;
   totalSize: number;
   errors: TransferError[];

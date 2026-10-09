@@ -2,19 +2,30 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-Run the full dev stack (Next.js, Jackett, qBittorrent, socket-server, files-server):
+Start the services (Jackett, qBittorrent, FlareSolverr behind the VPN) with Docker, then run the app locally:
 
 ```bash
 cp .env.example .env
 # Edit .env: set JWT_SIGN_TOKEN, JACKETT_API_KEY (from Jackett UI after first start)
-docker compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up -d
+pnpm install
+pnpm dev
 ```
 
-- **App:** http://localhost:3000 (Next.js dev with hot reload)
+`pnpm dev` uses [Turborepo](https://turborepo.com) to start everything in parallel:
+
+| Task         | Command                              | Default URL           |
+| ------------ | ------------------------------------ | --------------------- |
+| `dev:web`    | `next dev`                           | http://localhost:3000 |
+| `dev:socket` | `tsx watch servers/socket-server.ts` | ws://localhost:3001   |
+| `dev:files`  | `tsx watch servers/file-server.ts`   | http://localhost:3002 |
+
+The socket and file servers restart automatically when their code changes. Each task can also be run on its own, e.g. `pnpm dev:web`. Ports come from `PORT`, `SOCKET_SERVER_PORT` and `FILE_SERVER_PORT`; when running locally they must be different from each other.
+
 - **Jackett:** http://localhost:9117 — add indexers, copy API key into `.env`
 - **qBittorrent:** http://localhost:8080 — set Default save path to `/downloads` in Options
 
-The app uses `config.dev.json` for download/library paths (dev volumes: `downloads-dev`, `encodes-dev`, `media-dev`).
+Download and library paths are read from `config.json` (see `example.config.json`).
 
 ### Authentication
 
