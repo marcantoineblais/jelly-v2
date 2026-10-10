@@ -59,9 +59,13 @@ export default function DownloadsClient({ indexers }: DownloadsClientProps) {
   // Filters are user preferences (saved in the session); the typed title and
   // the last results are kept in this browser.
   const filters: Filters = { ...DEFAULT_FILTERS, ...session.downloads };
-  const [title, setTitle] = usePersistentState("downloads:title", "");
+  const [title, setTitle] = usePersistentState("downloads:title", "", {
+    storage: "session",
+  });
   const [lastSearch, setLastSearch, clearLastSearch] =
-    usePersistentState<LastSearch | null>("downloads:last-search", null);
+    usePersistentState<LastSearch | null>("downloads:last-search", null, {
+      storage: "session",
+    });
 
   const selectedIndexer = indexers.find((i) => i.id === filters.indexer);
 

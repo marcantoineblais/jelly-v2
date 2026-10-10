@@ -113,7 +113,7 @@ export default function TrackersClient({
     episode: number | null;
     items: FeedItem[];
     searchedAt: number;
-  } | null>("trackers:last-search", null);
+  } | null>("trackers:last-search", null, { storage: "session" });
 
   const [isSearchDisabled, setIsSearchDisabled] = useState(false);
   const [lastEpisode, setLastEpisode] = useState<LastEpisode | null>(null);
