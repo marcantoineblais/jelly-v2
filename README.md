@@ -61,8 +61,8 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Jelly runs as a Portainer git stack from `docker-compose.yml`, which follows the `deploy` branch. There are no versions to bump: on every push to `main`, CI (`.github/workflows/build-and-release.yml`) runs lint, pushes `ghcr.io/marcantoineblais/jelly` tagged with the commit SHA and `latest`, then force-pushes `deploy` with the compose file pinned to that SHA. Portainer polls `deploy` and recreates only the Jelly containers, since the other images don't change. Pushes to `staging` do the same with the `staging` tag and the `deploy-staging` branch.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Don't commit to `deploy` or `deploy-staging`: CI overwrites them on every release.
