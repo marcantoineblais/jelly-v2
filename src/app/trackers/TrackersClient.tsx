@@ -29,7 +29,6 @@ import DownloadResults from "@/src/components/downloads/DownloadResults";
 import Collapse from "@/src/components/ui/Collapse";
 import DisclosureButton from "@/src/components/ui/DisclosureButton";
 import useFeedSearch from "@/src/hooks/use-feed-search";
-import { useSession } from "@/src/providers/session-provider-client";
 import { LibraryFoldersResponse } from "../api/trackers/libraries/[name]/folders/route";
 import {
   formatSearchQuery,
@@ -96,17 +95,16 @@ export default function TrackersClient({
   const toast = useToast();
   const { validate, errorMessage, setErrors, revalidateOnError } =
     useValidation(validateFormData);
-  const { session, updateSession } = useSession();
   const { search, cancel: cancelSearch, isSearching } = useFeedSearch();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const toggleForm = () => setIsFormOpen((open) => !open);
 
   const [shows, setShows] = useState<TrackedShow[]>(initialShows);
-  // The selected show is a user preference; the last results stay in this browser
-  const selectedShowId = session.trackers?.selectedShowId ?? "";
-  const setSelectedShowId = useCallback(
-    (id: string) => updateSession({ trackers: { selectedShowId: id } }),
-    [updateSession],
+  // The selected show and its last results only last for this tab's session
+  const [selectedShowId, setSelectedShowId] = usePersistentState(
+    "trackers:selected-show",
+    "",
+    { storage: "session" },
   );
   const [lastSearch, setLastSearch] = usePersistentState<{
     showId: string;

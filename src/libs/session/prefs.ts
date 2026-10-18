@@ -1,7 +1,7 @@
 import type { SessionData } from "@/src/providers/session-provider";
 
 /**
- * UI preferences (sorts, filters, selected tracker) live in a cookie: they
+ * UI preferences (sorts, filters) live in a cookie: they
  * are per browser, cost no request when changed, and the server can read
  * them while rendering so pages arrive with the right values.
  */
