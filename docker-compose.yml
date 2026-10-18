@@ -4,7 +4,7 @@
 # Jelly: use http://jelly-gluetun:<port> for each (JACKETT_PORT, FLARESOLVERR_PORT, QBITTORRENT_WEBUI_PORT).
 # FIREWALL_INPUT_PORTS: Gluetun blocks inbound by default; allow these ports so jelly can reach qBittorrent/Jackett/FlareSolverr.
 # Image: CI pins :latest to the commit's tag on the deploy branch, which the Portainer stack follows.
-x-common-image: &common-image ghcr.io/marcantoineblais/jelly:latest
+x-common-image: &common-image ghcr.io/marcantoineblais/jelly:41465650e2df82ed222413f86d5a3067b4de7ee9
 
 services:
   gluetun:
