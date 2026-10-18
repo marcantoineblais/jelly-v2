@@ -1,7 +1,13 @@
 import { JACKETT_API_KEY, JACKETT_URL } from "@/src/config";
 import { XMLParser } from "fast-xml-parser";
 import { formatDataSize } from "../format-data-size";
+import { log } from "../logger";
 import { formatDate, sortFeedItems, type SortBy } from "./feed-format";
+
+/** Torznab error code Jackett returns (with HTTP 400) when the indexer request itself failed. */
+const TORZNAB_INDEXER_ERROR = "900";
+/** Total tries for a search whose indexer request failed. */
+const SEARCH_ATTEMPTS = 2;
 
 export type TorrentSearchItem = {
   id: number;
@@ -168,17 +174,71 @@ export async function searchJackett(
   if (options?.limit != null && options.limit > 0)
     params.set("limit", String(options.limit));
 
-  const response = await fetch(
+  const data = await fetchTorznab(
     `${baseUrl}/api/v2.0/indexers/${path}/results/torznab/api?${params.toString()}`,
-    { signal: options?.signal },
+    options?.signal,
   );
-  if (!response.ok) throw new Error(`Jackett search: ${response.status}`);
-  const data = await response.text();
   let items = parseTorznabXml(data);
   if (options?.sortBy && options?.sortOrder) {
     items = sortFeedItems(items, options.sortBy, options.sortOrder);
   }
   return { items, total: items.length };
+}
+
+/**
+ * GET a Torznab URL and return the XML body. Indexer failures (connection reset
+ * on a stale keep-alive connection, upstream timeout, ...) are usually transient
+ * and succeed on the next try, so those are retried before giving up.
+ */
+async function fetchTorznab(url: string, signal?: AbortSignal): Promise<string> {
+  for (let attempt = 1; ; attempt++) {
+    const response = await fetch(url, { signal });
+    const body = await response.text();
+    if (response.ok) return body;
+
+    const error = parseTorznabError(body);
+    const reason = error
+      ? summarizeTorznabError(error.description)
+      : `HTTP ${response.status}`;
+    if (error?.code !== TORZNAB_INDEXER_ERROR || attempt >= SEARCH_ATTEMPTS) {
+      throw new Error(`Jackett search failed: ${reason}`);
+    }
+    log({
+      source: "jackett",
+      message: `Indexer request failed, retrying: ${reason}`,
+      data: { attempt, status: response.status },
+      level: "warn",
+    });
+  }
+}
+
+/** Parse a Torznab `<error code="..." description="..." />` body, or null when it is not one. */
+function parseTorznabError(
+  xml: string,
+): { code: string; description: string } | null {
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "",
+  });
+  try {
+    const error = parser.parse(xml)?.error;
+    if (error?.code == null) return null;
+    return {
+      code: String(error.code),
+      description: String(error.description ?? ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** First line of a Jackett error without the .NET exception noise, e.g. "1337x: Connection reset by peer". */
+function summarizeTorznabError(description: string): string {
+  return description
+    .split(/&#xA;|\r?\n/)[0]
+    .replace(/^[\w.]+Exception: /, "")
+    .replace(/^Exception \(([^)]+)\): /, "$1: ")
+    .trim();
 }
 
 export function parseTorznabXml(xml: string): TorrentSearchItem[] {
